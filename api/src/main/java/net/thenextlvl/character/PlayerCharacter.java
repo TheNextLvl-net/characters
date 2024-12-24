@@ -10,7 +10,5 @@ public interface PlayerCharacter extends Character<Player> {
 
     boolean isTablistEntryHidden();
 
-    void setSkin(Skin skin);
-
     void setTablistEntryHidden(boolean hidden);
 }

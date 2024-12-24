@@ -2,7 +2,7 @@ package net.thenextlvl.character.model;
 
 import com.destroystokyo.paper.SkinParts;
 
-public record CharacterSkinParts(int raw) implements SkinParts {
+public record CharacterSkinParts(byte raw) implements SkinParts {
     @Override
     public boolean hasCapeEnabled() {
         return (raw & 1) != 0;

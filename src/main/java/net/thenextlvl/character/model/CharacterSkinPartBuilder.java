@@ -6,7 +6,7 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class CharacterSkinPartBuilder implements SkinPartBuilder {
-    private short raw;
+    private byte raw;
 
     public CharacterSkinPartBuilder() {
         this((byte) 127);

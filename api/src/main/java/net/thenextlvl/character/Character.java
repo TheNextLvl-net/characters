@@ -6,21 +6,18 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 
-/**
- * An interface that represents a npc
- */
 @NullMarked
 public interface Character<T extends Entity> {
-    CompletableFuture<Boolean> teleportAsync(Location location);
-
+    @Nullable
     Component getDisplayName();
 
     EntityType getType();
@@ -30,16 +27,17 @@ public interface Character<T extends Entity> {
 
     Optional<T> getEntity();
 
-    Set<Player> getViewers();
+    @Unmodifiable
+    Set<UUID> getViewers();
 
     String getName();
 
     @Nullable
     World getWorld();
 
-    boolean addViewer(Player player);
+    boolean addViewer(UUID player);
 
-    boolean addViewers(Collection<Player> players);
+    boolean addViewers(Collection<UUID> players);
 
     boolean canSee(Player player);
 
@@ -47,43 +45,31 @@ public interface Character<T extends Entity> {
 
     boolean isCollidable();
 
-    boolean isInvulnerable();
-
     boolean isPersistent();
 
     boolean isSpawned();
 
     boolean isTrackedBy(Player player);
 
+    boolean isViewer(UUID player);
+
     boolean isVisibleByDefault();
 
     boolean persist();
 
-    boolean removeViewer(Player player);
+    boolean removeViewer(UUID player);
 
-    boolean removeViewers(Collection<Player> players);
+    boolean removeViewers(Collection<UUID> players);
 
     boolean respawn();
 
     boolean spawn(Location location);
 
-    double getDisplayRange();
-
-    int getLoadingRange();
-
-    void lookAt(Entity entity);
-
-    void lookAt(Location location);
-
     void remove();
 
     void setCollidable(boolean collidable);
 
-    void setDisplayName(Component displayName);
-
-    void setDisplayRange(double range);
-
-    void setInvulnerable(boolean invulnerable);
+    void setDisplayName(@Nullable Component displayName);
 
     void setPersistent(boolean persistent);
 
