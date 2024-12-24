@@ -5,14 +5,17 @@ plugins {
 }
 
 group = rootProject.group
-version = "1.2.4"
+version = rootProject.version
+
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
     withSourcesJar()
     withJavadocJar()
+}
+
+tasks.compileJava {
+    options.release.set(21)
 }
 
 repositories {
@@ -22,37 +25,20 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.projectlombok:lombok:1.18.28")
-    annotationProcessor("org.projectlombok:lombok:1.18.28")
-
-    compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
-    compileOnly("net.thenextlvl.holograms:api:2.0.0")
-    compileOnly("net.thenextlvl.core:annotations:2.0.1")
-
-    testImplementation("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
-}
-
-tasks.test {
-    useJUnitPlatform()
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
 }
 
 publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-        repositories {
-            maven {
-                url = uri("https://repo.thenextlvl.net/releases")
-                credentials {
-                    if (extra.has("RELEASES_USER"))
-                        username = extra["RELEASES_USER"].toString()
-                    if (extra.has("RELEASES_PASSWORD"))
-                        password = extra["RELEASES_PASSWORD"].toString()
-                }
-            }
+    publications.create<MavenPublication>("maven") {
+        artifactId = "characters"
+        from(components["java"])
+    }
+    repositories.maven {
+        val channel = if ((version as String).contains("-pre")) "snapshots" else "releases"
+        url = uri("https://repo.thenextlvl.net/$channel")
+        credentials {
+            username = System.getenv("REPOSITORY_USER")
+            password = System.getenv("REPOSITORY_TOKEN")
         }
     }
 }

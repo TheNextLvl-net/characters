@@ -10,10 +10,10 @@ import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerPlayer;
 import net.thenextlvl.hologram.api.HologramProvider;
 import net.thenextlvl.hologram.api.hologram.Hologram;
-import net.thenextlvl.npc.api.Interaction;
-import net.thenextlvl.npc.api.NPC;
-import net.thenextlvl.npc.api.equipment.Equipment;
-import net.thenextlvl.npc.api.skin.Skin;
+import net.thenextlvl.character.Interaction;
+import net.thenextlvl.character.Character;
+import net.thenextlvl.character.equipment.Equipment;
+import net.thenextlvl.character.skin.Skin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 @Getter
 @Setter
-public class CraftNPC implements NPC {
+public class CraftNPC implements Character {
     private static final @Nullable HologramProvider provider;
 
     static {
@@ -68,7 +68,7 @@ public class CraftNPC implements NPC {
     }
 
     @Override
-    public NPC clone() {
+    public Character clone() {
         try {
             var clone = (CraftNPC) super.clone();
             clone.profile = (PlayerProfile) profile.clone();

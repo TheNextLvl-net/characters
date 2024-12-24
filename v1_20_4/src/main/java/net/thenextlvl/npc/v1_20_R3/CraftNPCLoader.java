@@ -11,9 +11,9 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.thenextlvl.hologram.api.HologramProvider;
-import net.thenextlvl.npc.api.NPC;
-import net.thenextlvl.npc.api.NPCLoader;
-import net.thenextlvl.npc.api.skin.Skin;
+import net.thenextlvl.character.Character;
+import net.thenextlvl.character.CharacterLoader;
+import net.thenextlvl.character.skin.Skin;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
@@ -28,7 +28,7 @@ import java.util.*;
 import static net.minecraft.network.protocol.game.ClientboundAnimatePacket.SWING_MAIN_HAND;
 import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION;
 
-public class CraftNPCLoader implements NPCLoader {
+public class CraftNPCLoader implements CharacterLoader {
     private static final @Nullable HologramProvider provider;
 
     static {
@@ -40,12 +40,12 @@ public class CraftNPCLoader implements NPCLoader {
     private final ClientsideNPCLoader loader = new ClientsideNPCLoader(new NPCCache());
 
     @Override
-    public void load(NPC npc, Player player) throws IllegalStateException, NullPointerException {
+    public void load(Character npc, Player player) throws IllegalStateException, NullPointerException {
         load(npc, player, player.getLocation());
     }
 
     @Override
-    public void load(NPC npc, Player player, Location location) throws IllegalStateException, NullPointerException {
+    public void load(Character npc, Player player, Location location) throws IllegalStateException, NullPointerException {
         Preconditions.checkState(!isLoaded(npc, player), "NPC is already loaded");
         Preconditions.checkState(canSee(location, npc), "NPC can't be seen by the player");
         Preconditions.checkNotNull(npc.getLocation().getWorld(), "World can't be null");
@@ -53,56 +53,56 @@ public class CraftNPCLoader implements NPCLoader {
     }
 
     @Override
-    public void unload(NPC npc, Player player) throws IllegalStateException {
+    public void unload(Character npc, Player player) throws IllegalStateException {
         Preconditions.checkState(isLoaded(npc, player), "NPC is not loaded");
         loader.unload((CraftNPC) npc, (CraftPlayer) player);
     }
 
     @Override
-    public void update(NPC npc, Player player) throws IllegalStateException, NullPointerException {
+    public void update(Character npc, Player player) throws IllegalStateException, NullPointerException {
         unload(npc, player);
         load(npc, player);
     }
 
     @Override
-    public void showTablistName(NPC npc, Player player) throws IllegalStateException {
+    public void showTablistName(Character npc, Player player) throws IllegalStateException {
         Preconditions.checkState(isLoaded(npc, player), "NPC is not loaded");
         Preconditions.checkState(isTablistNameHidden(npc, player), "Tablist name is already shown");
         loader.showTablistName(((CraftNPC) npc), ((CraftPlayer) player), true);
     }
 
     @Override
-    public void hideTablistName(NPC npc, Player player) {
+    public void hideTablistName(Character npc, Player player) {
         Preconditions.checkState(isLoaded(npc, player), "NPC is not loaded");
         Preconditions.checkState(!isTablistNameHidden(npc, player), "Tablist name is already hidden");
         loader.hideTablistName((CraftNPC) npc, (CraftPlayer) player, true);
     }
 
     @Override
-    public boolean isTablistNameHidden(NPC npc, Player player) {
+    public boolean isTablistNameHidden(Character npc, Player player) {
         return loader.cache().isTablistNameHidden(player, (CraftNPC) npc);
     }
 
     @Override
-    public boolean isLoaded(NPC npc, Player player) {
+    public boolean isLoaded(Character npc, Player player) {
         var npcs = loader.cache().get(player);
         return npcs != null && npcs.containsKey((CraftNPC) npc);
     }
 
     @Override
-    public boolean canSee(Player player, NPC npc) {
+    public boolean canSee(Player player, Character npc) {
         return canSee(player.getLocation(), npc);
     }
 
     @Override
-    public boolean canSee(Location location, NPC npc) {
+    public boolean canSee(Location location, Character npc) {
         var rangeSquared = npc.getLoadingRange() * npc.getLoadingRange();
         return location.getWorld().equals(npc.getLocation().getWorld())
                 && npc.getLocation().distanceSquared(location) <= rangeSquared;
     }
 
     @Override
-    public Collection<? extends NPC> getNPCs(Player player) {
+    public Collection<? extends Character> getNPCs(Player player) {
         return new ArrayList<>(loader.cache().getNPCs(player).keySet());
     }
 

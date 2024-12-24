@@ -2,32 +2,32 @@ package net.thenextlvl.npc.v1_20_R3;
 
 import com.google.common.base.Preconditions;
 import lombok.Getter;
-import net.thenextlvl.npc.api.NPC;
-import net.thenextlvl.npc.api.NPCRegistry;
-import net.thenextlvl.npc.api.event.NPCRegisterEvent;
-import net.thenextlvl.npc.api.event.NPCUnregisterEvent;
+import net.thenextlvl.character.Character;
+import net.thenextlvl.character.CharacterRegistry;
+import net.thenextlvl.character.event.CharacterRegisterEvent;
+import net.thenextlvl.character.event.CharacterUnregisterEvent;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 @Getter
-public class CraftNPCRegistry implements NPCRegistry {
-    private final Collection<NPC> nPCs = new ArrayList<>();
+public class CraftNPCRegistry implements CharacterRegistry {
+    private final Collection<Character> nPCs = new ArrayList<>();
 
     @Override
-    public void register(NPC npc) throws IllegalStateException {
+    public void register(Character npc) throws IllegalStateException {
         Preconditions.checkState(!isRegistered(npc), "NPC already registered");
-        if (new NPCRegisterEvent(npc).callEvent()) nPCs.add(npc);
+        if (new CharacterRegisterEvent(npc).callEvent()) nPCs.add(npc);
     }
 
     @Override
-    public void unregister(NPC npc) throws IllegalStateException {
+    public void unregister(Character npc) throws IllegalStateException {
         Preconditions.checkState(isRegistered(npc), "NPC not registered");
-        if (new NPCUnregisterEvent(npc).callEvent()) nPCs.remove(npc);
+        if (new CharacterUnregisterEvent(npc).callEvent()) nPCs.remove(npc);
     }
 
     @Override
-    public boolean isRegistered(NPC npc) {
+    public boolean isRegistered(Character npc) {
         return nPCs.contains(npc);
     }
 }

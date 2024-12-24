@@ -1,6 +1,0 @@
-@MethodsReturnNotNullByDefault
-@ParametersAreNotNullByDefault
-package net.thenextlvl.npc.api;
-
-import core.annotation.MethodsReturnNotNullByDefault;
-import core.annotation.ParametersAreNotNullByDefault;

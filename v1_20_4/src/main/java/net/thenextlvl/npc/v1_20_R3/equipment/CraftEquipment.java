@@ -1,7 +1,7 @@
 package net.thenextlvl.npc.v1_20_R3.equipment;
 
 import lombok.Getter;
-import net.thenextlvl.npc.api.equipment.Equipment;
+import net.thenextlvl.character.equipment.Equipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
