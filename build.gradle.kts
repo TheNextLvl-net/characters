@@ -5,6 +5,7 @@ plugins {
     id("java")
     id("io.github.goooler.shadow") version "8.1.8"
     id("io.papermc.hangar-publish-plugin") version "0.1.2"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.8"
     id("net.minecrell.plugin-yml.paper") version "0.6.0"
 }
 
@@ -25,12 +26,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
 
     implementation("org.bstats:bstats-bukkit:3.1.0")
     implementation(project(":api"))
 
-    testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    //testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
