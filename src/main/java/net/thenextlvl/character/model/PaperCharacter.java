@@ -24,18 +24,18 @@ import java.util.UUID;
 
 @NullMarked
 public class PaperCharacter<T extends Entity> implements Character<T> {
-    private @Nullable Component displayName = null;
-    private @Nullable T entity;
+    protected @Nullable Component displayName = null;
+    protected @Nullable T entity;
 
-    private boolean collidable = false;
-    private boolean invincible = true;
-    private boolean persistent = true;
-    private boolean visibleByDefault = true;
+    protected boolean collidable = false;
+    protected boolean invincible = true;
+    protected boolean persistent = true;
+    protected boolean visibleByDefault = true;
 
-    private final EntityType type;
-    private final File file;
-    private final Set<UUID> viewers = new HashSet<>();
-    private final String name;
+    protected final EntityType type;
+    protected final File file;
+    protected final Set<UUID> viewers = new HashSet<>();
+    protected final String name;
 
     protected final CharacterPlugin plugin;
 
@@ -105,10 +105,10 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean despawn() {
-        return getEntity().map(entity -> {
-            entity.remove();
-            return true;
-        }).orElse(false);
+        if (entity == null) return false;
+        entity.remove();
+        entity = null;
+        return true;
     }
 
     @Override
@@ -172,31 +172,32 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public boolean spawn(Location location) {
         if (isSpawned()) return false;
         Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type" + type);
-        this.entity = (T) location.getWorld().spawn(location, type.getEntityClass(), entity -> {
-            if (entity instanceof LivingEntity living) {
-                living.setAI(false);
-                living.setCanPickupItems(false);
-                living.setCollidable(isCollidable());
-            }
-            if (entity instanceof Lootable lootable) {
-                lootable.clearLootTable();
-            }
-            entity.customName(Optional.ofNullable(getDisplayName())
-                    .orElseGet(() -> Component.text(getName())));
-            entity.setCustomNameVisible(true);
-            entity.setGravity(false);
-            entity.setInvulnerable(isInvincible());
-            entity.setPersistent(isPersistent());
-            entity.setSilent(true);
-            entity.setVisibleByDefault(isVisibleByDefault());
-        });
+        this.entity = (T) location.getWorld().spawn(location, type.getEntityClass(), this::preSpawn);
         return true;
+    }
+
+    protected void preSpawn(Entity entity) {
+        if (entity instanceof LivingEntity living) {
+            living.setAI(false);
+            living.setCanPickupItems(false);
+            living.setCollidable(isCollidable());
+        }
+        if (entity instanceof Lootable lootable) {
+            lootable.clearLootTable();
+        }
+        entity.customName(Optional.ofNullable(getDisplayName())
+                .orElseGet(() -> Component.text(getName())));
+        entity.setCustomNameVisible(true);
+        entity.setInvulnerable(isInvincible());
+        entity.setPersistent(isPersistent());
+        entity.setSilent(true);
+        entity.setVisibleByDefault(isVisibleByDefault());
     }
 
     @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void remove() {
-        getEntity().ifPresent(Entity::remove);
+        despawn();
         if (!isPersistent()) file.delete();
         plugin.characterController().unregister(name);
     }
