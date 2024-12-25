@@ -8,7 +8,11 @@ import org.jspecify.annotations.NullMarked;
 public interface PlayerCharacter extends Character<Player> {
     Skin getSkin();
 
-    boolean isTablistEntryHidden();
+    boolean isListed();
 
-    void setTablistEntryHidden(boolean hidden);
+    boolean isRealPlayer();
+
+    void setListed(boolean listed);
+
+    void setRealPlayer(boolean real);
 }
