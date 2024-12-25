@@ -45,6 +45,8 @@ public interface Character<T extends Entity> {
 
     boolean isCollidable();
 
+    boolean isInvincible();
+
     boolean isPersistent();
 
     boolean isSpawned();
@@ -70,6 +72,8 @@ public interface Character<T extends Entity> {
     void setCollidable(boolean collidable);
 
     void setDisplayName(@Nullable Component displayName);
+
+    void setInvincible(boolean invincible);
 
     void setPersistent(boolean persistent);
 

@@ -1,5 +1,6 @@
 package net.thenextlvl.character.model;
 
+import com.google.common.base.Preconditions;
 import net.kyori.adventure.text.Component;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterPlugin;
@@ -9,6 +10,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -25,7 +27,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     private @Nullable Component displayName = null;
     private @Nullable T entity;
 
-    private boolean collidable = true;
+    private boolean collidable = false;
+    private boolean invincible = true;
     private boolean persistent = true;
     private boolean visibleByDefault = true;
 
@@ -60,7 +63,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public Optional<T> getEntity() {
-        return Optional.ofNullable(entity);
+        return Optional.ofNullable(entity).filter(Entity::isValid);
     }
 
     @Override
@@ -95,6 +98,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         var location = getLocation();
         if (location == null || !player.getWorld().equals(location.getWorld())) return false;
         //if (player.getLocation().distanceSquared(location) > 16 * 16) return false;
+        // todo: check if player is in range
 
         return isVisibleByDefault() || isViewer(player.getUniqueId());
     }
@@ -113,13 +117,18 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public boolean isInvincible() {
+        return invincible;
+    }
+
+    @Override
     public boolean isPersistent() {
         return persistent;
     }
 
     @Override
     public boolean isSpawned() {
-        return entity != null;
+        return entity != null && entity.isValid();
     }
 
     @Override
@@ -139,7 +148,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean persist() {
-        return false;
+        return false; // todo: persist
     }
 
     @Override
@@ -159,19 +168,26 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean spawn(Location location) {
-        if (isSpawned() || type.getEntityClass() == null) return false;
-        location.getWorld().spawn(location, type.getEntityClass(), entity -> {
+        if (isSpawned()) return false;
+        Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type" + type);
+        this.entity = (T) location.getWorld().spawn(location, type.getEntityClass(), entity -> {
             if (entity instanceof LivingEntity living) {
                 living.setAI(false);
                 living.setCanPickupItems(false);
                 living.setCollidable(isCollidable());
-                living.setInvulnerable(true);
-                living.setSilent(true);
             }
-            entity.customName(getDisplayName());
-            entity.setCustomNameVisible(getDisplayName() != null);
+            if (entity instanceof Lootable lootable) {
+                lootable.clearLootTable();
+            }
+            entity.customName(Optional.ofNullable(getDisplayName())
+                    .orElseGet(() -> Component.text(getName())));
+            entity.setCustomNameVisible(true);
+            entity.setGravity(false);
+            entity.setInvulnerable(isInvincible());
             entity.setPersistent(isPersistent());
+            entity.setSilent(true);
             entity.setVisibleByDefault(isVisibleByDefault());
         });
         return true;
@@ -180,27 +196,41 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void remove() {
-        file.delete();
-        despawn();
+        getEntity().ifPresent(Entity::remove);
+        if (!isPersistent()) file.delete();
+        plugin.characterController().unregister(name);
     }
 
     @Override
     public void setCollidable(boolean collidable) {
         this.collidable = collidable;
+        getEntity().ifPresent(entity -> {
+            if (!(entity instanceof LivingEntity living)) return;
+            living.setCollidable(collidable);
+        });
     }
 
     @Override
     public void setDisplayName(@Nullable Component displayName) {
         this.displayName = displayName;
+        getEntity().ifPresent(entity -> entity.customName(displayName));
+    }
+
+    @Override
+    public void setInvincible(boolean invincible) {
+        this.invincible = invincible;
+        getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
     }
 
     @Override
     public void setPersistent(boolean persistent) {
         this.persistent = persistent;
+        getEntity().ifPresent(entity -> entity.setPersistent(persistent));
     }
 
     @Override
     public void setVisibleByDefault(boolean visible) {
         this.visibleByDefault = visible;
+        getEntity().ifPresent(entity -> entity.setVisibleByDefault(visible));
     }
 }

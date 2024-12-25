@@ -1,4 +1,5 @@
 import io.papermc.hangarpublishplugin.model.Platforms
+import net.minecrell.pluginyml.paper.PaperPluginDescription
 
 plugins {
     id("java")
@@ -45,7 +46,7 @@ tasks.shadowJar {
 
 paper {
     name = "Characters"
-    main = "net.thenextlvl.npc.FakePlayerAPI"
+    main = "net.thenextlvl.character.CharacterPlugin"
     apiVersion = "1.21"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
@@ -53,7 +54,8 @@ paper {
 
     serverDependencies {
         register("HologramAPI") {
-            required = true
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            required = false
         }
     }
 }
