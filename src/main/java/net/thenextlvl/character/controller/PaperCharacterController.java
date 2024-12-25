@@ -35,7 +35,9 @@ public class PaperCharacterController implements CharacterController {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends Entity> Character<T> createCharacter(String name, EntityType type) {
+        if (type.equals(EntityType.PLAYER)) return (Character<T>) createCharacter(name);
         var character = new PaperCharacter<T>(plugin, name, type);
         characters.put(name, character);
         return character;
