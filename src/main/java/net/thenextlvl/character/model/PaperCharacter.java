@@ -1,6 +1,8 @@
 package net.thenextlvl.character.model;
 
 import com.google.common.base.Preconditions;
+import core.io.IO;
+import core.nbt.NBTOutputStream;
 import net.kyori.adventure.text.Component;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterPlugin;
@@ -17,15 +19,23 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
+
 @NullMarked
 public class PaperCharacter<T extends Entity> implements Character<T> {
     protected @Nullable Component displayName = null;
+    protected @Nullable Location spawnLocation = null;
     protected @Nullable T entity;
 
     protected boolean collidable = false;
@@ -41,7 +51,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected final CharacterPlugin plugin;
 
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
-        this.file = new File(plugin.getDataFolder(), name + ".dat");
+        this.file = new File(plugin.savesFolder(), name + ".dat");
         this.name = name;
         this.plugin = plugin;
         this.type = type;
@@ -60,6 +70,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Nullable Location getLocation() {
         return getEntity().map(Entity::getLocation).orElse(null);
+    }
+
+    @Override
+    public @Nullable Location getSpawnLocation() {
+        return spawnLocation;
     }
 
     @Override
@@ -147,7 +162,25 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean persist() {
-        return false; // todo: persist
+        try {
+            if (!isPersistent()) return false;
+            var io = IO.of(file);
+            if (io.exists()) Files.move(file.toPath(),
+                    new File(file.getPath() + "_old").toPath(),
+                    StandardCopyOption.REPLACE_EXISTING);
+            else io.createParents();
+            try (var outputStream = new NBTOutputStream(
+                    io.outputStream(WRITE, CREATE, TRUNCATE_EXISTING),
+                    StandardCharsets.UTF_8
+            )) {
+                outputStream.writeTag(getName(), plugin.nbt().toTag(this));
+                return true;
+            }
+        } catch (Exception e) {
+            plugin.getComponentLogger().error("Failed to save character {}", getName(), e);
+            plugin.getComponentLogger().error("Please report this issue on GitHub: {}", CharacterPlugin.ISSUES);
+            return false;
+        }
     }
 
     @Override
@@ -162,14 +195,24 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean respawn() {
-        var location = getLocation();
-        return location != null && despawn() && spawn(location);
+        return spawnLocation != null && respawn(spawnLocation);
+    }
+
+    @Override
+    public boolean respawn(Location location) {
+        return despawn() && spawn(location);
+    }
+
+    @Override
+    public boolean spawn() {
+        return spawnLocation != null && spawn(spawnLocation);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public boolean spawn(Location location) {
         if (isSpawned()) return false;
+        this.spawnLocation = location;
         Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type" + type);
         this.entity = (T) location.getWorld().spawn(location, type.getEntityClass(), this::preSpawn);
         return true;
@@ -226,6 +269,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public void setPersistent(boolean persistent) {
         this.persistent = persistent;
         getEntity().ifPresent(entity -> entity.setPersistent(persistent));
+    }
+
+    @Override
+    public void setSpawnLocation(@Nullable Location location) {
+        this.spawnLocation = location;
     }
 
     @Override
