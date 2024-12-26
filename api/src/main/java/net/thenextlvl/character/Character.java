@@ -25,6 +25,9 @@ public interface Character<T extends Entity> {
     @Nullable
     Location getLocation();
 
+    @Nullable
+    Location getSpawnLocation();
+
     Optional<T> getEntity();
 
     @Unmodifiable
@@ -65,6 +68,10 @@ public interface Character<T extends Entity> {
 
     boolean respawn();
 
+    boolean respawn(Location location);
+
+    boolean spawn();
+
     boolean spawn(Location location);
 
     void remove();
@@ -76,6 +83,8 @@ public interface Character<T extends Entity> {
     void setInvincible(boolean invincible);
 
     void setPersistent(boolean persistent);
+
+    void setSpawnLocation(@Nullable Location location);
 
     void setVisibleByDefault(boolean visible);
 }
