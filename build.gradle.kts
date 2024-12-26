@@ -23,11 +23,13 @@ tasks.compileJava {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.thenextlvl.net/releases")
 }
 
 dependencies {
     paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
 
+    implementation("net.thenextlvl.core:nbt:2.2.14")
     implementation("org.bstats:bstats-bukkit:3.1.0")
     implementation(project(":api"))
 
