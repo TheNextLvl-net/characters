@@ -72,6 +72,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             return true;
         } else if (isSpawned()) return false;
 
+        super.spawnLocation = location;
+
         // todo: fix skin not applying
         var gameProfile = new GameProfile(uuid, name);
         this.profile.getProperties().forEach(property -> {
@@ -109,16 +111,16 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
             broadcastPlayerInfo();
             broadcastPlayerAdd(level, serverPlayer);
-
-            plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
-                if (entity.isValid()) serverPlayer.doTick();
-                else if (entity == null) scheduledTask.cancel();
-            }, 1, 1);
         } else {
             server.getHandle().placeNewPlayer(serverPlayer.connection.connection, serverPlayer, cookie);
             serverPlayer.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
             entity.setSleepingIgnored(true);
         }
+
+        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
+            if (entity.isValid()) serverPlayer.doTick();
+            else if (entity == null) scheduledTask.cancel();
+        }, 1, 1);
 
         preSpawn(this.entity);
         applySkinPartConfig(serverPlayer);
