@@ -11,20 +11,20 @@ public interface SkinPartBuilder {
         return ServiceLoader.load(SkinPartBuilder.class).findFirst()
                 .orElseThrow(() -> new IllegalStateException("No SkinPartBuilder service found"));
     }
-    
+
     SkinPartBuilder cape(boolean enabled);
+
+    SkinPartBuilder hat(boolean enabled);
 
     SkinPartBuilder jacket(boolean enabled);
 
-    SkinPartBuilder leftSleeve(boolean enabled);
-
-    SkinPartBuilder rightSleeve(boolean enabled);
-
     SkinPartBuilder leftPants(boolean enabled);
+
+    SkinPartBuilder leftSleeve(boolean enabled);
 
     SkinPartBuilder rightPants(boolean enabled);
 
-    SkinPartBuilder hat(boolean enabled);
+    SkinPartBuilder rightSleeve(boolean enabled);
 
     SkinParts build();
 }
