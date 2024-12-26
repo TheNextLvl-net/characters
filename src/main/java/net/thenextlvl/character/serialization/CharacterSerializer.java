@@ -17,8 +17,8 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
         tag.add("type", context.serialize(character.getType()));
         if (character.getDisplayName() != null)
             tag.add("displayName", context.serialize(character.getDisplayName()));
-        if (character.getLocation() != null)
-            tag.add("location", context.serialize(character.getLocation()));
+        if (character.getSpawnLocation() != null)
+            tag.add("location", context.serialize(character.getSpawnLocation()));
         tag.add("collidable", character.isCollidable());
         tag.add("invincible", character.isInvincible());
         tag.add("visibleByDefault", character.isVisibleByDefault());
