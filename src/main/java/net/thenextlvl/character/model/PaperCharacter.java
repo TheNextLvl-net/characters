@@ -6,6 +6,7 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterPlugin;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -92,14 +93,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    // todo: can be removed entirely?
     public boolean canSee(Player player) {
-        if (!isSpawned()) return false;
-
-        var location = getLocation();
-        if (location == null || !player.getWorld().equals(location.getWorld())) return false;
-        //if (player.getLocation().distanceSquared(location) > 16 * 16) return false;
-        // todo: check if player is in range
-
+        if (entity == null || !isSpawned()) return false;
+        if (!player.getWorld().equals(entity.getWorld())) return false;
+        if (!((CraftEntity) entity).getHandleRaw().shouldRender(player.getX(), player.getY(), player.getZ()))
+            return false;
         return isVisibleByDefault() || isViewer(player.getUniqueId());
     }
 
