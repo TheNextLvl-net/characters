@@ -16,7 +16,6 @@ import net.thenextlvl.character.SkinPartBuilder;
 import net.thenextlvl.character.plugin.controller.PaperCharacterController;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
-import net.thenextlvl.character.plugin.listener.test;
 import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
@@ -91,8 +90,6 @@ public class CharacterPlugin extends JavaPlugin {
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
-
-        getServer().getPluginManager().registerEvents(new test(this), this);
     }
 
     public File savesFolder() {
