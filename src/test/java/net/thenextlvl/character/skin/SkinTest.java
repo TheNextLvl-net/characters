@@ -1,12 +1,12 @@
 package net.thenextlvl.character.skin;
 
-import net.thenextlvl.character.model.CharacterSkinPartBuilder;
+import net.thenextlvl.character.plugin.model.PaperSkinPartBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class SkinTest {
-    private final SkinPartBuilder builder = new CharacterSkinPartBuilder();
+    private final PaperSkinPartBuilder builder = new PaperSkinPartBuilder();
 
     @Test
     @DisplayName("skin part capes")
