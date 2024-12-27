@@ -1,8 +1,8 @@
-package net.thenextlvl.character.listener;
+package net.thenextlvl.character.plugin.listener;
 
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import net.thenextlvl.character.Character;
-import net.thenextlvl.character.CharacterPlugin;
+import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.event.player.PlayerInteractCharacterEvent;
 import net.thenextlvl.character.event.player.PlayerInteractCharacterEvent.InteractionType;
 import org.bukkit.event.EventHandler;

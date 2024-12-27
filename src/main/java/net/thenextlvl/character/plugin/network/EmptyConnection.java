@@ -1,4 +1,4 @@
-package net.thenextlvl.character.model.packet;
+package net.thenextlvl.character.plugin.network;
 
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketListener;

@@ -1,4 +1,4 @@
-package net.thenextlvl.character.model.packet;
+package net.thenextlvl.character.plugin.network;
 
 import io.netty.channel.AbstractChannel;
 import io.netty.channel.ChannelConfig;

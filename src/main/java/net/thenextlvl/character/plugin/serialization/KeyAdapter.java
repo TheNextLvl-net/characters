@@ -1,4 +1,4 @@
-package net.thenextlvl.character.serialization;
+package net.thenextlvl.character.plugin.serialization;
 
 import core.nbt.serialization.ParserException;
 import core.nbt.serialization.TagAdapter;

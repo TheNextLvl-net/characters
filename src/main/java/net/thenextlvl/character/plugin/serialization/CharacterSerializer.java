@@ -1,9 +1,10 @@
-package net.thenextlvl.character.serialization;
+package net.thenextlvl.character.plugin.serialization;
 
 import core.nbt.serialization.ParserException;
 import core.nbt.serialization.TagSerializationContext;
 import core.nbt.serialization.TagSerializer;
 import core.nbt.tag.CompoundTag;
+import core.nbt.tag.ListTag;
 import core.nbt.tag.Tag;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.PlayerCharacter;
@@ -23,8 +24,15 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
         tag.add("invincible", character.isInvincible());
         tag.add("visibleByDefault", character.isVisibleByDefault());
         if (character instanceof PlayerCharacter playerCharacter) {
-            tag.add("realPlayer", playerCharacter.isRealPlayer());
+            if (playerCharacter.getGameProfile().getId() != null)
+                tag.add("uuid", context.serialize(playerCharacter.getGameProfile().getId()));
+            var properties = new ListTag<>(CompoundTag.ID);
+            playerCharacter.getGameProfile().getProperties().forEach(property ->
+                    properties.add(context.serialize(property)));
             tag.add("listed", playerCharacter.isListed());
+            tag.add("properties", properties);
+            tag.add("realPlayer", playerCharacter.isRealPlayer());
+            tag.add("skinParts", (byte) playerCharacter.getSkinParts().getRaw());
         }
         return tag;
     }

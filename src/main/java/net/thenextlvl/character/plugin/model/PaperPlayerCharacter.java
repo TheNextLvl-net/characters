@@ -1,9 +1,8 @@
-package net.thenextlvl.character.model;
+package net.thenextlvl.character.plugin.model;
 
 import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
-import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.properties.Property;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
@@ -14,10 +13,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity.RemovalReason;
-import net.thenextlvl.character.CharacterPlugin;
 import net.thenextlvl.character.PlayerCharacter;
-import net.thenextlvl.character.model.packet.EmptyPacketListener;
-import net.thenextlvl.character.skin.Skin;
+import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.network.EmptyPacketListener;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -26,7 +24,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
-import org.bukkit.profile.PlayerTextures;
 import org.jspecify.annotations.NullMarked;
 
 import java.lang.reflect.InvocationTargetException;
@@ -36,20 +33,14 @@ import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMIS
 
 @NullMarked
 public class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
-    private CraftPlayerProfile profile;
     private boolean listed;
     private boolean realPlayer = false;
-    private final Skin skin = new CharacterSkin();
-    private final UUID uuid;
-
-    public PaperPlayerCharacter(CharacterPlugin plugin, String name) {
-        this(plugin, name, UUID.randomUUID());
-    }
+    private final CraftPlayerProfile profile;
+    private SkinParts skinParts = new PaperSkinPartBuilder().build();
 
     public PaperPlayerCharacter(CharacterPlugin plugin, String name, UUID uuid) {
         super(plugin, name, EntityType.PLAYER);
         this.profile = new CraftPlayerProfile(uuid, name);
-        this.uuid = uuid;
     }
 
     @Override
@@ -66,7 +57,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
                 handle.unsetRemoved();
                 handle.setServerLevel(level);
                 handle.spawnIn(level);
-                broadcastPlayerAdd(level, handle);
+                broadcastPlayer();
                 handle.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
             }
             return true;
@@ -74,18 +65,10 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         super.spawnLocation = location;
 
-        // todo: fix skin not applying
-        var gameProfile = new GameProfile(uuid, name);
-        this.profile.getProperties().forEach(property -> {
-            var value = new Property(property.getName(), property.getValue(), property.getSignature());
-            gameProfile.getProperties().put(property.getName(), value);
-        });
-        this.profile = new CraftPlayerProfile(gameProfile);
-
         var information = ClientInformation.createDefault();
-        var serverPlayer = new ServerPlayer(server.getServer(), level, gameProfile, information);
+        var serverPlayer = new ServerPlayer(server.getServer(), level, profile.getGameProfile(), information);
 
-        var cookie = new CommonListenerCookie(gameProfile, 0, information, false);
+        var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false);
         serverPlayer.connection = new EmptyPacketListener(server.getServer(), serverPlayer, cookie);
         serverPlayer.setClientLoaded(true);
         this.entity = new CraftCharacter(server, serverPlayer);
@@ -109,8 +92,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
             level.getChunkSource().chunkMap.addEntity(serverPlayer);
 
-            broadcastPlayerInfo();
-            broadcastPlayerAdd(level, serverPlayer);
+            broadcastPlayer();
         } else {
             server.getHandle().placeNewPlayer(serverPlayer.connection.connection, serverPlayer, cookie);
             serverPlayer.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
@@ -128,27 +110,32 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return true;
     }
 
-    private void broadcastPlayerAdd(ServerLevel level, ServerPlayer handle) {
-        var packet = new ClientboundAddEntityPacket(handle.getId(), handle.getUUID(),
-                handle.getX(), handle.getY(), handle.getZ(), handle.getXRot(), handle.getYRot(),
-                handle.getType(), 0, handle.getDeltaMovement(), handle.getYHeadRot());
-        plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
-    }
-
-    public void broadcastPlayerInfo() {
+    public void broadcastPlayer() {
         getEntity().ifPresent(entity -> {
             var handle = ((CraftPlayer) entity).getHandle();
-            var packet = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(handle, isListed());
-            entity.getWorld().getPlayers().forEach(player -> sendPacket(player, packet));
+            var add = new ClientboundAddEntityPacket(handle.getId(), handle.getUUID(),
+                    handle.getX(), handle.getY(), handle.getZ(), handle.getXRot(), handle.getYRot(),
+                    handle.getType(), 0, handle.getDeltaMovement(), handle.getYHeadRot());
+            var initializing = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(handle, isListed());
+            entity.getWorld().getPlayers().forEach(player -> {
+                sendPacket(player, initializing);
+                sendPacket(player, add);
+            });
         });
     }
 
     public void sendPlayer(Player player) {
-        getEntity().ifPresent(entity -> {
-            var handle = ((CraftPlayer) entity).getHandle();
-            var packet = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(handle, isListed());
-            sendPacket(player, packet);
-        });
+        getEntity().map(entity -> ((CraftPlayer) entity).getHandle())
+                .ifPresent(entity -> sendPlayer(entity, player));
+    }
+
+    private void sendPlayer(ServerPlayer entity, Player player) {
+        var add = new ClientboundAddEntityPacket(entity.getId(), entity.getUUID(),
+                entity.getX(), entity.getY(), entity.getZ(), entity.getXRot(), entity.getYRot(),
+                entity.getType(), 0, entity.getDeltaMovement(), entity.getYHeadRot());
+        var initializing = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
+        sendPacket(player, initializing);
+        sendPacket(player, add);
     }
 
     private void sendPacket(Player player, Packet<?> packet) {
@@ -183,8 +170,13 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public Skin getSkin() {
-        return skin;
+    public PlayerProfile getGameProfile() {
+        return profile;
+    }
+
+    @Override
+    public SkinParts getSkinParts() {
+        return skinParts;
     }
 
     @Override
@@ -207,35 +199,15 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         this.realPlayer = real;
     }
 
-    private void applySkinPartConfig(ServerPlayer player) {
-        player.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) getSkin().getParts().getRaw());
+    @Override
+    public void setSkinParts(SkinParts parts) {
+        this.skinParts = parts;
+        getEntity().map(player -> ((CraftPlayer) player).getHandle())
+                .ifPresent(this::applySkinPartConfig);
     }
 
-    @NullMarked
-    public class CharacterSkin implements Skin {
-        private SkinParts parts = new CharacterSkinPartBuilder().build();
-
-        @Override
-        public PlayerTextures getTextures() {
-            return profile.getTextures();
-        }
-
-        @Override
-        public SkinParts getParts() {
-            return parts;
-        }
-
-        @Override
-        public void setParts(SkinParts parts) {
-            this.parts = parts;
-            getEntity().map(player -> ((CraftPlayer) player).getHandle())
-                    .ifPresent(PaperPlayerCharacter.this::applySkinPartConfig);
-        }
-
-        @Override
-        public void setTextures(PlayerTextures textures) {
-            profile.setTextures(textures);
-        }
+    private void applySkinPartConfig(ServerPlayer player) {
+        player.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) getSkinParts().getRaw());
     }
 
     private class CraftCharacter extends CraftPlayer {

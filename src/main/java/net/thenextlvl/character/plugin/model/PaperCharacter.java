@@ -1,14 +1,13 @@
-package net.thenextlvl.character.model;
+package net.thenextlvl.character.plugin.model;
 
 import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.nbt.NBTOutputStream;
 import net.kyori.adventure.text.Component;
 import net.thenextlvl.character.Character;
-import net.thenextlvl.character.CharacterPlugin;
+import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -108,12 +107,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    // todo: can be removed entirely?
     public boolean canSee(Player player) {
         if (entity == null || !isSpawned()) return false;
         if (!player.getWorld().equals(entity.getWorld())) return false;
-        if (!((CraftEntity) entity).getHandleRaw().shouldRender(player.getX(), player.getY(), player.getZ()))
-            return false;
         return isVisibleByDefault() || isViewer(player.getUniqueId());
     }
 
@@ -165,9 +161,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         try {
             if (!isPersistent()) return false;
             var io = IO.of(file);
-            if (io.exists()) Files.move(file.toPath(),
-                    new File(file.getPath() + "_old").toPath(),
-                    StandardCopyOption.REPLACE_EXISTING);
+            var backup = new File(file.getPath() + "_old");
+            if (io.exists()) Files.move(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
             else io.createParents();
             try (var outputStream = new NBTOutputStream(
                     io.outputStream(WRITE, CREATE, TRUNCATE_EXISTING),
@@ -175,9 +170,15 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             )) {
                 outputStream.writeTag(getName(), plugin.nbt().toTag(this));
                 return true;
+            } catch (Throwable t) {
+                if (backup.exists()) {
+                    Files.copy(backup.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    plugin.getComponentLogger().warn("Recovered {} from potential data loss", getName(), t);
+                }
+                throw t;
             }
-        } catch (Exception e) {
-            plugin.getComponentLogger().error("Failed to save character {}", getName(), e);
+        } catch (Throwable t) {
+            plugin.getComponentLogger().error("Failed to save character {}", getName(), t);
             plugin.getComponentLogger().error("Please report this issue on GitHub: {}", CharacterPlugin.ISSUES);
             return false;
         }

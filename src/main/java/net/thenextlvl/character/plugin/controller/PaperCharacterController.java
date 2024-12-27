@@ -1,12 +1,13 @@
-package net.thenextlvl.character.controller;
+package net.thenextlvl.character.plugin.controller;
 
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterController;
-import net.thenextlvl.character.CharacterPlugin;
+import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.PlayerCharacter;
-import net.thenextlvl.character.model.PaperCharacter;
-import net.thenextlvl.character.model.PaperPlayerCharacter;
+import net.thenextlvl.character.plugin.model.PaperCharacter;
+import net.thenextlvl.character.plugin.model.PaperPlayerCharacter;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -99,6 +100,13 @@ public class PaperCharacterController implements CharacterController {
     }
 
     @Override
+    public @Unmodifiable Collection<? extends Character<?>> getCharacters(World world) {
+        return characters.values().stream()
+                .filter(character -> world.equals(character.getWorld()))
+                .toList();
+    }
+
+    @Override
     public Optional<PlayerCharacter> getCharacter(Player player) {
         return characters.values().stream()
                 .filter(character -> character.getType().equals(EntityType.PLAYER))
@@ -111,7 +119,12 @@ public class PaperCharacterController implements CharacterController {
 
     @Override
     public PlayerCharacter createCharacter(String name) {
-        var character = new PaperPlayerCharacter(plugin, name);
+        return createCharacter(name, UUID.randomUUID());
+    }
+
+    @Override
+    public PlayerCharacter createCharacter(String name, UUID uuid) {
+        var character = new PaperPlayerCharacter(plugin, name, uuid);
         characters.put(name, character);
         return character;
     }
