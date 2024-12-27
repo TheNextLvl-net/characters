@@ -44,12 +44,12 @@ tasks.test {
 
 tasks.shadowJar {
     minimize()
-    relocate("org.bstats", "net.thenextlvl.npc.bstats")
+    relocate("org.bstats", "net.thenextlvl.character.bstats")
 }
 
 paper {
     name = "Characters"
-    main = "net.thenextlvl.character.CharacterPlugin"
+    main = "net.thenextlvl.character.plugin.CharacterPlugin"
     apiVersion = "1.21"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
