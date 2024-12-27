@@ -1,12 +1,15 @@
 package net.thenextlvl.character;
 
-import net.thenextlvl.character.skin.Skin;
+import com.destroystokyo.paper.SkinParts;
+import com.destroystokyo.paper.profile.PlayerProfile;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public interface PlayerCharacter extends Character<Player> {
-    Skin getSkin();
+    PlayerProfile getGameProfile();
+
+    SkinParts getSkinParts();
 
     boolean isListed();
 
@@ -15,4 +18,6 @@ public interface PlayerCharacter extends Character<Player> {
     void setListed(boolean listed);
 
     void setRealPlayer(boolean real);
+
+    void setSkinParts(SkinParts builder);
 }
