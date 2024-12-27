@@ -1,6 +1,7 @@
 package net.thenextlvl.character;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -33,9 +34,14 @@ public interface CharacterController {
     @Unmodifiable
     Collection<? extends Character<?>> getCharacters(Player player);
 
+    @Unmodifiable
+    Collection<? extends Character<?>> getCharacters(World world);
+
     Optional<PlayerCharacter> getCharacter(Player player);
 
     PlayerCharacter createCharacter(String name);
+
+    PlayerCharacter createCharacter(String name, UUID uuid);
 
     PlayerCharacter spawnCharacter(String name, Location location);
 
