@@ -9,7 +9,7 @@ plugins {
     id("net.minecrell.plugin-yml.paper") version "0.6.0"
 }
 
-group = "net.thenextlvl.npc"
+group = "net.thenextlvl.characters"
 version = "1.2.5"
 
 java {
