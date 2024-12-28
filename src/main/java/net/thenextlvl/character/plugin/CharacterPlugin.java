@@ -34,6 +34,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Unmodifiable;
@@ -207,6 +208,7 @@ public class CharacterPlugin extends JavaPlugin {
         root.optional("displayName").map(tag -> nbt.fromTag(tag, Component.class))
                 .ifPresent(character::setDisplayName);
         root.optional("invincible").map(Tag::getAsBoolean).ifPresent(character::setInvincible);
+        root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(character::setPose);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(character::setVisibleByDefault);
         return character;
     }
