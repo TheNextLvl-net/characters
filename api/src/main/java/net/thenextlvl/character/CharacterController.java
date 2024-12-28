@@ -45,5 +45,7 @@ public interface CharacterController {
 
     PlayerCharacter spawnCharacter(String name, Location location);
 
+    boolean characterExists(String name);
+
     boolean isCharacter(Entity entity);
 }

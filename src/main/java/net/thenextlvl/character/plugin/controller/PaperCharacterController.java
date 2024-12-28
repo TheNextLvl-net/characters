@@ -137,6 +137,11 @@ public class PaperCharacterController implements CharacterController {
     }
 
     @Override
+    public boolean characterExists(String name) {
+        return characters.containsKey(name);
+    }
+
+    @Override
     public boolean isCharacter(Entity entity) {
         return characters.values().stream().anyMatch(character ->
                 character.getEntity().map(entity::equals).orElse(false));
