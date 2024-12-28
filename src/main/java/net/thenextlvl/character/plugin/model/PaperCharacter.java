@@ -245,7 +245,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         entity.customName(Optional.ofNullable(getDisplayName())
                 .orElseGet(() -> Component.text(getName())));
         entity.setCustomNameVisible(isDisplayNameVisible());
-        entity.setCustomNameVisible(true);
         entity.setInvulnerable(isInvincible());
         entity.setPersistent(isPersistent());
         entity.setPose(getPose(), true);
