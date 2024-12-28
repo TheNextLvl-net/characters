@@ -5,11 +5,15 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.UUID;
+
 @NullMarked
 public interface PlayerCharacter extends Character<Player> {
     PlayerProfile getGameProfile();
 
     SkinParts getSkinParts();
+
+    UUID getUniqueId();
 
     boolean isListed();
 

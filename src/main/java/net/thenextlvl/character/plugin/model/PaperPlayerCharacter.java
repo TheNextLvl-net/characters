@@ -27,6 +27,7 @@ import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
 import org.jspecify.annotations.NullMarked;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 import java.util.UUID;
 
 import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION;
@@ -177,6 +178,11 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     @Override
     public SkinParts getSkinParts() {
         return skinParts;
+    }
+
+    @Override
+    public UUID getUniqueId() {
+        return Objects.requireNonNull(profile.getId());
     }
 
     @Override
