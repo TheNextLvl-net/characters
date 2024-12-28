@@ -106,9 +106,8 @@ public class CharacterPlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS.newHandler(event -> {
-            event.registrar().register(CharacterCommand.create(this), List.of("npc"));
-        }));
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS.newHandler(event ->
+                event.registrar().register(CharacterCommand.create(this), List.of("npc"))));
     }
 
     private void registerListeners() {
