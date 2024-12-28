@@ -99,10 +99,7 @@ public class CharacterPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        characterController.getCharacters().forEach(character -> {
-            character.persist();
-            character.despawn();
-        });
+        characterController.getCharacters().forEach(Character::persist);
         metrics.shutdown();
     }
 
