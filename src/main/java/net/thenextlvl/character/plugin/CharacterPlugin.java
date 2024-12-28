@@ -126,7 +126,7 @@ public class CharacterPlugin extends JavaPlugin {
             return null;
         } catch (Exception e) {
             getComponentLogger().error("Failed to load character from {}", file.getPath(), e);
-            getComponentLogger().error("Please report this issue on GitHub: {}", ISSUES);
+            getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             return null;
         }
     }
