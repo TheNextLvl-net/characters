@@ -44,16 +44,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected boolean visibleByDefault = true;
 
     protected final EntityType type;
-    protected final File file;
-    protected final File backup;
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String name;
 
     protected final CharacterPlugin plugin;
 
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
-        this.file = new File(plugin.savesFolder(), name + ".dat");
-        this.backup = new File(file.getPath() + "_old");
         this.name = name;
         this.plugin = plugin;
         this.type = type;
@@ -162,8 +158,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean persist() {
         if (!isPersistent()) return false;
-        var file = IO.of(this.file);
-        var backup = IO.of(this.backup);
+        var file = IO.of(file());
+        var backup = IO.of(backupFile());
         try {
             if (file.exists()) Files.move(file.getPath(), backup.getPath(), StandardCopyOption.REPLACE_EXISTING);
             else file.createParents();
@@ -246,8 +242,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void remove() {
         despawn();
-        file.delete();
-        backup.delete();
+        file().delete();
+        backupFile().delete();
         plugin.characterController().unregister(name);
     }
 
@@ -287,5 +283,13 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public void setVisibleByDefault(boolean visible) {
         this.visibleByDefault = visible;
         getEntity().ifPresent(entity -> entity.setVisibleByDefault(visible));
+    }
+
+    private File backupFile() {
+        return new File(plugin.savesFolder(), this.name + ".dat_old");
+    }
+
+    private File file() {
+        return new File(plugin.savesFolder(), this.name + ".dat");
     }
 }
