@@ -242,8 +242,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
         }
-        entity.customName(Optional.ofNullable(getDisplayName())
-                .orElseGet(() -> Component.text(getName())));
+        entity.customName(getDisplayName());
         entity.setCustomNameVisible(isDisplayNameVisible());
         entity.setInvulnerable(isInvincible());
         entity.setPersistent(isPersistent());
