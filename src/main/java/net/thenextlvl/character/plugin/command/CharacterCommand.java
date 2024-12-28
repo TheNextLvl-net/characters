@@ -17,7 +17,6 @@ public class CharacterCommand {
                 .then(CharacterEquipmentCommand.create(plugin))
                 .then(CharacterListCommand.create(plugin))
                 .then(CharacterPoseCommand.create(plugin))
-                .then(CharacterRenameCommand.create(plugin))
                 .then(CharacterSkinCommand.create(plugin))
                 .then(CharacterTagCommand.create(plugin))
                 .then(CharacterTeleportCommand.create(plugin))
