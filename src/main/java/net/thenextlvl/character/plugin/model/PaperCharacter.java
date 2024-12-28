@@ -18,6 +18,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -44,6 +45,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     protected final EntityType type;
     protected final File file;
+    protected final File backup;
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String name;
 
@@ -51,6 +53,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
         this.file = new File(plugin.savesFolder(), name + ".dat");
+        this.backup = new File(file.getPath() + "_old");
         this.name = name;
         this.plugin = plugin;
         this.type = type;
@@ -158,28 +161,29 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean persist() {
+        if (!isPersistent()) return false;
+        var file = IO.of(this.file);
+        var backup = IO.of(this.backup);
         try {
-            if (!isPersistent()) return false;
-            var io = IO.of(file);
-            var backup = new File(file.getPath() + "_old");
-            if (io.exists()) Files.move(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            else io.createParents();
+            if (file.exists()) Files.move(file.getPath(), backup.getPath(), StandardCopyOption.REPLACE_EXISTING);
+            else file.createParents();
             try (var outputStream = new NBTOutputStream(
-                    io.outputStream(WRITE, CREATE, TRUNCATE_EXISTING),
+                    file.outputStream(WRITE, CREATE, TRUNCATE_EXISTING),
                     StandardCharsets.UTF_8
             )) {
                 outputStream.writeTag(getName(), plugin.nbt().toTag(this));
                 return true;
-            } catch (Throwable t) {
-                if (backup.exists()) {
-                    Files.copy(backup.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    plugin.getComponentLogger().warn("Recovered {} from potential data loss", getName(), t);
-                }
-                throw t;
             }
         } catch (Throwable t) {
+            if (backup.exists()) try {
+                Files.copy(backup.getPath(), file.getPath(), StandardCopyOption.REPLACE_EXISTING);
+                plugin.getComponentLogger().warn("Recovered {} from potential data loss", getName());
+            } catch (IOException e) {
+                plugin.getComponentLogger().error("Failed to restore character {}", getName(), e);
+            }
             plugin.getComponentLogger().error("Failed to save character {}", getName(), t);
-            plugin.getComponentLogger().error("Please report this issue on GitHub: {}", CharacterPlugin.ISSUES);
+            plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}",
+                    CharacterPlugin.ISSUES);
             return false;
         }
     }
@@ -241,7 +245,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void remove() {
         despawn();
-        if (!isPersistent()) file.delete();
+        file.delete();
+        backup.delete();
         plugin.characterController().unregister(name);
     }
 
