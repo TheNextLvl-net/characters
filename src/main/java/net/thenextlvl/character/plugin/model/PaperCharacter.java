@@ -214,7 +214,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public boolean spawn(Location location) {
         if (isSpawned()) return false;
         this.spawnLocation = location;
-        Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type" + type);
+        Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type %s", type);
         this.entity = (T) location.getWorld().spawn(location, type.getEntityClass(), this::preSpawn);
         return true;
     }
