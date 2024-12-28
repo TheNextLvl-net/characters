@@ -240,8 +240,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             living.setCollidable(isCollidable());
         }
         if (entity instanceof Mob mob) {
-            mob.setLootTable(EmptyLootTable.INSTANCE); // todo: remove this when fixed in paper
-            //mob.clearLootTable();
+            mob.setLootTable(EmptyLootTable.INSTANCE);
         }
         entity.customName(Optional.ofNullable(getDisplayName())
                 .orElseGet(() -> Component.text(getName())));
