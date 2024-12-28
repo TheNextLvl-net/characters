@@ -8,6 +8,7 @@ import core.nbt.serialization.NBT;
 import core.nbt.serialization.ParserException;
 import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -17,6 +18,7 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterController;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.SkinPartBuilder;
+import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.controller.PaperCharacterController;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
@@ -90,6 +92,7 @@ public class CharacterPlugin extends JavaPlugin {
             if (location == null || character.spawn(location)) return;
             getComponentLogger().error("Failed to spawn character {}", character.getName());
         });
+        registerCommands();
         registerListeners();
     }
 
@@ -102,9 +105,17 @@ public class CharacterPlugin extends JavaPlugin {
         metrics.shutdown();
     }
 
+    private void registerCommands() {
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS.newHandler(event -> {
+            event.registrar().register(CharacterCommand.create(this), List.of("npc"));
+        }));
+    }
+
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
+    }
+
     public ComponentBundle bundle() {
         return bundle;
     }
