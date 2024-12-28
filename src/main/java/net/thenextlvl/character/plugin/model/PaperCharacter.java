@@ -42,6 +42,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected Pose pose = Pose.STANDING;
 
     protected boolean collidable = false;
+    protected boolean displayNameVisible = true;
     protected boolean invincible = true;
     protected boolean persistent = true;
     protected boolean visibleByDefault = true;
@@ -131,6 +132,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean isCollidable() {
         return collidable;
+    }
+
+    @Override
+    public boolean isDisplayNameVisible() {
+        return displayNameVisible;
     }
 
     @Override
@@ -239,6 +245,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
         entity.customName(Optional.ofNullable(getDisplayName())
                 .orElseGet(() -> Component.text(getName())));
+        entity.setCustomNameVisible(isDisplayNameVisible());
         entity.setCustomNameVisible(true);
         entity.setInvulnerable(isInvincible());
         entity.setPersistent(isPersistent());
@@ -269,6 +276,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public void setDisplayName(@Nullable Component displayName) {
         this.displayName = displayName;
         getEntity().ifPresent(entity -> entity.customName(displayName));
+    }
+
+    @Override
+    public void setDisplayNameVisible(boolean visible) {
+        this.displayNameVisible = visible;
+        getEntity().ifPresent(entity -> entity.setCustomNameVisible(visible));
     }
 
     @Override
