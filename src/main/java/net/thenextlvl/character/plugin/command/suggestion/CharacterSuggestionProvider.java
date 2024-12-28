@@ -18,7 +18,9 @@ public class CharacterSuggestionProvider implements SuggestionProvider<CommandSo
 
     @Override
     public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
-        plugin.characterController().getCharacterNames().forEach(builder::suggest);
+        plugin.characterController().getCharacterNames().stream()
+                .filter(name -> name.contains(builder.getRemaining()))
+                .forEach(builder::suggest);
         return builder.buildFuture();
     }
 }
