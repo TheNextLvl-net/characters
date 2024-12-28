@@ -11,8 +11,8 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
-import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -225,8 +225,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             living.setCanPickupItems(false);
             living.setCollidable(isCollidable());
         }
-        if (entity instanceof Lootable lootable) {
-            lootable.clearLootTable();
+        if (entity instanceof Mob mob) {
+            mob.setLootTable(EmptyLootTable.INSTANCE);
         }
         entity.customName(Optional.ofNullable(getDisplayName())
                 .orElseGet(() -> Component.text(getName())));
