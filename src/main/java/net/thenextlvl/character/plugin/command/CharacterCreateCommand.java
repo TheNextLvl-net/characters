@@ -9,6 +9,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.entity.EntityType;
 import org.jspecify.annotations.NullMarked;
@@ -21,7 +22,7 @@ class CharacterCreateCommand {
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, String> nameArgument(CharacterPlugin plugin) {
-        return Commands.argument("name", StringArgumentType.greedyString())
+        return Commands.argument("name", StringArgumentType.word())
                 .executes(context -> create(context, EntityType.PLAYER, plugin));
     }
 
@@ -34,11 +35,18 @@ class CharacterCreateCommand {
     }
 
     private static int create(CommandContext<CommandSourceStack> context, EntityType type, CharacterPlugin plugin) {
+        var sender = context.getSource().getSender();
         var name = context.getArgument("name", String.class);
-        if (plugin.characterController().characterExists(name)) {
+        if (name.length() > 16) {
+            plugin.bundle().sendMessage(sender, "character.name.too-long");
+            return 0;
+        } else if (plugin.characterController().characterExists(name)) {
+            plugin.bundle().sendMessage(sender, "character.exists", Placeholder.unparsed("name", name));
             return 0;
         } else {
-            var character = plugin.characterController().createCharacter(name, type);
+            plugin.characterController().spawnCharacter(name, context.getSource().getLocation(), type);
+            plugin.bundle().sendMessage(sender, "character.created", Placeholder.unparsed("name", name),
+                    Placeholder.unparsed("type", type.key().asString()));
             return Command.SINGLE_SUCCESS;
         }
     }
