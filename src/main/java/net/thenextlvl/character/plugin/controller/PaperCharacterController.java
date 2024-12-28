@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
@@ -138,6 +139,11 @@ public class PaperCharacterController implements CharacterController {
         var character = createCharacter(name);
         character.spawn(location);
         return character;
+    }
+
+    @Override
+    public Set<String> getCharacterNames() {
+        return characters.keySet();
     }
 
     @Override

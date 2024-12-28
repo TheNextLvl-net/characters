@@ -10,6 +10,7 @@ import org.jspecify.annotations.NullMarked;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
@@ -44,6 +45,8 @@ public interface CharacterController {
     PlayerCharacter createCharacter(String name, UUID uuid);
 
     PlayerCharacter spawnCharacter(String name, Location location);
+
+    Set<String> getCharacterNames();
 
     boolean characterExists(String name);
 
