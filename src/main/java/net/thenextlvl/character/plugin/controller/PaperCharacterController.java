@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.controller;
 
+import com.google.common.base.Preconditions;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterController;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -40,6 +41,7 @@ public class PaperCharacterController implements CharacterController {
     @SuppressWarnings("unchecked")
     public <T extends Entity> Character<T> createCharacter(String name, EntityType type) {
         if (type.equals(EntityType.PLAYER)) return (Character<T>) createCharacter(name);
+        Preconditions.checkArgument(!characterExists(name), "Character named %s already exists", name);
         var character = new PaperCharacter<T>(plugin, name, type);
         characters.put(name, character);
         return character;
@@ -125,6 +127,7 @@ public class PaperCharacterController implements CharacterController {
 
     @Override
     public PlayerCharacter createCharacter(String name, UUID uuid) {
+        Preconditions.checkArgument(!characterExists(name), "Character named %s already exists", name);
         var character = new PaperPlayerCharacter(plugin, name, uuid);
         characters.put(name, character);
         return character;
