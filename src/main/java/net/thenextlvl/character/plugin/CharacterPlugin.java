@@ -1,6 +1,7 @@
 package net.thenextlvl.character.plugin;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
+import core.i18n.file.ComponentBundle;
 import core.io.IO;
 import core.nbt.NBTInputStream;
 import core.nbt.serialization.NBT;
@@ -9,6 +10,9 @@ import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterController;
 import net.thenextlvl.character.PlayerCharacter;
@@ -27,6 +31,7 @@ import org.bstats.bukkit.Metrics;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Unmodifiable;
@@ -39,6 +44,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -50,6 +56,7 @@ public class CharacterPlugin extends JavaPlugin {
     public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new";
     private final Metrics metrics = new Metrics(this, 24223);
     private final File savesFolder = new File(getDataFolder(), "saves");
+    private final File translations = new File(getDataFolder(), "translations");
 
     private final NBT nbt = NBT.builder()
             .registerTypeHierarchyAdapter(Character.class, new CharacterSerializer())
@@ -61,6 +68,15 @@ public class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
     private final PaperCharacterController characterController = new PaperCharacterController(this);
+
+    private final ComponentBundle bundle = new ComponentBundle(translations,
+            audience -> audience instanceof Player player ? player.locale() : Locale.US)
+            .register("messages", Locale.US)
+            .register("messages_german", Locale.GERMANY)
+            .miniMessage(bundle -> MiniMessage.builder().tags(TagResolver.resolver(
+                    TagResolver.standard(),
+                    Placeholder.component("prefix", bundle.component(Locale.US, "prefix"))
+            )).build());
 
     @Override
     public void onLoad() {
@@ -89,6 +105,8 @@ public class CharacterPlugin extends JavaPlugin {
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
+    public ComponentBundle bundle() {
+        return bundle;
     }
 
     public File savesFolder() {
