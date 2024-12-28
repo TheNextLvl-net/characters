@@ -21,6 +21,7 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
             tag.add("location", context.serialize(character.getSpawnLocation()));
         tag.add("collidable", character.isCollidable());
         tag.add("invincible", character.isInvincible());
+        tag.add("pose", character.getPose().name());
         tag.add("visibleByDefault", character.isVisibleByDefault());
         return character instanceof PlayerCharacter player ? serialize(tag, player, context) : tag;
     }

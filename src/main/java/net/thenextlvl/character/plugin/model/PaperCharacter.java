@@ -13,6 +13,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -37,6 +38,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected @Nullable Component displayName = null;
     protected @Nullable Location spawnLocation = null;
     protected @Nullable T entity;
+
+    protected Pose pose = Pose.STANDING;
 
     protected boolean collidable = false;
     protected boolean invincible = true;
@@ -78,6 +81,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public Optional<T> getEntity() {
         return Optional.ofNullable(entity).filter(Entity::isValid);
+    }
+
+    @Override
+    public Pose getPose() {
+        return pose;
     }
 
     @Override
@@ -234,6 +242,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         entity.setCustomNameVisible(true);
         entity.setInvulnerable(isInvincible());
         entity.setPersistent(isPersistent());
+        entity.setPose(getPose(), true);
         entity.setSilent(true);
         entity.setVisibleByDefault(isVisibleByDefault());
     }
@@ -272,6 +281,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public void setPersistent(boolean persistent) {
         this.persistent = persistent;
         getEntity().ifPresent(entity -> entity.setPersistent(persistent));
+    }
+
+    @Override
+    public void setPose(Pose pose) {
+        this.pose = pose;
+        getEntity().ifPresent(entity -> entity.setPose(pose, true));
     }
 
     @Override

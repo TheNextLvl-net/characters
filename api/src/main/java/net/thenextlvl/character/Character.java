@@ -6,6 +6,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -29,6 +30,8 @@ public interface Character<T extends Entity> {
     Location getSpawnLocation();
 
     Optional<T> getEntity();
+
+    Pose getPose();
 
     @Unmodifiable
     Set<UUID> getViewers();
@@ -83,6 +86,8 @@ public interface Character<T extends Entity> {
     void setInvincible(boolean invincible);
 
     void setPersistent(boolean persistent);
+
+    void setPose(Pose pose);
 
     void setSpawnLocation(@Nullable Location location);
 
