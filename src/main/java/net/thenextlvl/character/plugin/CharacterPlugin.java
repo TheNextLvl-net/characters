@@ -26,7 +26,6 @@ import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -102,12 +101,6 @@ public class CharacterPlugin extends JavaPlugin {
 
     public PaperCharacterController characterController() {
         return characterController;
-    }
-
-    public EntityType getEntityTypeByClass(Class<? extends Entity> type) {
-        return Arrays.stream(EntityType.values())
-                .filter(entityType -> type.equals(entityType.getEntityClass()))
-                .findAny().orElseThrow();
     }
 
     public @Unmodifiable List<Character<?>> readAll() {

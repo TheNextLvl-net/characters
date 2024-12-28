@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +33,7 @@ public class PaperCharacterController implements CharacterController {
 
     @Override
     public <T extends Entity> Character<T> createCharacter(String name, Class<T> type) {
-        return createCharacter(name, plugin.getEntityTypeByClass(type));
+        return createCharacter(name, getEntityTypeByClass(type));
     }
 
     @Override
@@ -46,7 +47,7 @@ public class PaperCharacterController implements CharacterController {
 
     @Override
     public <T extends Entity> Character<T> spawnCharacter(String name, Location location, Class<T> type) {
-        return spawnCharacter(name, location, plugin.getEntityTypeByClass(type));
+        return spawnCharacter(name, location, getEntityTypeByClass(type));
     }
 
     @Override
@@ -149,5 +150,11 @@ public class PaperCharacterController implements CharacterController {
 
     public void unregister(String name) {
         characters.remove(name);
+    }
+
+    private EntityType getEntityTypeByClass(Class<? extends Entity> type) {
+        return Arrays.stream(EntityType.values())
+                .filter(entityType -> type.equals(entityType.getEntityClass()))
+                .findAny().orElseThrow();
     }
 }
