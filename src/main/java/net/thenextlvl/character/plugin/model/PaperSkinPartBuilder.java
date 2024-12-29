@@ -2,79 +2,80 @@ package net.thenextlvl.character.plugin.model;
 
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
-import net.thenextlvl.character.SkinPartBuilder;
+import net.thenextlvl.character.skin.SkinLayer;
+import net.thenextlvl.character.skin.SkinPartBuilder;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class PaperSkinPartBuilder implements SkinPartBuilder {
-    private byte raw;
+    private int raw;
 
     public PaperSkinPartBuilder() {
-        this((byte) 127);
+        this(127);
     }
 
-    public PaperSkinPartBuilder(byte raw) {
+    public PaperSkinPartBuilder(int raw) {
         this.raw = raw;
     }
 
     @Override
-    public PaperSkinPartBuilder all(boolean enabled) {
-        this.raw = enabled ? (byte) 127 : 0;
-        return this;
+    public SkinPartBuilder all(boolean enabled) {
+        return raw(enabled ? 127 : 0);
     }
 
     @Override
-    public PaperSkinPartBuilder cape(boolean enabled) {
-        if (enabled) this.raw |= 1;
-        else this.raw &= ~1;
-        return this;
+    public SkinPartBuilder cape(boolean enabled) {
+        return toggle(SkinLayer.CAPE, enabled);
     }
 
     @Override
-    public PaperSkinPartBuilder jacket(boolean enabled) {
-        if (enabled) this.raw |= 1 << 1;
-        else this.raw &= ~(1 << 1);
-        return this;
+    public SkinPartBuilder jacket(boolean enabled) {
+        return toggle(SkinLayer.JACKET, enabled);
     }
 
     @Override
-    public PaperSkinPartBuilder leftSleeve(boolean enabled) {
-        if (enabled) this.raw |= 1 << 2;
-        else this.raw &= ~(1 << 2);
-        return this;
+    public SkinPartBuilder leftSleeve(boolean enabled) {
+        return toggle(SkinLayer.LEFT_SLEEVE, enabled);
     }
 
     @Override
-    public SkinPartBuilder raw(byte raw) {
+    public SkinPartBuilder rightSleeve(boolean enabled) {
+        return toggle(SkinLayer.RIGHT_SLEEVE, enabled);
+    }
+
+    @Override
+    public SkinPartBuilder leftPants(boolean enabled) {
+        return toggle(SkinLayer.LEFT_PANTS_LEG, enabled);
+    }
+
+    @Override
+    public SkinPartBuilder rightPants(boolean enabled) {
+        return toggle(SkinLayer.RIGHT_PANTS_LEG, enabled);
+    }
+
+    @Override
+    public SkinPartBuilder hat(boolean enabled) {
+        return toggle(SkinLayer.HAT, enabled);
+    }
+
+    @Override
+    public SkinPartBuilder toggle(SkinLayer layer, boolean enabled) {
+        return enabled ? show(layer) : hide(layer);
+    }
+
+    @Override
+    public SkinPartBuilder hide(SkinLayer layer) {
+        return raw(raw &= ~layer.getMask());
+    }
+
+    @Override
+    public SkinPartBuilder show(SkinLayer layer) {
+        return raw(raw |= layer.getMask());
+    }
+
+    @Override
+    public SkinPartBuilder raw(int raw) {
         this.raw = raw;
-        return this;
-    }
-
-    @Override
-    public PaperSkinPartBuilder rightSleeve(boolean enabled) {
-        if (enabled) this.raw |= 1 << 3;
-        else this.raw &= ~(1 << 3);
-        return this;
-    }
-
-    @Override
-    public PaperSkinPartBuilder leftPants(boolean enabled) {
-        if (enabled) this.raw |= 1 << 4;
-        else this.raw &= ~(1 << 4);
-        return this;
-    }
-
-    @Override
-    public PaperSkinPartBuilder rightPants(boolean enabled) {
-        if (enabled) this.raw |= 1 << 5;
-        else this.raw &= ~(1 << 5);
-        return this;
-    }
-
-    @Override
-    public PaperSkinPartBuilder hat(boolean enabled) {
-        if (enabled) this.raw |= 1 << 6;
-        else this.raw &= ~(1 << 6);
         return this;
     }
 
