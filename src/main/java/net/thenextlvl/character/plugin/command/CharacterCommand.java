@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterSuggestionProvider;
+import net.thenextlvl.character.plugin.command.suggestion.PlayerCharacterSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -29,6 +30,11 @@ public class CharacterCommand {
     static RequiredArgumentBuilder<CommandSourceStack, String> characterArgument(CharacterPlugin plugin) {
         return Commands.argument("character", StringArgumentType.word())
                 .suggests(new CharacterSuggestionProvider(plugin));
+    }
+
+    static RequiredArgumentBuilder<CommandSourceStack, String> playerCharacterArgument(CharacterPlugin plugin) {
+        return Commands.argument("character", StringArgumentType.word())
+                .suggests(new PlayerCharacterSuggestionProvider(plugin));
     }
 
     static RequiredArgumentBuilder<CommandSourceStack, String> nameArgument(CharacterPlugin plugin) {
