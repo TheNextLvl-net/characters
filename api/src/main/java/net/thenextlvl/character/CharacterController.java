@@ -23,11 +23,11 @@ public interface CharacterController {
 
     <T extends Entity> Character<T> spawnCharacter(String name, Location location, EntityType type);
 
-    <T extends Entity> Optional<Character<T>> getCharacter(String name);
-
     <T extends Entity> Optional<Character<T>> getCharacter(T entity);
 
-    <T extends Entity> Optional<Character<T>> getCharacter(UUID uuid);
+    Optional<Character<?>> getCharacter(String name);
+
+    Optional<Character<?>> getCharacter(UUID uuid);
 
     @Unmodifiable
     Collection<? extends Character<?>> getCharacters();

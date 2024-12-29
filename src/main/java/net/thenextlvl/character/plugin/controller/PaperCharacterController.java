@@ -62,13 +62,6 @@ public class PaperCharacterController implements CharacterController {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends Entity> Optional<Character<T>> getCharacter(String name) {
-        return Optional.ofNullable(characters.get(name))
-                .map(character -> (Character<T>) character);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
     public <T extends Entity> Optional<Character<T>> getCharacter(T entity) {
         return characters.values().stream()
                 .filter(character -> character.getType().equals(entity.getType()))
@@ -80,15 +73,18 @@ public class PaperCharacterController implements CharacterController {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T extends Entity> Optional<Character<T>> getCharacter(UUID uuid) {
+    public Optional<Character<?>> getCharacter(String name) {
+        return Optional.ofNullable(characters.get(name));
+    }
+
+    @Override
+    public Optional<Character<?>> getCharacter(UUID uuid) {
         return characters.values().stream()
                 .filter(character -> character.getEntity()
                         .map(Entity::getUniqueId)
                         .filter(uuid::equals)
                         .isPresent()
-                ).map(character -> (Character<T>) character)
-                .findFirst();
+                ).findFirst();
     }
 
     @Override
