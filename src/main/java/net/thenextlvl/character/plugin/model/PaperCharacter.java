@@ -242,13 +242,17 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
         }
-        entity.customName(getDisplayName());
-        entity.setCustomNameVisible(isDisplayNameVisible());
         entity.setInvulnerable(isInvincible());
         entity.setPersistent(isPersistent());
         entity.setPose(getPose(), true);
         entity.setSilent(true);
         entity.setVisibleByDefault(isVisibleByDefault());
+        updateDisplayName(entity);
+    }
+
+    protected void updateDisplayName(Entity entity) {
+        entity.customName(displayNameVisible ? displayName : null);
+        entity.setCustomNameVisible(displayNameVisible && displayName != null);
     }
 
     @Override
@@ -272,13 +276,13 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public void setDisplayName(@Nullable Component displayName) {
         this.displayName = displayName;
-        getEntity().ifPresent(entity -> entity.customName(displayName));
+        getEntity().ifPresent(this::updateDisplayName);
     }
 
     @Override
     public void setDisplayNameVisible(boolean visible) {
         this.displayNameVisible = visible;
-        getEntity().ifPresent(entity -> entity.setCustomNameVisible(visible));
+        getEntity().ifPresent(this::updateDisplayName);
     }
 
     @Override
