@@ -1,7 +1,6 @@
 package net.thenextlvl.character.plugin.command;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -14,24 +13,23 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.entity.EntityType;
 import org.jspecify.annotations.NullMarked;
 
+import static net.thenextlvl.character.plugin.command.CharacterCommand.nameArgument;
+
 @NullMarked
 class CharacterCreateCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("create")
-                .then(nameArgument(plugin).then(typeArgument(plugin)));
-    }
-
-    private static RequiredArgumentBuilder<CommandSourceStack, String> nameArgument(CharacterPlugin plugin) {
-        return Commands.argument("name", StringArgumentType.word())
-                .executes(context -> create(context, EntityType.PLAYER, plugin));
+        var type = typeArgument(plugin).executes(context -> {
+            var entityType = context.getArgument("type", EntityType.class);
+            return create(context, entityType, plugin);
+        });
+        var create = nameArgument(plugin).executes(context ->
+                create(context, EntityType.PLAYER, plugin)
+        ).then(type);
+        return Commands.literal("create").then(create);
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, EntityType> typeArgument(CharacterPlugin plugin) {
-        return Commands.argument("type", ArgumentTypes.resource(RegistryKey.ENTITY_TYPE))
-                .executes(context -> {
-                    var type = context.getArgument("type", EntityType.class);
-                    return create(context, type, plugin);
-                });
+        return Commands.argument("type", ArgumentTypes.resource(RegistryKey.ENTITY_TYPE));
     }
 
     private static int create(CommandContext<CommandSourceStack> context, EntityType type, CharacterPlugin plugin) {
