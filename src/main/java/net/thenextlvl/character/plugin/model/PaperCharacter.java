@@ -243,7 +243,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             mob.setLootTable(EmptyLootTable.INSTANCE);
         }
         entity.setInvulnerable(isInvincible());
-        entity.setPersistent(isPersistent());
+        entity.setPersistent(false);
         entity.setPose(getPose(), true);
         entity.setSilent(true);
         entity.setVisibleByDefault(isVisibleByDefault());
@@ -294,7 +294,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public void setPersistent(boolean persistent) {
         this.persistent = persistent;
-        getEntity().ifPresent(entity -> entity.setPersistent(persistent));
     }
 
     @Override
