@@ -1,7 +1,6 @@
 package net.thenextlvl.character.plugin.command;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -10,20 +9,15 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.PoseArgument;
-import net.thenextlvl.character.plugin.command.suggestion.CharacterSuggestionProvider;
 import org.bukkit.entity.Pose;
 import org.jspecify.annotations.NullMarked;
+
+import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
 class CharacterPoseCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("pose").then(characterArgument(plugin));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
-        return Commands.argument("character", StringArgumentType.word())
-                .suggests(new CharacterSuggestionProvider(plugin))
-                .then(poseArgument(plugin));
+        return Commands.literal("pose").then(characterArgument(plugin).then(poseArgument(plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> poseArgument(CharacterPlugin plugin) {
