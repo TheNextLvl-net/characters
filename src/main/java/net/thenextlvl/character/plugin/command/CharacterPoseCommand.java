@@ -8,7 +8,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.command.argument.PoseArgument;
+import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.entity.Pose;
 import org.jspecify.annotations.NullMarked;
 
@@ -17,12 +17,12 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterPoseCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("pose").then(characterArgument(plugin).then(poseArgument(plugin)));
+        return Commands.literal("pose").then(characterArgument(plugin).then(poseArgument(plugin)
+                .executes(context -> pose(context, plugin))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> poseArgument(CharacterPlugin plugin) {
-        return Commands.argument("pose", new PoseArgument())
-                .executes(context -> pose(context, plugin));
+        return Commands.argument("pose", new EnumArgument<>(Pose.class));
     }
 
     private static int pose(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
