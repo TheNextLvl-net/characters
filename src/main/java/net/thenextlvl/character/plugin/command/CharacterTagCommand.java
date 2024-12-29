@@ -10,18 +10,20 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.command.suggestion.CharacterSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.Objects;
+
+import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
 class CharacterTagCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("tag")
+                .then(hide(plugin))
                 .then(reset(plugin))
                 .then(set(plugin))
-                .then(toggle(plugin));
+                .then(show(plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
@@ -29,19 +31,19 @@ class CharacterTagCommand {
                 .executes(context -> reset(context, plugin)));
     }
 
+    private static ArgumentBuilder<CommandSourceStack, ?> hide(CharacterPlugin plugin) {
+        return Commands.literal("hide").then(characterArgument(plugin)
+                .executes(context -> toggle(context, plugin, false)));
+    }
+
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
         return Commands.literal("set").then(characterArgument(plugin)
                 .then(tagArgument(plugin).executes(context -> set(context, plugin))));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> toggle(CharacterPlugin plugin) {
-        return Commands.literal("toggle").then(characterArgument(plugin)
-                .executes(context -> toggle(context, plugin)));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
-        return Commands.argument("character", StringArgumentType.word())
-                .suggests(new CharacterSuggestionProvider(plugin));
+    private static ArgumentBuilder<CommandSourceStack, ?> show(CharacterPlugin plugin) {
+        return Commands.literal("show").then(characterArgument(plugin)
+                .executes(context -> toggle(context, plugin, true)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> tagArgument(CharacterPlugin plugin) {
@@ -88,7 +90,7 @@ class CharacterTagCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int toggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private static int toggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
         var sender = context.getSource().getSender();
         var name = context.getArgument("character", String.class);
         var character = plugin.characterController().getCharacter(name).orElse(null);
@@ -98,9 +100,12 @@ class CharacterTagCommand {
             return 0;
         }
 
-        var message = character.isDisplayNameVisible() ? "character.tag.hidden" : "character.tag.shown";
-        character.setDisplayNameVisible(!character.isDisplayNameVisible());
+        var success = character.isDisplayNameVisible() != visible;
+        var message = !success ? "nothing.changed" : visible ? "character.tag.shown" : "character.tag.hidden";
+
+        if (success) character.setDisplayNameVisible(visible);
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", name));
-        return Command.SINGLE_SUCCESS;
+
+        return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
