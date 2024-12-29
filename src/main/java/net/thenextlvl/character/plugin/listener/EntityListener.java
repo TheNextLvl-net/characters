@@ -25,6 +25,7 @@ public class EntityListener implements Listener {
         plugin.characterController().getCharacter(event.getRightClicked()).ifPresent(character -> {
             var type = event.getPlayer().isSneaking() ? InteractionType.SHIFT_RIGHT_CLICK : InteractionType.RIGHT_CLICK;
             var characterEvent = new PlayerInteractCharacterEvent(character, event.getPlayer(), type);
+            characterEvent.setCancelled(true);
             event.setCancelled(!characterEvent.callEvent());
         });
     }
