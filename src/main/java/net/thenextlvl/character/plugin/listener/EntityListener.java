@@ -2,9 +2,9 @@ package net.thenextlvl.character.plugin.listener;
 
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.action.ClickType;
+import net.thenextlvl.character.event.player.PlayerCharacterClickEvent;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.event.player.PlayerInteractCharacterEvent;
-import net.thenextlvl.character.event.player.PlayerInteractCharacterEvent.InteractionType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -23,8 +23,8 @@ public class EntityListener implements Listener {
     public void onEntityInteract(PlayerInteractEntityEvent event) {
         if (!event.getHand().equals(EquipmentSlot.HAND)) return;
         plugin.characterController().getCharacter(event.getRightClicked()).ifPresent(character -> {
-            var type = event.getPlayer().isSneaking() ? InteractionType.SHIFT_RIGHT_CLICK : InteractionType.RIGHT_CLICK;
-            var characterEvent = new PlayerInteractCharacterEvent(character, event.getPlayer(), type);
+            var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_RIGHT : ClickType.RIGHT;
+            var characterEvent = new PlayerCharacterClickEvent(character, event.getPlayer(), type);
             characterEvent.setCancelled(true);
             event.setCancelled(!characterEvent.callEvent());
         });
@@ -33,8 +33,8 @@ public class EntityListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPrePlayerAttackEntityLowest(PrePlayerAttackEntityEvent event) {
         plugin.characterController().getCharacter(event.getAttacked()).ifPresent(character -> {
-            var type = event.getPlayer().isSneaking() ? InteractionType.SHIFT_LEFT_CLICK : InteractionType.LEFT_CLICK;
-            var characterEvent = new PlayerInteractCharacterEvent(character, event.getPlayer(), type);
+            var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
+            var characterEvent = new PlayerCharacterClickEvent(character, event.getPlayer(), type);
             event.setCancelled(!characterEvent.callEvent());
         });
     }

@@ -1,6 +1,7 @@
 package net.thenextlvl.character;
 
 import net.kyori.adventure.text.Component;
+import net.thenextlvl.character.action.ClickAction;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @NullMarked
 public interface Character<T extends Entity> {
+
     @Nullable
     Component getDisplayName();
 
@@ -34,12 +36,17 @@ public interface Character<T extends Entity> {
     Pose getPose();
 
     @Unmodifiable
+    Set<ClickAction<?>> getActions();
+
+    @Unmodifiable
     Set<UUID> getViewers();
 
     String getName();
 
     @Nullable
     World getWorld();
+
+    boolean addAction(ClickAction<?> action);
 
     boolean addViewer(UUID player);
 
@@ -48,6 +55,8 @@ public interface Character<T extends Entity> {
     boolean canSee(Player player);
 
     boolean despawn();
+
+    boolean hasAction(ClickAction<?> action);
 
     boolean isCollidable();
 
@@ -66,6 +75,8 @@ public interface Character<T extends Entity> {
     boolean isVisibleByDefault();
 
     boolean persist();
+
+    boolean removeAction(ClickAction<?> action);
 
     boolean removeViewer(UUID player);
 

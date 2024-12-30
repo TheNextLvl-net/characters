@@ -5,6 +5,7 @@ import core.io.IO;
 import core.nbt.NBTOutputStream;
 import net.kyori.adventure.text.Component;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -48,6 +49,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected boolean visibleByDefault = true;
 
     protected final EntityType type;
+    protected final Set<ClickAction<?>> actions = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String name;
 
@@ -90,6 +92,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public @Unmodifiable Set<ClickAction<?>> getActions() {
+        return Set.copyOf(actions);
+    }
+
+    @Override
     public @Unmodifiable Set<UUID> getViewers() {
         return Set.copyOf(viewers);
     }
@@ -102,6 +109,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Nullable World getWorld() {
         return getEntity().map(Entity::getWorld).orElse(null);
+    }
+
+    @Override
+    public boolean addAction(ClickAction<?> action) {
+        return actions.add(action);
     }
 
     @Override
@@ -127,6 +139,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         entity.remove();
         entity = null;
         return true;
+    }
+
+    @Override
+    public boolean hasAction(ClickAction<?> action) {
+        return actions.contains(action);
     }
 
     @Override
@@ -196,6 +213,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
                     CharacterPlugin.ISSUES);
             return false;
         }
+    }
+
+    @Override
+    public boolean removeAction(ClickAction<?> action) {
+        return actions.remove(action);
     }
 
     @Override
