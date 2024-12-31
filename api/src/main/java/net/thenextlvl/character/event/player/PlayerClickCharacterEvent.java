@@ -7,11 +7,11 @@ import org.bukkit.event.Cancellable;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PlayerCharacterClickEvent extends PlayerCharacterEvent implements Cancellable {
+public class PlayerClickCharacterEvent extends PlayerCharacterEvent implements Cancellable {
     private final ClickType type;
     private boolean cancelled;
 
-    public PlayerCharacterClickEvent(Character<?> character, Player player, ClickType type) {
+    public PlayerClickCharacterEvent(Character<?> character, Player player, ClickType type) {
         super(character, player);
         this.type = type;
     }

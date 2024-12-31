@@ -3,19 +3,8 @@ package net.thenextlvl.character.skin;
 import com.destroystokyo.paper.SkinParts;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.ServiceLoader;
-
 @NullMarked
 public interface SkinPartBuilder {
-    static SkinPartBuilder builder() {
-        return ServiceLoader.load(SkinPartBuilder.class, SkinPartBuilder.class.getClassLoader()).findFirst()
-                .orElseThrow(() -> new IllegalStateException("No implementation of SkinPartBuilder found"));
-    }
-
-    static SkinPartBuilder of(SkinParts parts) {
-        return builder().raw(parts.getRaw());
-    }
-
     SkinPartBuilder all(boolean enabled);
 
     SkinPartBuilder cape(boolean enabled);
