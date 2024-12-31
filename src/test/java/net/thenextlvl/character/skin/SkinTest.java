@@ -1,6 +1,6 @@
 package net.thenextlvl.character.skin;
 
-import net.thenextlvl.character.plugin.model.PaperSkinPartBuilder;
+import net.thenextlvl.character.plugin.character.PaperSkinPartBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
