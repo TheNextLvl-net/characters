@@ -8,19 +8,29 @@ import core.nbt.serialization.NBT;
 import core.nbt.serialization.ParserException;
 import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
+import core.paper.messenger.PluginMessenger;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.title.Title;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterController;
+import net.thenextlvl.character.CharacterProvider;
 import net.thenextlvl.character.PlayerCharacter;
+import net.thenextlvl.character.action.ActionType;
+import net.thenextlvl.character.plugin.character.action.PaperActionType;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
-import net.thenextlvl.character.plugin.controller.PaperCharacterController;
+import net.thenextlvl.character.plugin.character.PaperCharacterController;
+import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
+import net.thenextlvl.character.plugin.listener.test;
+import net.thenextlvl.character.plugin.character.PaperCharacterProvider;
 import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
@@ -28,10 +38,10 @@ import net.thenextlvl.character.plugin.serialization.KeyAdapter;
 import net.thenextlvl.character.plugin.serialization.LocationAdapter;
 import net.thenextlvl.character.plugin.serialization.ProfilePropertyAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
-import net.thenextlvl.character.skin.SkinPartBuilder;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
@@ -44,6 +54,7 @@ import org.jspecify.annotations.Nullable;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -71,6 +82,8 @@ public class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
     private final PaperCharacterController characterController = new PaperCharacterController(this);
+    private final PaperCharacterProvider characterProvider = new PaperCharacterProvider();
+    private final PluginMessenger messenger = new PluginMessenger(this);
 
     private final ComponentBundle bundle = new ComponentBundle(translations,
             audience -> audience instanceof Player player ? player.locale() : Locale.US)
@@ -84,6 +97,7 @@ public class CharacterPlugin extends JavaPlugin {
     @Override
     public void onLoad() {
         getServer().getServicesManager().register(CharacterController.class, characterController, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(CharacterProvider.class, characterProvider, this, ServicePriority.Highest);
     }
 
     @Override
@@ -112,8 +126,11 @@ public class CharacterPlugin extends JavaPlugin {
     }
 
     private void registerListeners() {
+        getServer().getPluginManager().registerEvents(new CharacterListener(), this);
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
+
+        getServer().getPluginManager().registerEvents(new test(this), this);
     }
 
     public ComponentBundle bundle() {
@@ -130,6 +147,10 @@ public class CharacterPlugin extends JavaPlugin {
 
     public PaperCharacterController characterController() {
         return characterController;
+    }
+
+    public PaperCharacterProvider characterProvider() {
+        return characterProvider;
     }
 
     public @Unmodifiable List<Character<?>> readAll() {
@@ -199,7 +220,7 @@ public class CharacterPlugin extends JavaPlugin {
         root.optional("listed").map(Tag::getAsBoolean).ifPresent(character::setListed);
         root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(character::setRealPlayer);
         root.optional("skinParts").map(Tag::getAsByte).ifPresent(raw ->
-                character.setSkinParts(SkinPartBuilder.builder().raw(raw).build()));
+                character.setSkinParts(characterProvider.skinPartBuilder().raw(raw).build()));
         return deserialize(root, character);
     }
 
@@ -212,5 +233,23 @@ public class CharacterPlugin extends JavaPlugin {
         root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(character::setPose);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(character::setVisibleByDefault);
         return character;
+    }
+
+    public final ActionType<Component> sendActionbar = register(new PaperActionType<>("send_actionbar", Audience::sendActionBar));
+    public final ActionType<Component> sendMessage = register(new PaperActionType<Component>("send_message", Audience::sendMessage));
+    public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer",
+            (player, address) -> player.transfer(address.getHostName(), address.getPort())));
+    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Entity::teleportAsync)));  // todo add command
+    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Audience::playSound)); // todo add command
+    public final ActionType<String> connect = register(new PaperActionType<>("connect", messenger::connect));
+    public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", (player, command) ->
+            player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
+    public final ActionType<String> runPlayerCommandPermitted = register(new PaperActionType<>("run_player_command_permitted",
+            (player, command) -> player.getServer().dispatchCommand(player, command)));
+    public final ActionType<String> runPlayerCommand = register(new PaperActionType<>("run_player_command", Player::performCommand));
+    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Audience::showTitle)); // todo add command
+
+    private <T> ActionType<T> register(ActionType<T> actionType) {
+        return characterProvider().getActionRegistry().register(actionType);
     }
 }

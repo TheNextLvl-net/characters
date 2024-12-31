@@ -1,12 +1,10 @@
-package net.thenextlvl.character.plugin.controller;
+package net.thenextlvl.character.plugin.character;
 
 import com.google.common.base.Preconditions;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterController;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.model.PaperCharacter;
-import net.thenextlvl.character.plugin.model.PaperPlayerCharacter;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;

@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.model;
+package net.thenextlvl.character.plugin.character;
 
 import com.google.common.base.Preconditions;
 import core.io.IO;
@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -113,7 +114,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean addAction(ClickAction<?> action) {
-        return actions.add(action);
+        return actions.stream().noneMatch(clickAction ->
+                clickAction.getName().equals(action.getName())
+        ) && actions.add(action);
     }
 
     @Override

@@ -12,7 +12,6 @@ import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import net.thenextlvl.character.skin.SkinLayer;
-import net.thenextlvl.character.skin.SkinPartBuilder;
 import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.playerCharacterArgument;
@@ -66,7 +65,10 @@ class CharacterSkinCommand {
         }
 
         var layer = context.getArgument("layer", SkinLayer.class);
-        var skinParts = SkinPartBuilder.of(player.getSkinParts()).toggle(layer, visible).build();
+        var skinParts = plugin.characterProvider()
+                .skinPartBuilder(player.getSkinParts())
+                .toggle(layer, visible)
+                .build();
 
         if (skinParts.equals(player.getSkinParts())) {
             plugin.bundle().sendMessage(sender, "nothing.changed");

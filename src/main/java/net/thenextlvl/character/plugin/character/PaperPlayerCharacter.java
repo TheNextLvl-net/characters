@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.model;
+package net.thenextlvl.character.plugin.character;
 
 import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;

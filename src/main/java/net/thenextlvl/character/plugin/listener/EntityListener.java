@@ -3,7 +3,7 @@ package net.thenextlvl.character.plugin.listener;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickType;
-import net.thenextlvl.character.event.player.PlayerCharacterClickEvent;
+import net.thenextlvl.character.event.player.PlayerClickCharacterEvent;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -24,9 +24,9 @@ public class EntityListener implements Listener {
         if (!event.getHand().equals(EquipmentSlot.HAND)) return;
         plugin.characterController().getCharacter(event.getRightClicked()).ifPresent(character -> {
             var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_RIGHT : ClickType.RIGHT;
-            var characterEvent = new PlayerCharacterClickEvent(character, event.getPlayer(), type);
-            characterEvent.setCancelled(true);
-            event.setCancelled(!characterEvent.callEvent());
+            var characterEvent = new PlayerClickCharacterEvent(character, event.getPlayer(), type);
+            characterEvent.callEvent();
+            event.setCancelled(true);
         });
     }
 
@@ -34,7 +34,7 @@ public class EntityListener implements Listener {
     public void onPrePlayerAttackEntityLowest(PrePlayerAttackEntityEvent event) {
         plugin.characterController().getCharacter(event.getAttacked()).ifPresent(character -> {
             var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
-            var characterEvent = new PlayerCharacterClickEvent(character, event.getPlayer(), type);
+            var characterEvent = new PlayerClickCharacterEvent(character, event.getPlayer(), type);
             event.setCancelled(!characterEvent.callEvent());
         });
     }

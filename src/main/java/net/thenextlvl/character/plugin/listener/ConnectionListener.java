@@ -1,7 +1,7 @@
 package net.thenextlvl.character.plugin.listener;
 
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.model.PaperPlayerCharacter;
+import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;

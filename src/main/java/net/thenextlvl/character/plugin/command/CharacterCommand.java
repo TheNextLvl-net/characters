@@ -14,6 +14,7 @@ import org.jspecify.annotations.NullMarked;
 public class CharacterCommand {
     public static LiteralCommandNode<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("character")
+                // todo: add permissions
                 .then(CharacterActionCommand.create(plugin))
                 .then(CharacterAttributeCommand.create(plugin))
                 .then(CharacterCreateCommand.create(plugin))
@@ -27,17 +28,17 @@ public class CharacterCommand {
                 .build();
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, String> characterArgument(CharacterPlugin plugin) {
+    static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
         return Commands.argument("character", StringArgumentType.word())
                 .suggests(new CharacterSuggestionProvider(plugin));
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, String> playerCharacterArgument(CharacterPlugin plugin) {
+    static RequiredArgumentBuilder<CommandSourceStack, ?> playerCharacterArgument(CharacterPlugin plugin) {
         return Commands.argument("character", StringArgumentType.word())
                 .suggests(new PlayerCharacterSuggestionProvider(plugin));
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, String> nameArgument(CharacterPlugin plugin) {
+    static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {
         return Commands.argument("name", StringArgumentType.word());
     }
 }

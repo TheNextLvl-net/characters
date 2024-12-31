@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.model;
+package net.thenextlvl.character.plugin.character;
 
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
@@ -8,10 +8,11 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class PaperSkinPartBuilder implements SkinPartBuilder {
+    private static final int ALL_ENABLED = (1 << SkinLayer.values().length) - 1;
     private int raw;
 
     public PaperSkinPartBuilder() {
-        this(127);
+        this((1 << SkinLayer.values().length) - 1);
     }
 
     public PaperSkinPartBuilder(int raw) {
@@ -20,7 +21,7 @@ public class PaperSkinPartBuilder implements SkinPartBuilder {
 
     @Override
     public SkinPartBuilder all(boolean enabled) {
-        return raw(enabled ? 127 : 0);
+        return raw(enabled ? ALL_ENABLED : 0);
     }
 
     @Override
