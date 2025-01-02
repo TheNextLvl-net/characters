@@ -240,7 +240,7 @@ public class CharacterPlugin extends JavaPlugin {
     public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer",
             (player, address) -> player.transfer(address.getHostName(), address.getPort())));
     public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Entity::teleportAsync)));  // todo add command
-    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Audience::playSound)); // todo add command
+    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Audience::playSound));
     public final ActionType<String> connect = register(new PaperActionType<>("connect", messenger::connect));
     public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", (player, command) ->
             player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));

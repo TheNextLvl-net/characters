@@ -1,6 +1,7 @@
 package net.thenextlvl.character.plugin.command;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -8,6 +9,9 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -16,6 +20,7 @@ import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.action.ClickTypes;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
+import org.bukkit.Registry;
 import org.jspecify.annotations.NullMarked;
 
 import java.net.InetSocketAddress;
@@ -29,6 +34,7 @@ class CharacterActionAddCommand {
         return Commands.literal("add").then(characterArgument(plugin)
                 .then(clickTypesArgument(plugin).then(nameArgument(plugin)
                         .then(connect(plugin))
+                        .then(playSound(plugin))
                         .then(runConsoleCommand(plugin))
                         .then(runPlayerCommand(plugin))
                         .then(runPlayerCommandPermitted(plugin))
@@ -39,6 +45,24 @@ class CharacterActionAddCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> connect(CharacterPlugin plugin) {
         return Commands.literal("connect").then(stringArgument(plugin, "server", plugin.connect));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> playSound(CharacterPlugin plugin) {
+        return Commands.literal("play-sound").then(soundArgument(plugin)
+                .then(soundSourceArgument(plugin)
+                        .then(Commands.argument("volume", FloatArgumentType.floatArg(0, 1))
+                                .then(Commands.argument("pitch", FloatArgumentType.floatArg(0, 15))
+                                        .executes(context -> {
+                                            var volume = context.getArgument("volume", float.class);
+                                            var pitch = context.getArgument("pitch", float.class);
+                                            return playSound(context, getSource(context), volume, pitch, plugin);
+                                        }))
+                                .executes(context -> {
+                                    var volume = context.getArgument("volume", float.class);
+                                    return playSound(context, getSource(context), volume, 1, plugin);
+                                }))
+                        .executes(context -> playSound(context, getSource(context), 1, 1, plugin)))
+                .executes(context -> playSound(context, Sound.Source.MASTER, 1, 1, plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> runConsoleCommand(CharacterPlugin plugin) {
@@ -87,6 +111,14 @@ class CharacterActionAddCommand {
                 });
     }
 
+    private static int playSound(CommandContext<CommandSourceStack> context, Sound.Source source, float volume, float pitch, CharacterPlugin plugin) {
+        var sender = context.getSource().getSender();
+        var sound = context.getArgument("sound", org.bukkit.Sound.class);
+        var key = Registry.SOUNDS.getKey(sound);
+        if (key == null) throw new NullPointerException("Unknown sound");
+        return addAction(context, plugin.playSound, Sound.sound(key, source, volume, pitch), plugin);
+    }
+
     private static int transfer(CommandContext<CommandSourceStack> context, int port, CharacterPlugin plugin) {
         var hostname = context.getArgument("hostname", String.class);
         var address = new InetSocketAddress(hostname, port);
@@ -95,6 +127,18 @@ class CharacterActionAddCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> clickTypesArgument(CharacterPlugin plugin) {
         return Commands.argument("click-types", new EnumArgument<>(ClickTypes.class));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> soundArgument(CharacterPlugin plugin) {
+        return Commands.argument("sound", ArgumentTypes.resource(RegistryKey.SOUND_EVENT));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> soundSourceArgument(CharacterPlugin plugin) {
+        return Commands.argument("sound-source", new EnumArgument<>(Sound.Source.class));
+    }
+
+    private static Sound.Source getSource(CommandContext<CommandSourceStack> context) {
+        return context.getArgument("sound-source", Sound.Source.class);
     }
 
     private static <T> int addAction(CommandContext<CommandSourceStack> context, ActionType<T> actionType, T input, CharacterPlugin plugin) {
