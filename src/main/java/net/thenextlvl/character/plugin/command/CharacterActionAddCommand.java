@@ -40,6 +40,7 @@ class CharacterActionAddCommand {
                         .then(runPlayerCommandPermitted(plugin))
                         .then(sendActionBar(plugin))
                         .then(sendMessage(plugin))
+                        .then(teleport(plugin))
                         .then(transfer(plugin)))));
     }
 
@@ -83,6 +84,10 @@ class CharacterActionAddCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendMessage(CharacterPlugin plugin) {
         return Commands.literal("send-message").then(messageArgument(plugin, plugin.sendMessage));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> teleport(CharacterPlugin plugin) {
+        return Commands.literal("teleport");
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> transfer(CharacterPlugin plugin) {
