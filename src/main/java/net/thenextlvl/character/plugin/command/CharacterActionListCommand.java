@@ -18,6 +18,6 @@ class CharacterActionListCommand {
     }
 
     private static int list(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        return Command.SINGLE_SUCCESS;
+        return Command.SINGLE_SUCCESS; // todo implement
     }
 }

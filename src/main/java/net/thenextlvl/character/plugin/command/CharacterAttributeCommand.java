@@ -9,6 +9,6 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 class CharacterAttributeCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("attribute");
+        return Commands.literal("attribute"); // todo implement
     }
 }

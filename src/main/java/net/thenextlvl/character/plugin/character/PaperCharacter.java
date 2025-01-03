@@ -311,6 +311,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public void setDisplayName(@Nullable Component displayName) {
         this.displayName = displayName;
+        // todo implement for players and add holo based display names
         getEntity().ifPresent(this::updateDisplayName);
     }
 

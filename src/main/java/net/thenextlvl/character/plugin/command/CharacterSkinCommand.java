@@ -42,11 +42,11 @@ class CharacterSkinCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
-        return Commands.literal("reset").then(playerCharacterArgument(plugin));
+        return Commands.literal("reset").then(playerCharacterArgument(plugin)); // todo implement
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(playerCharacterArgument(plugin));
+        return Commands.literal("set").then(playerCharacterArgument(plugin)); // todo implement
     }
 
     private static int layerToggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {

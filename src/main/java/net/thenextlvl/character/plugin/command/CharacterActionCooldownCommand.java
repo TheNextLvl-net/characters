@@ -35,10 +35,10 @@ class CharacterActionCooldownCommand {
     }
 
     private static int remove(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        return 0;
+        return 0; // todo implement
     }
 
     private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        return 0;
+        return 0; // todo implement
     }
 }
