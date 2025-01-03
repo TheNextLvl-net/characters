@@ -31,12 +31,16 @@ class CharacterActionRemoveCommand {
 
         var action = context.getArgument("action", String.class);
 
-        var success = character.removeAction(action);
-        var message = success ? "character.action.removed" : "nothing.changed";
+        if (character.removeAction(action)) {
+            plugin.bundle().sendMessage(sender, "character.action.removed",
+                    Placeholder.unparsed("action", action),
+                    Placeholder.unparsed("character", name));
+            return Command.SINGLE_SUCCESS;
+        }
 
-        plugin.bundle().sendMessage(sender, message,
-                Placeholder.unparsed("action", action),
-                Placeholder.unparsed("character", name));
-        return success ? Command.SINGLE_SUCCESS : 0;
+        plugin.bundle().sendMessage(sender, "character.action.not_found",
+                Placeholder.parsed("character", name),
+                Placeholder.unparsed("name", action));
+        return 0;
     }
 }

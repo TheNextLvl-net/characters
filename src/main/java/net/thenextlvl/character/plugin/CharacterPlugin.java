@@ -245,7 +245,7 @@ public class CharacterPlugin extends JavaPlugin {
     public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", (player, command) ->
             player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
     public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", Player::performCommand));
-    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Audience::showTitle)); // todo add command
+    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Audience::showTitle));
 
     private <T> ActionType<T> register(ActionType<T> actionType) {
         return characterProvider().getActionRegistry().register(actionType);
