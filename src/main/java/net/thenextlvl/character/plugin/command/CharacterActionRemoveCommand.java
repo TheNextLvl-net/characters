@@ -29,16 +29,13 @@ class CharacterActionRemoveCommand {
             return 0;
         }
 
-        var actionName = context.getArgument("action", String.class);
-        var action = character.getActions().stream().filter(click ->
-                click.getName().equals(actionName)
-        ).findAny();
+        var action = context.getArgument("action", String.class);
 
-        var success = action.map(character::removeAction).orElse(false);
+        var success = character.removeAction(action);
         var message = success ? "character.action.removed" : "nothing.changed";
 
         plugin.bundle().sendMessage(sender, message,
-                Placeholder.unparsed("action", actionName),
+                Placeholder.unparsed("action", action),
                 Placeholder.unparsed("character", name));
         return success ? Command.SINGLE_SUCCESS : 0;
     }

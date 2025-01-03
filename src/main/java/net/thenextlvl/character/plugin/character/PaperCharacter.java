@@ -26,7 +26,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -50,7 +52,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected boolean visibleByDefault = true;
 
     protected final EntityType type;
-    protected final Set<ClickAction<?>> actions = new HashSet<>();
+    protected final Map<String, ClickAction<?>> actions = new HashMap<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String name;
 
@@ -60,6 +62,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         this.name = name;
         this.plugin = plugin;
         this.type = type;
+    }
+
+    @Override
+    public ClickAction<?> getAction(String name) {
+        return actions.get(name);
     }
 
     @Override
@@ -83,6 +90,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public @Unmodifiable Map<String, ClickAction<?>> getActions() {
+        return Map.copyOf(actions);
+    }
+
+    @Override
     public Optional<T> getEntity() {
         return Optional.ofNullable(entity).filter(Entity::isValid);
     }
@@ -90,11 +102,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public Pose getPose() {
         return pose;
-    }
-
-    @Override
-    public @Unmodifiable Set<ClickAction<?>> getActions() {
-        return Set.copyOf(actions);
     }
 
     @Override
@@ -113,10 +120,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public boolean addAction(ClickAction<?> action) {
-        return actions.stream().noneMatch(clickAction ->
-                clickAction.getName().equals(action.getName())
-        ) && actions.add(action);
+    public boolean addAction(String name, ClickAction<?> action) {
+        return !action.equals(actions.put(name, action));
     }
 
     @Override
@@ -146,7 +151,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean hasAction(ClickAction<?> action) {
-        return actions.contains(action);
+        return actions.containsValue(action);
+    }
+
+    @Override
+    public boolean hasAction(String name) {
+        return actions.containsKey(name);
     }
 
     @Override
@@ -219,8 +229,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public boolean removeAction(ClickAction<?> action) {
-        return actions.remove(action);
+    public boolean removeAction(String name) {
+        return false;
     }
 
     @Override
