@@ -14,15 +14,13 @@ public class ClickAction<T> {
     private ClickType[] clickTypes;
     private T input;
     private final ActionType<T> actionType;
-    private final String name;
 
-    public ClickAction(String name, ActionType<T> actionType, ClickType[] clickTypes, T input) {
-        this(name, actionType, clickTypes, input, null);
+    public ClickAction(ActionType<T> actionType, ClickType[] clickTypes, T input) {
+        this(actionType, clickTypes, input, null);
     }
 
-    public ClickAction(String name, ActionType<T> actionType, ClickType[] clickTypes, T input, @Nullable String permission) {
+    public ClickAction(ActionType<T> actionType, ClickType[] clickTypes, T input, @Nullable String permission) {
         Preconditions.checkArgument(clickTypes.length > 0, "Click types cannot be empty");
-        this.name = name;
         this.actionType = actionType;
         this.clickTypes = clickTypes;
         this.permission = permission;
@@ -64,10 +62,6 @@ public class ClickAction<T> {
         return clickTypes;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public T getInput() {
         return input;
     }
@@ -79,12 +73,11 @@ public class ClickAction<T> {
         return Objects.equals(permission, that.permission)
                && Objects.deepEquals(clickTypes, that.clickTypes)
                && Objects.equals(input, that.input)
-               && Objects.equals(actionType, that.actionType)
-               && Objects.equals(name, that.name);
+               && Objects.equals(actionType, that.actionType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(permission, Arrays.hashCode(clickTypes), input, actionType, name);
+        return Objects.hash(permission, Arrays.hashCode(clickTypes), input, actionType);
     }
 }

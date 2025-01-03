@@ -13,12 +13,14 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
 public interface Character<T extends Entity> {
+    ClickAction<?> getAction(String name);
 
     @Nullable
     Component getDisplayName();
@@ -31,12 +33,12 @@ public interface Character<T extends Entity> {
     @Nullable
     Location getSpawnLocation();
 
+    @Unmodifiable
+    Map<String, ClickAction<?>> getActions();
+
     Optional<T> getEntity();
 
     Pose getPose();
-
-    @Unmodifiable
-    Set<ClickAction<?>> getActions();
 
     @Unmodifiable
     Set<UUID> getViewers();
@@ -46,7 +48,7 @@ public interface Character<T extends Entity> {
     @Nullable
     World getWorld();
 
-    boolean addAction(ClickAction<?> action);
+    boolean addAction(String name, ClickAction<?> action);
 
     boolean addViewer(UUID player);
 
@@ -57,6 +59,8 @@ public interface Character<T extends Entity> {
     boolean despawn();
 
     boolean hasAction(ClickAction<?> action);
+
+    boolean hasAction(String name);
 
     boolean isCollidable();
 
@@ -76,7 +80,7 @@ public interface Character<T extends Entity> {
 
     boolean persist();
 
-    boolean removeAction(ClickAction<?> action);
+    boolean removeAction(String name);
 
     boolean removeViewer(UUID player);
 
