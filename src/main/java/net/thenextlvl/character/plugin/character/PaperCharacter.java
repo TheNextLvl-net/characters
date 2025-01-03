@@ -230,7 +230,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean removeAction(String name) {
-        return false;
+        return actions.remove(name) != null;
     }
 
     @Override
