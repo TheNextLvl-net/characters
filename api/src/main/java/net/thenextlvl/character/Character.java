@@ -20,6 +20,7 @@ import java.util.UUID;
 
 @NullMarked
 public interface Character<T extends Entity> {
+    @Nullable
     ClickAction<?> getAction(String name);
 
     @Nullable
