@@ -14,7 +14,9 @@ class CharacterActionCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("action")
                 .then(CharacterActionAddCommand.create(plugin))
+                .then(CharacterActionCooldownCommand.create(plugin))
                 .then(CharacterActionListCommand.create(plugin))
+                .then(CharacterActionPermissionCommand.create(plugin))
                 .then(CharacterActionRemoveCommand.create(plugin));
     }
 
