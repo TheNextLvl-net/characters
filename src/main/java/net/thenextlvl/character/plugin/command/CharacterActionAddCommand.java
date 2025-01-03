@@ -7,9 +7,11 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -21,23 +23,23 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.action.ClickTypes;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.Registry;
+import org.bukkit.World;
 import org.jspecify.annotations.NullMarked;
 
 import java.net.InetSocketAddress;
 
+import static net.thenextlvl.character.plugin.command.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
-import static net.thenextlvl.character.plugin.command.CharacterCommand.nameArgument;
 
 @NullMarked
 class CharacterActionAddCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("add").then(characterArgument(plugin)
-                .then(clickTypesArgument(plugin).then(nameArgument(plugin)
+                .then(clickTypesArgument(plugin).then(actionArgument(plugin)
                         .then(connect(plugin))
                         .then(playSound(plugin))
                         .then(runConsoleCommand(plugin))
                         .then(runPlayerCommand(plugin))
-                        .then(runPlayerCommandPermitted(plugin))
                         .then(sendActionBar(plugin))
                         .then(sendMessage(plugin))
                         .then(teleport(plugin))
@@ -51,8 +53,8 @@ class CharacterActionAddCommand {
     private static ArgumentBuilder<CommandSourceStack, ?> playSound(CharacterPlugin plugin) {
         return Commands.literal("play-sound").then(soundArgument(plugin)
                 .then(soundSourceArgument(plugin)
-                        .then(Commands.argument("volume", FloatArgumentType.floatArg(0, 1))
-                                .then(Commands.argument("pitch", FloatArgumentType.floatArg(0, 15))
+                        .then(Commands.argument("volume", FloatArgumentType.floatArg(0))
+                                .then(Commands.argument("pitch", FloatArgumentType.floatArg(0, 2))
                                         .executes(context -> {
                                             var volume = context.getArgument("volume", float.class);
                                             var pitch = context.getArgument("pitch", float.class);
@@ -71,11 +73,7 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> runPlayerCommand(CharacterPlugin plugin) {
-        return Commands.literal("run-player-command").then(stringArgument(plugin, "command", plugin.runPlayerCommand));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> runPlayerCommandPermitted(CharacterPlugin plugin) {
-        return Commands.literal("run-player-command-permitted").then(stringArgument(plugin, "command", plugin.runPlayerCommandPermitted));
+        return Commands.literal("run-command").then(stringArgument(plugin, "command", plugin.runCommand));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendActionBar(CharacterPlugin plugin) {
@@ -87,7 +85,26 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> teleport(CharacterPlugin plugin) {
-        return Commands.literal("teleport");
+        return Commands.literal("teleport").then(positionArgument(plugin)
+                .then(Commands.argument("yaw", FloatArgumentType.floatArg(-180, 180))
+                        .then(Commands.argument("pitch", FloatArgumentType.floatArg(-90, 90))
+                                .then(Commands.argument("world", ArgumentTypes.world())
+                                        .executes(context -> {
+                                            var yaw = context.getArgument("yaw", float.class);
+                                            var pitch = context.getArgument("pitch", float.class);
+                                            var world = context.getArgument("world", World.class);
+                                            return teleport(context, yaw, pitch, world, plugin);
+                                        }))
+                                .executes(context -> {
+                                    var yaw = context.getArgument("yaw", float.class);
+                                    var pitch = context.getArgument("pitch", float.class);
+                                    var world = context.getSource().getLocation().getWorld();
+                                    return teleport(context, yaw, pitch, world, plugin);
+                                })))
+                .executes(context -> {
+                    var world = context.getSource().getLocation().getWorld();
+                    return teleport(context, 0, 0, world, plugin);
+                }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> transfer(CharacterPlugin plugin) {
@@ -124,6 +141,15 @@ class CharacterActionAddCommand {
         return addAction(context, plugin.playSound, Sound.sound(key, source, volume, pitch), plugin);
     }
 
+    private static int teleport(CommandContext<CommandSourceStack> context, float yaw, float pitch, World world, CharacterPlugin plugin) throws CommandSyntaxException {
+        var resolver = context.getArgument("position", FinePositionResolver.class);
+        var position = resolver.resolve(context.getSource());
+        var location = position.toLocation(world);
+        location.setYaw(yaw);
+        location.setPitch(pitch);
+        return addAction(context, plugin.teleport, location, plugin);
+    }
+
     private static int transfer(CommandContext<CommandSourceStack> context, int port, CharacterPlugin plugin) {
         var hostname = context.getArgument("hostname", String.class);
         var address = new InetSocketAddress(hostname, port);
@@ -132,6 +158,10 @@ class CharacterActionAddCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> clickTypesArgument(CharacterPlugin plugin) {
         return Commands.argument("click-types", new EnumArgument<>(ClickTypes.class));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> positionArgument(CharacterPlugin plugin) {
+        return Commands.argument("position", ArgumentTypes.finePosition());
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> soundArgument(CharacterPlugin plugin) {
@@ -155,10 +185,10 @@ class CharacterActionAddCommand {
             return 0;
         }
         var clickTypes = context.getArgument("click-types", ClickTypes.class);
-        var actionName = context.getArgument("name", String.class);
+        var actionName = context.getArgument("action", String.class);
 
-        var clickAction = new ClickAction<>(actionName, actionType, clickTypes.getClickTypes(), input);
-        var success = character.addAction(clickAction);
+        var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input);
+        var success = character.addAction(actionName, action);
 
         var message = success ? "character.action.added" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message,

@@ -239,14 +239,12 @@ public class CharacterPlugin extends JavaPlugin {
     public final ActionType<Component> sendMessage = register(new PaperActionType<Component>("send_message", Audience::sendMessage));
     public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer",
             (player, address) -> player.transfer(address.getHostName(), address.getPort())));
-    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Entity::teleportAsync)));  // todo add command
+    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Entity::teleportAsync)));
     public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Audience::playSound));
     public final ActionType<String> connect = register(new PaperActionType<>("connect", messenger::connect));
     public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", (player, command) ->
             player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
-    public final ActionType<String> runPlayerCommandPermitted = register(new PaperActionType<>("run_player_command_permitted",
-            (player, command) -> player.getServer().dispatchCommand(player, command)));
-    public final ActionType<String> runPlayerCommand = register(new PaperActionType<>("run_player_command", Player::performCommand));
+    public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", Player::performCommand));
     public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Audience::showTitle)); // todo add command
 
     private <T> ActionType<T> register(ActionType<T> actionType) {
