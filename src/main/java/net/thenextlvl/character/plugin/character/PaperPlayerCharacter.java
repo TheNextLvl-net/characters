@@ -111,7 +111,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         preSpawn(this.entity);
         applySkinPartConfig(serverPlayer);
-        updatePlayerStatus(level, serverPlayer, false);
         return true;
     }
 
@@ -148,23 +147,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     private void sendPacket(Player player, Packet<?> packet) {
         ((CraftPlayer) player).getHandle().connection.send(packet);
-    }
-
-    private void updatePlayerStatus(ServerLevel level, ServerPlayer serverPlayer, boolean remove) {
-        var players = level.players();
-        if (remove && players.contains(serverPlayer)) {
-            players.remove(serverPlayer);
-        } else if (!remove && !players.contains(serverPlayer)) {
-            players.add(serverPlayer);
-        } else return;
-
-        try {
-            var method = ChunkMap.class.getDeclaredMethod("updatePlayerStatus", ServerPlayer.class, boolean.class);
-            method.setAccessible(true);
-            method.invoke(level.getChunkSource().chunkMap, serverPlayer, !remove);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            plugin.getComponentLogger().error("Failed to update player status", e);
-        }
     }
 
     @Override
