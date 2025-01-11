@@ -10,12 +10,13 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
-import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ClientInformation;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.network.EmptyPacketListener;
@@ -27,9 +28,9 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -38,7 +39,7 @@ import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMIS
 
 @NullMarked
 public class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
-    private boolean listed;
+    private boolean listed = false;
     private boolean realPlayer = false;
     private final CraftPlayerProfile profile;
     private SkinParts skinParts = new PaperSkinPartBuilder().build();
@@ -70,7 +71,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         super.spawnLocation = location;
 
-        var information = ClientInformation.createDefault();
+        var information = createClientInformation();
         var serverPlayer = new ServerPlayer(server.getServer(), level, profile.getGameProfile(), information);
 
         var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false);
@@ -114,25 +115,28 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return true;
     }
 
+    private @NotNull ClientInformation createClientInformation() {
+        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
+    }
+
     public void broadcastPlayer() {
         getEntity().ifPresent(entity -> {
             var handle = ((CraftPlayer) entity).getHandle();
-            var add = new ClientboundAddEntityPacket(handle.getId(), handle.getUUID(),
-                    handle.getX(), handle.getY(), handle.getZ(), handle.getXRot(), handle.getYRot(),
-                    handle.getType(), 0, handle.getDeltaMovement(), handle.getYHeadRot());
-            var initializing = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(handle, isListed());
-            entity.getWorld().getPlayers().forEach(player -> {
-                sendPacket(player, initializing);
-                sendPacket(player, add);
-            });
+            var packets = new ClientboundBundlePacket(List.of(
+                    createInitializationPacket(handle), createAddPacket(handle)
+            ));
+            entity.getWorld().getPlayers().forEach(player -> sendPacket(player, packets));
         });
     }
 
     public void sendPlayer(Player player) {
-        getEntity().map(entity -> ((CraftPlayer) entity).getHandle()).ifPresent(entity ->
-                sendPacket(player, new ClientboundBundlePacket(List.of(
-                        createAddPacket(entity), createInitializationPacket(entity)
-                ))));
+        getEntity().ifPresent(entity -> {
+            var handle = ((CraftPlayer) entity).getHandle();
+            if (isVisibleByDefault()) sendPacket(player, new ClientboundBundlePacket(List.of(
+                    createAddPacket(handle), createInitializationPacket(handle))));
+            else if (canSee(player)) player.showEntity(plugin, entity);
+            else player.hideEntity(plugin, entity);
+        });
     }
 
     private ClientboundAddEntityPacket createAddPacket(ServerPlayer entity) {
@@ -186,7 +190,13 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     @Override
     public void setListed(boolean listed) {
+        if (this.listed == listed) return;
         this.listed = listed;
+        getEntity().ifPresent(entity -> {
+            ((CraftPlayer) entity).getHandle().updateOptionsNoEvents(createClientInformation());
+            var update = ClientboundPlayerInfoUpdatePacket.updateListed(entity.getUniqueId(), listed);
+            entity.getTrackedBy().forEach(player -> sendPacket(player, update));
+        });
     }
 
     @Override
@@ -196,6 +206,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     @Override
     public void setSkinParts(SkinParts parts) {
+        if (this.skinParts == parts) return;
         this.skinParts = parts;
         getEntity().map(player -> ((CraftPlayer) player).getHandle())
                 .ifPresent(this::applySkinPartConfig);

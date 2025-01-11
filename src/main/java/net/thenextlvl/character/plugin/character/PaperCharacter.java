@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -126,12 +127,16 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean addViewer(UUID player) {
-        return viewers.add(player);
+        if (!viewers.add(player)) return false;
+        if (entity == null || isVisibleByDefault()) return true;
+        var online = plugin.getServer().getPlayer(player);
+        if (online != null) online.showEntity(plugin, entity);
+        return true;
     }
 
     @Override
     public boolean addViewers(Collection<UUID> players) {
-        return viewers.addAll(players);
+        return players.stream().map(this::addViewer).reduce(false, Boolean::logicalOr);
     }
 
     @Override
@@ -235,12 +240,16 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean removeViewer(UUID player) {
-        return viewers.remove(player);
+        if (!viewers.remove(player)) return false;
+        if (entity == null || isVisibleByDefault()) return true;
+        var online = plugin.getServer().getPlayer(player);
+        if (online != null) online.hideEntity(plugin, entity);
+        return true;
     }
 
     @Override
     public boolean removeViewers(Collection<UUID> players) {
-        return viewers.removeAll(players);
+        return players.stream().map(this::removeViewer).reduce(false, Boolean::logicalOr);
     }
 
     @Override
@@ -301,6 +310,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public void setCollidable(boolean collidable) {
+        if (collidable == this.collidable) return;
         this.collidable = collidable;
         getEntity().ifPresent(entity -> {
             if (!(entity instanceof LivingEntity living)) return;
@@ -310,6 +320,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public void setDisplayName(@Nullable Component displayName) {
+        if (displayName == this.displayName) return;
         this.displayName = displayName;
         // todo implement for players and add holo based display names
         getEntity().ifPresent(this::updateDisplayName);
@@ -317,12 +328,14 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public void setDisplayNameVisible(boolean visible) {
+        if (visible == displayNameVisible) return;
         this.displayNameVisible = visible;
         getEntity().ifPresent(this::updateDisplayName);
     }
 
     @Override
     public void setInvincible(boolean invincible) {
+        if (invincible == this.invincible) return;
         this.invincible = invincible;
         getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
     }
@@ -334,6 +347,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public void setPose(Pose pose) {
+        if (pose == this.pose) return;
         this.pose = pose;
         getEntity().ifPresent(entity -> entity.setPose(pose, true));
     }
@@ -345,8 +359,18 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public void setVisibleByDefault(boolean visible) {
+        if (visible == visibleByDefault) return;
         this.visibleByDefault = visible;
-        getEntity().ifPresent(entity -> entity.setVisibleByDefault(visible));
+        getEntity().ifPresent(entity -> {
+            entity.setVisibleByDefault(visible);
+            if (visible) entity.getTrackedBy().forEach(player -> {
+                if (isViewer(player.getUniqueId())) return;
+                player.hideEntity(plugin, entity);
+            });
+            else getViewers().stream().map(plugin.getServer()::getPlayer)
+                    .filter(Objects::nonNull)
+                    .forEach(player -> player.showEntity(plugin, entity));
+        });
     }
 
     private File backupFile() {
