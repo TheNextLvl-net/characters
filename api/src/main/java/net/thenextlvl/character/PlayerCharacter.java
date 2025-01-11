@@ -19,6 +19,8 @@ public interface PlayerCharacter extends Character<Player> {
 
     boolean isRealPlayer();
 
+    boolean update();
+
     void setListed(boolean listed);
 
     void setRealPlayer(boolean real);

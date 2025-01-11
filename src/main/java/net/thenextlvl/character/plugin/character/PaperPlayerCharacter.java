@@ -5,8 +5,11 @@ import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.network.protocol.game.ClientboundBundlePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
@@ -27,6 +30,7 @@ import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
 import org.jspecify.annotations.NullMarked;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -126,17 +130,20 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     public void sendPlayer(Player player) {
-        getEntity().map(entity -> ((CraftPlayer) entity).getHandle())
-                .ifPresent(entity -> sendPlayer(entity, player));
+        getEntity().map(entity -> ((CraftPlayer) entity).getHandle()).ifPresent(entity ->
+                sendPacket(player, new ClientboundBundlePacket(List.of(
+                        createAddPacket(entity), createInitializationPacket(entity)
+                ))));
     }
 
-    private void sendPlayer(ServerPlayer entity, Player player) {
-        var add = new ClientboundAddEntityPacket(entity.getId(), entity.getUUID(),
+    private ClientboundAddEntityPacket createAddPacket(ServerPlayer entity) {
+        return new ClientboundAddEntityPacket(entity.getId(), entity.getUUID(),
                 entity.getX(), entity.getY(), entity.getZ(), entity.getXRot(), entity.getYRot(),
                 entity.getType(), 0, entity.getDeltaMovement(), entity.getYHeadRot());
-        var initializing = ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
-        sendPacket(player, initializing);
-        sendPacket(player, add);
+    }
+
+    private ClientboundPlayerInfoUpdatePacket createInitializationPacket(ServerPlayer entity) {
+        return ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
     }
 
     private void sendPacket(Player player, Packet<?> packet) {
@@ -163,8 +170,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     @Override
     public boolean despawn() {
         if (entity == null || !entity.isValid()) return false;
-        plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player,
-                new ClientboundRemoveEntitiesPacket(entity.getEntityId())));
+        var packet = new ClientboundRemoveEntitiesPacket(entity.getEntityId());
+        plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
         entity.setHealth(0);
         // todo: fix entity still being at the previous position
         return true;
@@ -210,6 +217,20 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         this.skinParts = parts;
         getEntity().map(player -> ((CraftPlayer) player).getHandle())
                 .ifPresent(this::applySkinPartConfig);
+    }
+
+    @Override
+    public boolean update() {
+        if (entity == null) return false;
+        var handle = ((CraftPlayer) entity).getHandle();
+        var remove = new ClientboundRemoveEntitiesPacket(handle.getId());
+        var removeInfo = new ClientboundPlayerInfoRemovePacket(List.of(handle.getUUID()));
+        var update = new ClientboundSetEntityDataPacket(handle.getId(), handle.getEntityData().packAll());
+        var packets = new ClientboundBundlePacket(List.of(
+                remove, removeInfo, createInitializationPacket(handle), createAddPacket(handle), update
+        ));
+        entity.getTrackedBy().forEach(player -> sendPacket(player, packets));
+        return true;
     }
 
     private void applySkinPartConfig(ServerPlayer player) {
