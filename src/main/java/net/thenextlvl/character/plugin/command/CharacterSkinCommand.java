@@ -18,8 +18,12 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import net.thenextlvl.character.skin.SkinLayer;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.Collection;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.playerCharacterArgument;
 
@@ -49,7 +53,8 @@ class CharacterSkinCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
-        return Commands.literal("reset").then(playerCharacterArgument(plugin)); // todo implement
+        return Commands.literal("reset").then(playerCharacterArgument(plugin)
+                .executes(context -> setSkin(context, null, plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
@@ -61,7 +66,8 @@ class CharacterSkinCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> fileSkinArgument(CharacterPlugin plugin) {
         return Commands.literal("file").then(Commands.argument("file", StringArgumentType.string())
-                .executes(context -> setFileSkin(context, plugin)));
+                .then(Commands.literal("slim").executes(context -> setFileSkin(context, true, plugin)))
+                .executes(context -> setFileSkin(context, false, plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> playerSkinArgument(CharacterPlugin plugin) {
@@ -74,28 +80,69 @@ class CharacterSkinCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> urlSkinArgument(CharacterPlugin plugin) {
         return Commands.literal("url").then(Commands.argument("url", StringArgumentType.string())
-                .executes(context -> setUrlSkin(context, plugin)));
+                .then(Commands.literal("slim").executes(context -> setUrlSkin(context, true, plugin)))
+                .executes(context -> setUrlSkin(context, false, plugin)));
     }
 
-    private static int setFileSkin(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        return Command.SINGLE_SUCCESS; // todo: implement
+    private static int setFileSkin(CommandContext<CommandSourceStack> context, boolean slim, CharacterPlugin plugin) {
+        var path = context.getArgument("file", String.class);
+        plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.generating");
+        plugin.characterProvider().skinFactory().fromFile(new File(path), slim)
+                .thenAccept(textures -> setSkin(context, textures, plugin))
+                .exceptionally(throwable -> {
+                    plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.image");
+                    return null;
+                });
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int setOfflinePlayerSkin(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var sender = context.getSource().getSender();
         var name = context.getArgument("offline-player", String.class);
-        plugin.getServer().createProfile(name).update().thenAccept(profile ->
-                setSkin(context, profile.getProperties(), plugin));
-        return Command.SINGLE_SUCCESS;
+        if (name.length() <= 16) {
+            plugin.getServer().createProfile(name).update().thenAccept(profile -> profile.getProperties().stream()
+                    .filter(property -> property.getName().equals("textures")).findAny()
+                    .ifPresentOrElse(textures -> setSkin(context, textures, plugin), () -> {
+                        if (profile.getName() == null) plugin.bundle().sendMessage(sender, "player.not_found",
+                                Placeholder.unparsed("name", name));
+                        else plugin.bundle().sendMessage(sender, "character.skin.not_found",
+                                Placeholder.unparsed("player", profile.getName()));
+                    }));
+            return Command.SINGLE_SUCCESS;
+        } else {
+            plugin.bundle().sendMessage(sender, "character.name.too-long");
+            return 0;
+        }
     }
 
     private static int setPlayerSkin(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
         var resolver = context.getArgument("player", PlayerSelectorArgumentResolver.class);
         var player = resolver.resolve(context.getSource()).getFirst();
-        return setSkin(context, player.getPlayerProfile().getProperties(), plugin);
+        var textures = player.getPlayerProfile().getProperties().stream()
+                .filter(property -> property.getName().equals("textures"))
+                .findAny().orElse(null);
+        if (textures != null) return setSkin(context, textures, plugin);
+        plugin.bundle().sendMessage(player, "character.skin.not_found",
+                Placeholder.unparsed("player", player.getName()));
+        return 0;
     }
 
-    private static int setUrlSkin(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        return Command.SINGLE_SUCCESS; // todo: implement
+    private static int setUrlSkin(CommandContext<CommandSourceStack> context, boolean slim, CharacterPlugin plugin) {
+        try {
+            var path = context.getArgument("url", String.class);
+            var url = new URI(!path.startsWith("http") ? "https://" + path : path).toURL();
+            plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.generating");
+            plugin.characterProvider().skinFactory().fromURL(url, slim)
+                    .thenAccept(textures -> setSkin(context, textures, plugin))
+                    .exceptionally(throwable -> {
+                        plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.image");
+                        return null;
+                    });
+            return Command.SINGLE_SUCCESS;
+        } catch (MalformedURLException | URISyntaxException e) {
+            plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.url");
+            return 0;
+        }
     }
 
     private static int layerToggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
@@ -134,7 +181,7 @@ class CharacterSkinCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int setSkin(CommandContext<CommandSourceStack> context, Collection<ProfileProperty> properties, CharacterPlugin plugin) {
+    private static int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
         var name = context.getArgument("character", String.class);
         var character = plugin.characterController().getCharacter(name).orElse(null);
@@ -149,11 +196,10 @@ class CharacterSkinCommand {
             return 0;
         }
 
-        player.getGameProfile().setProperties(properties);
-        player.update();
-
-         // todo: add result message
-
-        return Command.SINGLE_SUCCESS;
+        var success = textures == null ? player.clearTextures()
+                : player.setTextures(textures.getValue(), textures.getSignature());
+        var message = success ? "character.skin" : "nothing.changed";
+        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
+        return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
