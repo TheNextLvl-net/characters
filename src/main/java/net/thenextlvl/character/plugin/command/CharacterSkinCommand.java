@@ -85,9 +85,13 @@ class CharacterSkinCommand {
     }
 
     private static int setFileSkin(CommandContext<CommandSourceStack> context, boolean slim, CharacterPlugin plugin) {
-        var path = context.getArgument("file", String.class);
+        var file = new File(context.getArgument("file", String.class));
+        if (!file.isFile() || !file.getName().endsWith(".png")) {
+            plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.file");
+            return 0;
+        }
         plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.generating");
-        plugin.characterProvider().skinFactory().fromFile(new File(path), slim)
+        plugin.characterProvider().skinFactory().fromFile(file, slim)
                 .thenAccept(textures -> setSkin(context, textures, plugin))
                 .exceptionally(throwable -> {
                     plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.image");
