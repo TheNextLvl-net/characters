@@ -3,6 +3,7 @@ package net.thenextlvl.character.plugin.character;
 import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
+import com.destroystokyo.paper.profile.ProfileProperty;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
@@ -30,6 +31,7 @@ import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -169,6 +171,13 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
+    public @Nullable ProfileProperty getTextures() {
+        return getGameProfile().getProperties().stream()
+                .filter(property -> property.getName().equals("textures"))
+                .findAny().orElse(null);
+    }
+
+    @Override
     public SkinParts getSkinParts() {
         return skinParts;
     }
@@ -179,6 +188,14 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
+    public boolean clearTextures() {
+        if (!getGameProfile().getProperties().removeIf(property ->
+                property.getName().equals("textures"))) return false;
+        update();
+        return true;
+    }
+
+    @Override
     public boolean isListed() {
         return listed;
     }
@@ -186,6 +203,17 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     @Override
     public boolean isRealPlayer() {
         return realPlayer;
+    }
+
+    @Override
+    public boolean setTextures(String value, @Nullable String signature) {
+        var previous = getTextures();
+        if (previous != null && previous.getValue().equals(value)
+            && Objects.equals(previous.getSignature(), signature)) return false;
+        getGameProfile().getProperties().removeIf(property -> property.getName().equals("textures"));
+        getGameProfile().getProperties().add(new ProfileProperty("textures", value, signature));
+        update();
+        return true;
     }
 
     @Override
@@ -212,8 +240,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
                 .ifPresent(this::applySkinPartConfig);
     }
 
-    @Override
-    public boolean update() {
+    private boolean update() {
         if (entity == null) return false;
         var handle = ((CraftPlayer) entity).getHandle();
         var remove = new ClientboundRemoveEntitiesPacket(handle.getId());
