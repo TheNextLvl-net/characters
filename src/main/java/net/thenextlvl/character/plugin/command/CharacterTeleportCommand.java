@@ -13,6 +13,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySele
 import io.papermc.paper.entity.TeleportFlag.EntityState;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
@@ -59,30 +60,19 @@ class CharacterTeleportCommand {
             return 0;
         }
 
-        var name = context.getArgument("character", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
-
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        }
+        var character = (Character<?>) context.getArgument("character", Character.class);
 
         var location = character.getEntity().map(Entity::getLocation).orElse(character.getSpawnLocation());
         if (location != null) player.teleportAsync(location, TeleportCause.COMMAND, EntityState.RETAIN_PASSENGERS);
 
-        plugin.bundle().sendMessage(sender, "character.teleported.self", Placeholder.unparsed("character", name));
+        plugin.bundle().sendMessage(sender, "character.teleported.self",
+                Placeholder.unparsed("character", character.getName()));
         return Command.SINGLE_SUCCESS;
     }
 
     private static int teleport(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, Location location) {
         var sender = context.getSource().getSender();
-        var name = context.getArgument("character", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
-
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        }
+        var character = (Character<?>) context.getArgument("character", Character.class);
 
         character.getEntity().ifPresent(entity -> entity.teleportAsync(location));
         character.setSpawnLocation(location);
@@ -94,7 +84,7 @@ class CharacterTeleportCommand {
                 Formatter.number("z", location.z()),
                 Formatter.number("yaw", location.getYaw()),
                 Formatter.number("pitch", location.getPitch()),
-                Placeholder.unparsed("character", name));
+                Placeholder.unparsed("character", character.getName()));
         return Command.SINGLE_SUCCESS;
     }
 }

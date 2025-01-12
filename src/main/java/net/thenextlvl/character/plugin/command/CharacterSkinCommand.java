@@ -152,57 +152,35 @@ class CharacterSkinCommand {
 
     private static int layerToggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
         var sender = context.getSource().getSender();
-        var name = context.getArgument("character", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
-
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        }
-
-        if (!(character instanceof PlayerCharacter player)) {
-            plugin.bundle().sendMessage(sender, "character.not_player");
-            return 0;
-        }
+        var character = context.getArgument("character", PlayerCharacter.class);
 
         var layer = context.getArgument("layer", SkinLayer.class);
         var skinParts = plugin.characterProvider()
-                .skinPartBuilder(player.getSkinParts())
+                .skinPartBuilder(character.getSkinParts())
                 .toggle(layer, visible)
                 .build();
 
-        if (skinParts.equals(player.getSkinParts())) {
+        if (skinParts.equals(character.getSkinParts())) {
             plugin.bundle().sendMessage(sender, "nothing.changed");
             return 0;
         }
 
-        player.setSkinParts(skinParts);
+        character.setSkinParts(skinParts);
 
         var message = visible ? "character.skin_layer.shown" : "character.skin_layer.hidden";
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.component("layer", Component.translatable(layer)),
-                Placeholder.unparsed("character", name));
+                Placeholder.unparsed("character", character.getName()));
 
         return Command.SINGLE_SUCCESS;
     }
 
     private static int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var name = context.getArgument("character", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
+        var character = context.getArgument("character", PlayerCharacter.class);
 
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        }
-
-        if (!(character instanceof PlayerCharacter player)) {
-            plugin.bundle().sendMessage(sender, "character.not_player");
-            return 0;
-        }
-
-        var success = textures == null ? player.clearTextures()
-                : player.setTextures(textures.getValue(), textures.getSignature());
+        var success = textures == null ? character.clearTextures()
+                : character.setTextures(textures.getValue(), textures.getSignature());
         var message = success ? "character.skin" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;

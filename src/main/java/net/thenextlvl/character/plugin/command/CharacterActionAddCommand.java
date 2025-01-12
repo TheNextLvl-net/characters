@@ -19,6 +19,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.Ticks;
+import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -222,12 +223,7 @@ class CharacterActionAddCommand {
 
     private static <T> int addAction(CommandContext<CommandSourceStack> context, ActionType<T> actionType, T input, ClickTypes clickTypes, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var name = context.getArgument("character", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        }
+        var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
 
         var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input);
@@ -236,7 +232,7 @@ class CharacterActionAddCommand {
         var message = success ? "character.action.added" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("action", actionName),
-                Placeholder.unparsed("character", name));
+                Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 }

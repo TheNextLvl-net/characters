@@ -9,6 +9,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.jspecify.annotations.NullMarked;
 
@@ -52,59 +53,46 @@ class CharacterTagCommand {
 
     private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var name = context.getArgument("character", String.class);
+        var character = context.getArgument("character", Character.class);
         var tag = context.getArgument("tag", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
         var displayName = MiniMessage.miniMessage().deserialize(tag);
 
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        } else if (Objects.equals(character.getDisplayName(), displayName)) {
+        if (Objects.equals(character.getDisplayName(), displayName)) {
             plugin.bundle().sendMessage(sender, "nothing.changed");
             return 0;
         }
 
         character.setDisplayName(displayName);
         plugin.bundle().sendMessage(sender, "character.tag.set",
-                Placeholder.unparsed("character", name),
+                Placeholder.unparsed("character", character.getName()),
                 Placeholder.component("tag", displayName));
         return Command.SINGLE_SUCCESS;
     }
 
     private static int reset(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var name = context.getArgument("character", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
+        var character = context.getArgument("character", Character.class);
 
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        } else if (character.getDisplayName() == null) {
+        if (character.getDisplayName() == null) {
             plugin.bundle().sendMessage(sender, "nothing.changed");
             return 0;
         }
 
         character.setDisplayName(null);
-        plugin.bundle().sendMessage(sender, "character.tag.reset", Placeholder.unparsed("character", name));
+        plugin.bundle().sendMessage(sender, "character.tag.reset",
+                Placeholder.unparsed("character", character.getName()));
         return Command.SINGLE_SUCCESS;
     }
 
     private static int toggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
         var sender = context.getSource().getSender();
-        var name = context.getArgument("character", String.class);
-        var character = plugin.characterController().getCharacter(name).orElse(null);
-
-        if (character == null) {
-            plugin.bundle().sendMessage(sender, "character.not_found", Placeholder.unparsed("name", name));
-            return 0;
-        }
+        var character = context.getArgument("character", Character.class);
 
         var success = character.isDisplayNameVisible() != visible;
         var message = !success ? "nothing.changed" : visible ? "character.tag.shown" : "character.tag.hidden";
 
         if (success) character.setDisplayNameVisible(visible);
-        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", name));
+        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
 
         return success ? Command.SINGLE_SUCCESS : 0;
     }

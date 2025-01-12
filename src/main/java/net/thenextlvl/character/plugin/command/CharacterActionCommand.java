@@ -22,6 +22,6 @@ class CharacterActionCommand {
 
     static ArgumentBuilder<CommandSourceStack, ?> actionArgument(CharacterPlugin plugin) {
         return Commands.argument("action", StringArgumentType.word())
-                .suggests(new CharacterActionSuggestionProvider(plugin));
+                .suggests(new CharacterActionSuggestionProvider());
     }
 }
