@@ -82,7 +82,7 @@ public class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
     private final PaperCharacterController characterController = new PaperCharacterController(this);
-    private final PaperCharacterProvider characterProvider = new PaperCharacterProvider();
+    private final PaperCharacterProvider characterProvider = new PaperCharacterProvider(this);
     private final PluginMessenger messenger = new PluginMessenger(this);
 
     private final ComponentBundle bundle = new ComponentBundle(translations,

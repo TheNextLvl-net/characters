@@ -24,6 +24,7 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.thenextlvl.net/releases")
+    maven("https://repo.inventivetalent.org/repository/public/")
 }
 
 dependencies {
@@ -32,6 +33,12 @@ dependencies {
     implementation("net.thenextlvl.core:i18n:1.0.20")
     implementation("net.thenextlvl.core:paper:2.0.3")
     implementation("org.bstats:bstats-bukkit:3.1.0")
+    implementation("org.mineskin:java-client:3.0.1-SNAPSHOT") {
+        isTransitive = false
+    }
+    implementation("org.mineskin:java-client-java11:3.0.1-SNAPSHOT") {
+        isTransitive = false
+    }
     implementation(project(":api"))
 
     //testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
@@ -46,6 +53,7 @@ tasks.test {
 tasks.shadowJar {
     minimize()
     relocate("org.bstats", "net.thenextlvl.character.bstats")
+    relocate("org.mineskin", "net.thenextlvl.character.mineskin")
 }
 
 paper {
