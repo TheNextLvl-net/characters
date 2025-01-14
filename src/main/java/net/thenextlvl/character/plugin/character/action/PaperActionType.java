@@ -7,14 +7,9 @@ import org.jspecify.annotations.NullMarked;
 import java.util.function.BiConsumer;
 
 @NullMarked
-public record PaperActionType<T>(String name, BiConsumer<Player, T> function) implements ActionType<T> {
+public record PaperActionType<T>(String name, Class<T> type, BiConsumer<Player, T> function) implements ActionType<T> {
     @Override
     public void invoke(Player player, T input) {
         function.accept(player, input);
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 }

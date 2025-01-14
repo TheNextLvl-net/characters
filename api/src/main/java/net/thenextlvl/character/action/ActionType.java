@@ -5,7 +5,9 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public interface ActionType<T> {
-    String getName();
+    Class<T> type();
+
+    String name();
 
     void invoke(Player player, T input);
 }
