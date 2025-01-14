@@ -16,30 +16,14 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterActionCooldownCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("cooldown")
-                .then(remove(plugin))
-                .then(set(plugin));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
-        return Commands.literal("remove").then(characterArgument(plugin)
+        return Commands.literal("cooldown").then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .then(actionArgument(plugin).executes(context -> remove(context, plugin))));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(characterArgument(plugin)
-                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .then(actionArgument(plugin).then(cooldownArgument(plugin))
-                        .executes(context -> set(context, plugin))));
+                .then(actionArgument(plugin).then(cooldownArgument(plugin)
+                        .executes(context -> set(context, plugin)))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> cooldownArgument(CharacterPlugin plugin) {
         return Commands.argument("cooldown", ArgumentTypes.time());
-    }
-
-    private static int remove(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        return 0; // todo implement
     }
 
     private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
