@@ -22,7 +22,7 @@ public class PaperActionTypeRegistry implements ActionTypeRegistry {
 
     @Override
     public Optional<ActionType<?>> getByName(String name) {
-        return actionTypes.stream().filter(actionType -> actionType.getName().equals(name)).findAny();
+        return actionTypes.stream().filter(actionType -> actionType.name().equals(name)).findAny();
     }
 
     @Override
