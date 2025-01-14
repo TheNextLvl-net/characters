@@ -40,7 +40,8 @@ class CharacterActionAddCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = Commands.literal("add");
         for (var clickTypes : ClickTypes.values()) {
-            var chain = characterArgument(plugin).then(actionArgument(plugin)
+            var literal = clickTypes.name().toLowerCase();
+            var chain = Commands.literal(literal)
                     .then(connect(clickTypes, plugin))
                     .then(playSound(clickTypes, plugin))
                     .then(runConsoleCommand(clickTypes, plugin))
@@ -49,15 +50,14 @@ class CharacterActionAddCommand {
                     .then(sendMessage(clickTypes, plugin))
                     .then(teleport(clickTypes, plugin))
                     .then(title(clickTypes, plugin))
-                    .then(transfer(clickTypes, plugin)));
-            var literal = clickTypes.name().toLowerCase();
-            command.then(Commands.literal(literal).then(chain));
+                    .then(transfer(clickTypes, plugin));
+            command.then(characterArgument(plugin).then(actionArgument(plugin).then(chain)));
         }
         return command;
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> title(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("title")
+        return Commands.literal("send-title")
                 .then(Commands.argument("title", StringArgumentType.string())
                         .then(Commands.argument("subtitle", StringArgumentType.string())
                                 .then(titleTimesArgument(clickTypes, plugin))
