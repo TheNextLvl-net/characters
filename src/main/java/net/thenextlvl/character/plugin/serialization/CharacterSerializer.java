@@ -24,6 +24,9 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
         tag.add("invincible", character.isInvincible());
         tag.add("pose", character.getPose().name());
         tag.add("visibleByDefault", character.isVisibleByDefault());
+        var actions = new CompoundTag();
+        character.getActions().forEach((name, clickAction) -> actions.add(name, context.serialize(clickAction)));
+        if (!actions.isEmpty()) tag.add("clickActions", actions);
         return character instanceof PlayerCharacter player ? serialize(tag, player, context) : tag;
     }
 
