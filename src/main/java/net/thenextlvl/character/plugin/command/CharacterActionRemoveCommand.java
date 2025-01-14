@@ -8,6 +8,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterActionCommand.actionArgument;
@@ -16,8 +17,9 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterActionRemoveCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("remove").then(characterArgument(plugin).then(actionArgument(plugin)
-                .executes(context -> remove(context, plugin))));
+        return Commands.literal("remove").then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin).executes(context -> remove(context, plugin))));
     }
 
     private static int remove(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {

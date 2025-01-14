@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterActionCommand.actionArgument;
@@ -21,13 +22,16 @@ class CharacterActionCooldownCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
-        return Commands.literal("remove").then(characterArgument(plugin).then(actionArgument(plugin)
-                .executes(context -> remove(context, plugin))));
+        return Commands.literal("remove").then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin).executes(context -> remove(context, plugin))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(characterArgument(plugin).then(actionArgument(plugin)
-                .then(cooldownArgument(plugin)).executes(context -> set(context, plugin))));
+        return Commands.literal("set").then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin).then(cooldownArgument(plugin))
+                        .executes(context -> set(context, plugin))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> cooldownArgument(CharacterPlugin plugin) {

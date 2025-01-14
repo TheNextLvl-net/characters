@@ -10,6 +10,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -27,13 +28,16 @@ class CharacterActionPermissionCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
-        return Commands.literal("remove").then(characterArgument(plugin).then(actionArgument(plugin)
-                .executes(context -> set(context, null, plugin))));
+        return Commands.literal("remove").then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin).executes(context -> set(context, null, plugin))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(characterArgument(plugin).then(actionArgument(plugin)
-                .then(permissionArgument().executes(context -> set(context, plugin)))));
+        return Commands.literal("set").then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin).then(permissionArgument()
+                        .executes(context -> set(context, plugin)))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> permissionArgument() {
