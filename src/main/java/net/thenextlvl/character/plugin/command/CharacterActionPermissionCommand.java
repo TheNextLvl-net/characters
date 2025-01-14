@@ -22,22 +22,18 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterActionPermissionCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("permission")
-                .then(remove(plugin))
-                .then(set(plugin));
+        return Commands.literal("permission").then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin).then(remove(plugin)).then(set(plugin))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
-        return Commands.literal("remove").then(characterArgument(plugin)
-                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .then(actionArgument(plugin).executes(context -> set(context, null, plugin))));
+        return Commands.literal("remove").executes(context -> set(context, null, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(characterArgument(plugin)
-                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .then(actionArgument(plugin).then(permissionArgument()
-                        .executes(context -> set(context, plugin)))));
+        return Commands.literal("set").then(permissionArgument()
+                .executes(context -> set(context, plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> permissionArgument() {
