@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -12,19 +13,21 @@ import java.util.Objects;
 public class ClickAction<T> {
     private @Nullable String permission;
     private ClickType[] clickTypes;
+    private Duration cooldown;
     private T input;
     private final ActionType<T> actionType;
 
     public ClickAction(ActionType<T> actionType, ClickType[] clickTypes, T input) {
-        this(actionType, clickTypes, input, null);
+        this(actionType, clickTypes, input, Duration.ZERO, null);
     }
 
-    public ClickAction(ActionType<T> actionType, ClickType[] clickTypes, T input, @Nullable String permission) {
+    public ClickAction(ActionType<T> actionType, ClickType[] clickTypes, T input, Duration cooldown, @Nullable String permission) {
         Preconditions.checkArgument(clickTypes.length > 0, "Click types cannot be empty");
         this.actionType = actionType;
         this.clickTypes = clickTypes;
-        this.permission = permission;
+        this.cooldown = cooldown;
         this.input = input;
+        this.permission = permission;
     }
 
     public void invoke(Player player) {
@@ -40,6 +43,10 @@ public class ClickAction<T> {
     public void setClickTypes(ClickType[] clickTypes) {
         Preconditions.checkArgument(clickTypes.length > 0, "Click types cannot be empty");
         this.clickTypes = clickTypes;
+    }
+
+    public void setCooldown(Duration cooldown) {
+        this.cooldown = cooldown;
     }
 
     public void setInput(T input) {
@@ -58,6 +65,10 @@ public class ClickAction<T> {
         return actionType;
     }
 
+    public Duration getCooldown() {
+        return cooldown;
+    }
+
     public ClickType[] getClickTypes() {
         return clickTypes;
     }
@@ -72,12 +83,13 @@ public class ClickAction<T> {
         ClickAction<?> that = (ClickAction<?>) o;
         return Objects.equals(permission, that.permission)
                && Objects.deepEquals(clickTypes, that.clickTypes)
+               && Objects.equals(cooldown, that.cooldown)
                && Objects.equals(input, that.input)
                && Objects.equals(actionType, that.actionType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(permission, Arrays.hashCode(clickTypes), input, actionType);
+        return Objects.hash(permission, Arrays.hashCode(clickTypes), cooldown, input, actionType);
     }
 }
