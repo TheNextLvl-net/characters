@@ -14,6 +14,8 @@ import net.thenextlvl.character.action.ClickType;
 import org.jspecify.annotations.NullMarked;
 
 import java.time.Duration;
+import java.util.EnumSet;
+import java.util.stream.Collectors;
 
 @NullMarked
 public class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
@@ -27,7 +29,7 @@ public class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
         var clickTypes = root.<StringTag>getAsList("clickTypes").stream()
                 .map(StringTag::getAsString)
                 .map(ClickType::valueOf)
-                .toArray(ClickType[]::new);
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClickType.class)));
         var input = context.deserialize(root.get("input"), actionType.type());
         return new ClickAction<>(actionType, clickTypes, input, cooldown, permission);
     }
@@ -36,7 +38,7 @@ public class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
     public Tag serialize(ClickAction<?> action, TagSerializationContext context) throws ParserException {
         var tag = new CompoundTag();
         if (action.getPermission() != null) tag.add("permission", action.getPermission());
-        if (!action.getCooldown().equals(Duration.ZERO)) tag.add("cooldown", action.getCooldown().toMillis());
+        if (!action.getCooldown().isZero()) tag.add("cooldown", action.getCooldown().toMillis());
         tag.add("actionType", context.serialize(action.getActionType()));
         var types = new ListTag<StringTag>(StringTag.ID);
         for (var type : action.getClickTypes()) types.add(new StringTag(type.name()));
