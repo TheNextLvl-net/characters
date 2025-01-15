@@ -230,8 +230,10 @@ public class CharacterPlugin extends JavaPlugin {
         root.optional("displayName").map(tag -> nbt.fromTag(tag, Component.class))
                 .ifPresent(character::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(character::setDisplayNameVisible);
+        root.optional("gravity").map(Tag::getAsBoolean).ifPresent(character::setGravity);
         root.optional("invincible").map(Tag::getAsBoolean).ifPresent(character::setInvincible);
         root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(character::setPose);
+        root.optional("ticking").map(Tag::getAsBoolean).ifPresent(character::setTicking);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(character::setVisibleByDefault);
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 character.addAction(name, nbt.fromTag(action, ClickAction.class))));

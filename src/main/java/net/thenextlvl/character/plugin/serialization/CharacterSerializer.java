@@ -21,8 +21,10 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
             tag.add("location", context.serialize(character.getSpawnLocation()));
         tag.add("collidable", character.isCollidable());
         tag.add("displayNameVisible", character.isDisplayNameVisible());
+        tag.add("gravity", character.hasGravity());
         tag.add("invincible", character.isInvincible());
         tag.add("pose", character.getPose().name());
+        tag.add("ticking", character.isTicking());
         tag.add("visibleByDefault", character.isVisibleByDefault());
         var actions = new CompoundTag();
         character.getActions().forEach((name, clickAction) -> actions.add(name, context.serialize(clickAction)));
