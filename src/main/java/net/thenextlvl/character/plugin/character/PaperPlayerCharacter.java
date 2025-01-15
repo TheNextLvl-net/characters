@@ -4,6 +4,7 @@ import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
+import com.google.common.base.Preconditions;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
@@ -11,8 +12,10 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ParticleStatus;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity.RemovalReason;
@@ -25,10 +28,15 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
+import org.bukkit.scoreboard.Team;
+import org.bukkit.scoreboard.Team.Option;
+import org.bukkit.scoreboard.Team.OptionStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -137,6 +145,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
                     createAddPacket(handle), createInitializationPacket(handle))));
             else if (canSee(player)) player.showEntity(plugin, entity);
             else player.hideEntity(plugin, entity);
+            updateDisplayName(getCharacterSettingsTeam(player));
         });
     }
 
@@ -183,6 +192,77 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     @Override
     public UUID getUniqueId() {
         return Objects.requireNonNull(profile.getId());
+    }
+
+    @Override
+    protected void updateDisplayName(Player player) {
+        updateDisplayNameHologram(player);
+        plugin.getServer().getOnlinePlayers().forEach(all ->
+                updateDisplayName(getCharacterSettingsTeam(all)));
+    }
+
+    private Team getCharacterSettingsTeam(Player player) {
+        var characterSettings = player.getScoreboard().getTeam(getUniqueId().toString());
+        if (characterSettings != null) return characterSettings;
+        var team = player.getScoreboard().registerNewTeam(getUniqueId().toString());
+        team.addEntry(getName());
+        return team;
+    }
+
+    private void updateDisplayName(Team team) {
+        var status = displayNameVisible && displayName == null ? OptionStatus.ALWAYS : OptionStatus.NEVER;
+        team.setOption(Option.NAME_TAG_VISIBILITY, status);
+        team.color(glowColor);
+    }
+
+    private @Nullable TextDisplay displayNameHologram;
+
+    private void updateDisplayNameHologram(Player player) {
+        if (displayName == null || !displayNameVisible) {
+            removeDisplayNameHologram();
+        } else if (displayNameHologram == null) {
+            spawnDisplayNameHologram(player);
+        } else {
+            displayNameHologram.teleportAsync(getDisplayNameHologramPosition(player));
+            displayNameHologram.text(displayName);
+        }
+    }
+
+    private void spawnDisplayNameHologram(Player player) {
+        Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
+        var location = getDisplayNameHologramPosition(player);
+        displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, display -> {
+            display.setBillboard(Display.Billboard.CENTER);
+            display.setGravity(false);
+            display.setPersistent(false);
+            display.text(displayName);
+        });
+    }
+
+    private Location getDisplayNameHologramPosition(Player player) {
+        var location = player.getLocation().clone();
+        return switch (player.getPose()) {
+            case DYING, SLEEPING -> location;
+            case SWIMMING, FALL_FLYING -> location.add(0, 0.9, 0);
+            case SITTING, SNEAKING -> location.add(0, 1.65, 0);
+            default -> location.add(0, 2.08, 0);
+        };
+    }
+
+    private void removeDisplayNameHologram() {
+        if (displayNameHologram == null) return;
+        displayNameHologram.remove();
+        displayNameHologram = null;
+    }
+
+    @Override
+    public void remove() {
+        plugin.getServer().getOnlinePlayers().forEach(player -> {
+            var team = player.getScoreboard().getTeam(getUniqueId().toString());
+            if (team != null) team.unregister();
+        });
+        removeDisplayNameHologram();
+        super.remove();
     }
 
     @Override
