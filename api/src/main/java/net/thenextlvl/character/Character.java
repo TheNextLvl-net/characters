@@ -67,6 +67,8 @@ public interface Character<T extends Entity> {
 
     boolean hasAction(String name);
 
+    boolean hasGravity();
+
     boolean isCollidable();
 
     boolean isDisplayNameVisible();
@@ -76,6 +78,8 @@ public interface Character<T extends Entity> {
     boolean isPersistent();
 
     boolean isSpawned();
+
+    boolean isTicking();
 
     boolean isTrackedBy(Player player);
 
@@ -109,6 +113,8 @@ public interface Character<T extends Entity> {
 
     void setGlowColor(@Nullable NamedTextColor color);
 
+    void setGravity(boolean gravity);
+
     void setInvincible(boolean invincible);
 
     void setPersistent(boolean persistent);
@@ -116,6 +122,8 @@ public interface Character<T extends Entity> {
     void setPose(Pose pose);
 
     void setSpawnLocation(@Nullable Location location);
+
+    void setTicking(boolean ticking);
 
     void setVisibleByDefault(boolean visible);
 }

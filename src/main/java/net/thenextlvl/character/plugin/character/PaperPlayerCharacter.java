@@ -114,9 +114,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             entity.setSleepingIgnored(true);
         }
 
-        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
-            if (entity.isValid()) serverPlayer.doTick();
-            else if (entity == null) scheduledTask.cancel();
+        if (ticking) plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
+            if (!ticking || entity == null) scheduledTask.cancel();
+            else if (entity.isValid()) serverPlayer.doTick();
         }, 1, 1);
 
         preSpawn(this.entity);

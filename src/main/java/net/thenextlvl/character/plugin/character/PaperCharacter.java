@@ -50,8 +50,10 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     protected boolean collidable = false;
     protected boolean displayNameVisible = true;
+    protected boolean gravity = false;
     protected boolean invincible = true;
     protected boolean persistent = true;
+    protected boolean ticking = false;
     protected boolean visibleByDefault = true;
 
     protected final EntityType type;
@@ -172,6 +174,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public boolean hasGravity() {
+        return gravity;
+    }
+
+    @Override
     public boolean isCollidable() {
         return collidable;
     }
@@ -194,6 +201,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean isSpawned() {
         return entity != null && entity.isValid();
+    }
+
+    @Override
+    public boolean isTicking() {
+        return ticking;
     }
 
     @Override
@@ -293,6 +305,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
         }
+        entity.setGravity(hasGravity());
         entity.setInvulnerable(isInvincible());
         entity.setPersistent(false);
         entity.setPose(getPose(), true);
@@ -329,7 +342,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public void setDisplayName(@Nullable Component displayName) {
         if (displayName == this.displayName) return;
         this.displayName = displayName;
-        // todo implement for players and add holo based display names
         getEntity().ifPresent(this::updateDisplayName);
     }
 
@@ -343,6 +355,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public void setGlowColor(@Nullable NamedTextColor color) {
         this.glowColor = color;
+    }
+
+    @Override
+    public void setGravity(boolean gravity) {
+        this.gravity = gravity;
     }
 
     @Override
@@ -367,6 +384,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public void setSpawnLocation(@Nullable Location location) {
         this.spawnLocation = location;
+    }
+
+    @Override
+    public void setTicking(boolean ticking) {
+        this.ticking = ticking;
+        // todo: use custom entity impl to make this possible
     }
 
     @Override
