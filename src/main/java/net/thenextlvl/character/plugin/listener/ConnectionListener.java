@@ -10,6 +10,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -23,6 +24,13 @@ public class ConnectionListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
         loadCharacters(event.getPlayer().getWorld(), event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        plugin.characterController().getCharacters().forEach(character ->
+                character.getActions().values().forEach(action ->
+                        action.resetCooldown(event.getPlayer())));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
