@@ -65,7 +65,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
                 handle.unsetRemoved();
                 handle.setServerLevel(level);
                 handle.spawnIn(level);
-                broadcastPlayer();
+                broadcastCharacter();
                 handle.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
             }
             return true;
@@ -100,7 +100,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
             level.getChunkSource().chunkMap.addEntity(serverPlayer);
 
-            broadcastPlayer();
+            broadcastCharacter();
         } else {
             server.getHandle().placeNewPlayer(serverPlayer.connection.connection, serverPlayer, cookie);
             serverPlayer.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
@@ -121,7 +121,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
     }
 
-    public void broadcastPlayer() {
+    public void broadcastCharacter() {
         getEntity().ifPresent(entity -> {
             var handle = ((CraftPlayer) entity).getHandle();
             var packets = new ClientboundBundlePacket(List.of(
@@ -131,7 +131,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         });
     }
 
-    public void sendPlayer(Player player) {
+    public void loadCharacter(Player player) {
         getEntity().ifPresent(entity -> {
             var handle = ((CraftPlayer) entity).getHandle();
             if (isVisibleByDefault()) sendPacket(player, new ClientboundBundlePacket(List.of(
