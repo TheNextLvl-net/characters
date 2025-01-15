@@ -49,10 +49,10 @@ import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMIS
 
 @NullMarked
 public class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
+    private SkinParts skinParts = new PaperSkinPartBuilder().build();
     private boolean listed = false;
     private boolean realPlayer = false;
     private final CraftPlayerProfile profile;
-    private SkinParts skinParts = new PaperSkinPartBuilder().build();
 
     public PaperPlayerCharacter(CharacterPlugin plugin, String name, UUID uuid) {
         super(plugin, name, EntityType.PLAYER);
