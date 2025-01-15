@@ -105,6 +105,17 @@ public class PaperCharacterController implements CharacterController {
     }
 
     @Override
+    public @Unmodifiable Collection<? extends Character<?>> getCharactersNearby(Location location, double radius) {
+        Preconditions.checkArgument(radius > 0, "Radius must be greater than 0");
+        Preconditions.checkNotNull(location.getWorld(), "World cannot be null");
+        var radiusSquared = radius * radius;
+        return getCharacters(location.getWorld()).stream()
+                .filter(character -> character.getLocation() != null)
+                .filter(character -> character.getLocation().distanceSquared(location) <= radiusSquared)
+                .toList();
+    }
+
+    @Override
     public Optional<PlayerCharacter> getCharacter(Player player) {
         return characters.values().stream()
                 .filter(character -> character.getType().equals(EntityType.PLAYER))

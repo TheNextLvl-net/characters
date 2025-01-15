@@ -38,6 +38,9 @@ public interface CharacterController {
     @Unmodifiable
     Collection<? extends Character<?>> getCharacters(World world);
 
+    @Unmodifiable
+    Collection<? extends Character<?>> getCharactersNearby(Location location, double radius);
+
     Optional<PlayerCharacter> getCharacter(Player player);
 
     PlayerCharacter createCharacter(String name);
