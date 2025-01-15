@@ -43,6 +43,6 @@ public class ConnectionListener implements Listener {
                 .filter(character -> character.getType().equals(EntityType.PLAYER))
                 .filter(character -> character.canSee(player))
                 .map(character -> (PaperPlayerCharacter) character)
-                .forEach(character -> character.sendPlayer(player));
+                .forEach(character -> character.loadCharacter(player));
     }
 }
