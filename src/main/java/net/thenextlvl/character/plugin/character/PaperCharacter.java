@@ -280,11 +280,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (isSpawned()) return false;
         this.spawnLocation = location;
         Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type %s", type);
-        this.entity = (T) location.getWorld().spawn(location, type.getEntityClass(), this::preSpawn);
+        this.entity = location.getWorld().spawn(location, (Class<T>) type.getEntityClass(), this::preSpawn);
         return true;
     }
 
-    protected void preSpawn(Entity entity) {
+    protected void preSpawn(T entity) {
         if (entity instanceof LivingEntity living) {
             living.setAI(false);
             living.setCanPickupItems(false);
@@ -301,7 +301,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         updateDisplayName(entity);
     }
 
-    protected void updateDisplayName(Entity entity) {
+    protected void updateDisplayName(T entity) {
         entity.customName(displayNameVisible ? displayName : null);
         entity.setCustomNameVisible(displayNameVisible && displayName != null);
     }
