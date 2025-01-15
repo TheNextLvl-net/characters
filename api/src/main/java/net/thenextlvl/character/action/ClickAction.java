@@ -1,28 +1,28 @@
 package net.thenextlvl.character.action;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 
 @NullMarked
 public class ClickAction<T> {
     private @Nullable String permission;
-    private ClickType[] clickTypes;
+    private EnumSet<ClickType> clickTypes;
     private Duration cooldown;
     private T input;
     private final ActionType<T> actionType;
 
-    public ClickAction(ActionType<T> actionType, ClickType[] clickTypes, T input) {
+    public ClickAction(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input) {
         this(actionType, clickTypes, input, Duration.ZERO, null);
     }
 
-    public ClickAction(ActionType<T> actionType, ClickType[] clickTypes, T input, Duration cooldown, @Nullable String permission) {
-        Preconditions.checkArgument(clickTypes.length > 0, "Click types cannot be empty");
+    public ClickAction(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input, Duration cooldown, @Nullable String permission) {
         this.actionType = actionType;
         this.clickTypes = clickTypes;
         this.cooldown = cooldown;
@@ -30,18 +30,35 @@ public class ClickAction<T> {
         this.permission = permission;
     }
 
-    public void invoke(Player player) {
-        if (permission != null && !player.hasPermission(permission)) return;
+    private final Map<Player, Long> cooldowns = new WeakHashMap<>();
+
+    public boolean isOnCooldown(Player player) {
+        return cooldown.isPositive() && cooldowns.computeIfPresent(player, (ignored, lastUsed) -> {
+            if (System.currentTimeMillis() - cooldown.toMillis() > lastUsed) return null;
+            return lastUsed;
+        }) != null;
+    }
+
+    public boolean resetCooldown(Player player) {
+        return cooldowns.remove(player) != null;
+    }
+
+    public boolean canInvoke(Player player) {
+        return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
+    }
+
+    public boolean invoke(Player player) {
+        if (!canInvoke(player)) return false;
+        if (cooldown.isPositive()) cooldowns.put(player, System.currentTimeMillis());
         actionType.invoke(player, input);
+        return true;
     }
 
     public boolean isSupportedClickType(ClickType type) {
-        for (var clickType : clickTypes) if (clickType.equals(type)) return true;
-        return false;
+        return clickTypes.contains(type);
     }
 
-    public void setClickTypes(ClickType[] clickTypes) {
-        Preconditions.checkArgument(clickTypes.length > 0, "Click types cannot be empty");
+    public void setClickTypes(EnumSet<ClickType> clickTypes) {
         this.clickTypes = clickTypes;
     }
 
@@ -69,7 +86,7 @@ public class ClickAction<T> {
         return cooldown;
     }
 
-    public ClickType[] getClickTypes() {
+    public EnumSet<ClickType> getClickTypes() {
         return clickTypes;
     }
 
@@ -90,6 +107,6 @@ public class ClickAction<T> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(permission, Arrays.hashCode(clickTypes), cooldown, input, actionType);
+        return Objects.hash(permission, clickTypes, cooldown, input, actionType, cooldowns);
     }
 }
