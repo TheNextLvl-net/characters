@@ -74,10 +74,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         super.spawnLocation = location;
 
         var information = createClientInformation();
-        var serverPlayer = new ServerPlayer(server.getServer(), level, profile.getGameProfile(), information);
-
         var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false);
-        serverPlayer.connection = new EmptyPacketListener(server.getServer(), serverPlayer, cookie);
+        var serverPlayer = new ServerCharacter(server.getServer(), level, information, cookie);
+
         serverPlayer.setClientLoaded(true);
         this.entity = new CraftCharacter(server, serverPlayer);
 
@@ -264,6 +263,19 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         @Override
         public void remove() {
             despawn();
+        }
+    }
+
+    private class ServerCharacter extends ServerPlayer {
+        public ServerCharacter(MinecraftServer server, ServerLevel level, ClientInformation information, CommonListenerCookie cookie) {
+            super(server, level, PaperPlayerCharacter.this.profile.getGameProfile(), information);
+            this.connection = new EmptyPacketListener(server, this, cookie);
+        }
+
+        @Override
+        public void setPos(double x, double y, double z) {
+            super.setPos(x, y, z);
+            PaperPlayerCharacter.this.getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
         }
     }
 }
