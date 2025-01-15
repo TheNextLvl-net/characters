@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.nbt.NBTOutputStream;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -42,6 +43,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 public class PaperCharacter<T extends Entity> implements Character<T> {
     protected @Nullable Component displayName = null;
     protected @Nullable Location spawnLocation = null;
+    protected @Nullable NamedTextColor glowColor = null;
     protected @Nullable T entity;
 
     protected Pose pose = Pose.STANDING;
@@ -93,6 +95,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Unmodifiable Map<String, ClickAction<?>> getActions() {
         return Map.copyOf(actions);
+    }
+
+    @Override
+    public @Nullable NamedTextColor getGlowColor() {
+        return glowColor;
     }
 
     @Override
@@ -331,6 +338,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (visible == displayNameVisible) return;
         this.displayNameVisible = visible;
         getEntity().ifPresent(this::updateDisplayName);
+    }
+
+    @Override
+    public void setGlowColor(@Nullable NamedTextColor color) {
+        this.glowColor = color;
     }
 
     @Override

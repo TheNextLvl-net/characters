@@ -1,6 +1,7 @@
 package net.thenextlvl.character;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -36,6 +37,9 @@ public interface Character<T extends Entity> {
 
     @Unmodifiable
     Map<String, ClickAction<?>> getActions();
+
+    @Nullable
+    NamedTextColor getGlowColor();
 
     Optional<T> getEntity();
 
@@ -102,6 +106,8 @@ public interface Character<T extends Entity> {
     void setDisplayName(@Nullable Component displayName);
 
     void setDisplayNameVisible(boolean visible);
+
+    void setGlowColor(@Nullable NamedTextColor color);
 
     void setInvincible(boolean invincible);
 
