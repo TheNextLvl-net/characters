@@ -160,8 +160,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         if (entity == null || !entity.isValid()) return false;
         var packet = new ClientboundRemoveEntitiesPacket(entity.getEntityId());
         plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
-        entity.setHealth(0);
-        // todo: fix entity still being at the previous position
+        ((CraftPlayer) entity).getHandle().discard();
         return true;
     }
 
