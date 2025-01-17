@@ -22,6 +22,11 @@ public class ConnectionListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+        loadCharacters(event.getPlayer().getWorld(), event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
         loadCharacters(event.getPlayer().getWorld(), event.getPlayer());
     }
@@ -31,11 +36,6 @@ public class ConnectionListener implements Listener {
         plugin.characterController().getCharacters().forEach(character ->
                 character.getActions().values().forEach(action ->
                         action.resetCooldown(event.getPlayer())));
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
-        loadCharacters(event.getPlayer().getWorld(), event.getPlayer());
     }
 
     private void loadCharacters(World world, Player player) {

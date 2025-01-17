@@ -18,19 +18,19 @@ public interface PlayerCharacter extends Character<Player> {
 
     SkinParts getSkinParts();
 
+    void setSkinParts(SkinParts builder);
+
     UUID getUniqueId();
 
     boolean clearTextures();
 
     boolean isListed();
 
-    boolean isRealPlayer();
-
-    boolean setTextures(String value, @Nullable String signature);
-
     void setListed(boolean listed);
+
+    boolean isRealPlayer();
 
     void setRealPlayer(boolean real);
 
-    void setSkinParts(SkinParts builder);
+    boolean setTextures(String value, @Nullable String signature);
 }

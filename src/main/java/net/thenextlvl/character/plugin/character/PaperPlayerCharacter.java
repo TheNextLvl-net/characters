@@ -49,14 +49,27 @@ import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMIS
 
 @NullMarked
 public class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
+    private final CraftPlayerProfile profile;
+
     private SkinParts skinParts = new PaperSkinPartBuilder().build();
+
     private boolean listed = false;
     private boolean realPlayer = false;
-    private final CraftPlayerProfile profile;
+
+    private @Nullable TextDisplay displayNameHologram;
 
     public PaperPlayerCharacter(CharacterPlugin plugin, String name, UUID uuid) {
         super(plugin, name, EntityType.PLAYER);
         this.profile = new CraftPlayerProfile(uuid, name);
+    }
+
+    @Override
+    public boolean despawn() {
+        if (entity == null || !entity.isValid()) return false;
+        var packet = new ClientboundRemoveEntitiesPacket(entity.getEntityId());
+        plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
+        ((CraftPlayer) entity).getHandle().discard();
+        return true;
     }
 
     @Override
@@ -124,18 +137,21 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return true;
     }
 
-    private @NotNull ClientInformation createClientInformation() {
-        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
+    @Override
+    public void remove() {
+        plugin.getServer().getOnlinePlayers().forEach(player -> {
+            var team = player.getScoreboard().getTeam(getUniqueId().toString());
+            if (team != null) team.unregister();
+        });
+        removeDisplayNameHologram();
+        super.remove();
     }
 
-    public void broadcastCharacter() {
-        getEntity().ifPresent(entity -> {
-            var handle = ((CraftPlayer) entity).getHandle();
-            var packets = new ClientboundBundlePacket(List.of(
-                    createInitializationPacket(handle), createAddPacket(handle)
-            ));
-            entity.getWorld().getPlayers().forEach(player -> sendPacket(player, packets));
-        });
+    @Override
+    protected void updateDisplayName(Player player) {
+        updateDisplayNameHologram(player);
+        plugin.getServer().getOnlinePlayers().forEach(all ->
+                updateDisplayName(getCharacterSettingsTeam(all)));
     }
 
     public void loadCharacter(Player player) {
@@ -149,27 +165,14 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         });
     }
 
-    private ClientboundAddEntityPacket createAddPacket(ServerPlayer entity) {
-        return new ClientboundAddEntityPacket(entity.getId(), entity.getUUID(),
-                entity.getX(), entity.getY(), entity.getZ(), entity.getXRot(), entity.getYRot(),
-                entity.getType(), 0, entity.getDeltaMovement(), entity.getYHeadRot());
-    }
-
-    private ClientboundPlayerInfoUpdatePacket createInitializationPacket(ServerPlayer entity) {
-        return ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
-    }
-
-    private void sendPacket(Player player, Packet<?> packet) {
-        ((CraftPlayer) player).getHandle().connection.send(packet);
-    }
-
-    @Override
-    public boolean despawn() {
-        if (entity == null || !entity.isValid()) return false;
-        var packet = new ClientboundRemoveEntitiesPacket(entity.getEntityId());
-        plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
-        ((CraftPlayer) entity).getHandle().discard();
-        return true;
+    public void broadcastCharacter() {
+        getEntity().ifPresent(entity -> {
+            var handle = ((CraftPlayer) entity).getHandle();
+            var packets = new ClientboundBundlePacket(List.of(
+                    createInitializationPacket(handle), createAddPacket(handle)
+            ));
+            entity.getWorld().getPlayers().forEach(player -> sendPacket(player, packets));
+        });
     }
 
     @Override
@@ -190,15 +193,81 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
+    public void setSkinParts(SkinParts parts) {
+        if (this.skinParts == parts) return;
+        this.skinParts = parts;
+        getEntity().map(player -> ((CraftPlayer) player).getHandle())
+                .ifPresent(this::applySkinPartConfig);
+    }
+
+    @Override
     public UUID getUniqueId() {
         return Objects.requireNonNull(profile.getId());
     }
 
     @Override
-    protected void updateDisplayName(Player player) {
-        updateDisplayNameHologram(player);
-        plugin.getServer().getOnlinePlayers().forEach(all ->
-                updateDisplayName(getCharacterSettingsTeam(all)));
+    public boolean clearTextures() {
+        if (!getGameProfile().getProperties().removeIf(property ->
+                property.getName().equals("textures"))) return false;
+        update();
+        return true;
+    }
+
+    @Override
+    public boolean isListed() {
+        return listed;
+    }
+
+    @Override
+    public void setListed(boolean listed) {
+        if (this.listed == listed) return;
+        this.listed = listed;
+        getEntity().ifPresent(entity -> {
+            ((CraftPlayer) entity).getHandle().updateOptionsNoEvents(createClientInformation());
+            var update = ClientboundPlayerInfoUpdatePacket.updateListed(entity.getUniqueId(), listed);
+            entity.getTrackedBy().forEach(player -> sendPacket(player, update));
+        });
+    }
+
+    @Override
+    public boolean isRealPlayer() {
+        return realPlayer;
+    }
+
+    @Override
+    public void setRealPlayer(boolean real) {
+        this.realPlayer = real;
+    }
+
+    @Override
+    public boolean setTextures(String value, @Nullable String signature) {
+        var previous = getTextures();
+        if (previous != null && previous.getValue().equals(value)
+            && Objects.equals(previous.getSignature(), signature)) return false;
+        getGameProfile().getProperties().removeIf(property -> property.getName().equals("textures"));
+        getGameProfile().getProperties().add(new ProfileProperty("textures", value, signature));
+        update();
+        return true;
+    }
+
+    private void sendPacket(Player player, Packet<?> packet) {
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    private ClientboundAddEntityPacket createAddPacket(ServerPlayer entity) {
+        return new ClientboundAddEntityPacket(entity.getId(), entity.getUUID(),
+                entity.getX(), entity.getY(), entity.getZ(), entity.getXRot(), entity.getYRot(),
+                entity.getType(), 0, entity.getDeltaMovement(), entity.getYHeadRot());
+    }
+
+    private ClientboundPlayerInfoUpdatePacket createInitializationPacket(ServerPlayer entity) {
+        return ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
+    }
+
+    private void updateDisplayName(Team team) {
+        var status = displayNameVisible && displayName == null ? OptionStatus.ALWAYS : OptionStatus.NEVER;
+        team.setOption(Option.NAME_TAG_VISIBILITY, status);
+        team.color(glowColor);
     }
 
     private Team getCharacterSettingsTeam(Player player) {
@@ -209,13 +278,13 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return team;
     }
 
-    private void updateDisplayName(Team team) {
-        var status = displayNameVisible && displayName == null ? OptionStatus.ALWAYS : OptionStatus.NEVER;
-        team.setOption(Option.NAME_TAG_VISIBILITY, status);
-        team.color(glowColor);
+    private @NotNull ClientInformation createClientInformation() {
+        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
     }
 
-    private @Nullable TextDisplay displayNameHologram;
+    private void applySkinPartConfig(ServerPlayer player) {
+        player.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) getSkinParts().getRaw());
+    }
 
     private void updateDisplayNameHologram(Player player) {
         if (displayName == null || !displayNameVisible) {
@@ -255,69 +324,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         displayNameHologram = null;
     }
 
-    @Override
-    public void remove() {
-        plugin.getServer().getOnlinePlayers().forEach(player -> {
-            var team = player.getScoreboard().getTeam(getUniqueId().toString());
-            if (team != null) team.unregister();
-        });
-        removeDisplayNameHologram();
-        super.remove();
-    }
-
-    @Override
-    public boolean clearTextures() {
-        if (!getGameProfile().getProperties().removeIf(property ->
-                property.getName().equals("textures"))) return false;
-        update();
-        return true;
-    }
-
-    @Override
-    public boolean isListed() {
-        return listed;
-    }
-
-    @Override
-    public boolean isRealPlayer() {
-        return realPlayer;
-    }
-
-    @Override
-    public boolean setTextures(String value, @Nullable String signature) {
-        var previous = getTextures();
-        if (previous != null && previous.getValue().equals(value)
-            && Objects.equals(previous.getSignature(), signature)) return false;
-        getGameProfile().getProperties().removeIf(property -> property.getName().equals("textures"));
-        getGameProfile().getProperties().add(new ProfileProperty("textures", value, signature));
-        update();
-        return true;
-    }
-
-    @Override
-    public void setListed(boolean listed) {
-        if (this.listed == listed) return;
-        this.listed = listed;
-        getEntity().ifPresent(entity -> {
-            ((CraftPlayer) entity).getHandle().updateOptionsNoEvents(createClientInformation());
-            var update = ClientboundPlayerInfoUpdatePacket.updateListed(entity.getUniqueId(), listed);
-            entity.getTrackedBy().forEach(player -> sendPacket(player, update));
-        });
-    }
-
-    @Override
-    public void setRealPlayer(boolean real) {
-        this.realPlayer = real;
-    }
-
-    @Override
-    public void setSkinParts(SkinParts parts) {
-        if (this.skinParts == parts) return;
-        this.skinParts = parts;
-        getEntity().map(player -> ((CraftPlayer) player).getHandle())
-                .ifPresent(this::applySkinPartConfig);
-    }
-
     private boolean update() {
         if (entity == null) return false;
         var handle = ((CraftPlayer) entity).getHandle();
@@ -329,10 +335,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         ));
         entity.getTrackedBy().forEach(player -> sendPacket(player, packets));
         return true;
-    }
-
-    private void applySkinPartConfig(ServerPlayer player) {
-        player.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) getSkinParts().getRaw());
     }
 
     private class CraftCharacter extends CraftPlayer {
@@ -358,4 +360,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             PaperPlayerCharacter.this.getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
         }
     }
+
+
 }

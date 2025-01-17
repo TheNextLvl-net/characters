@@ -17,6 +17,27 @@ class EmptyChannel extends AbstractChannel {
     }
 
     @Override
+    public ChannelConfig config() {
+        config.setAutoRead(true);
+        return config;
+    }
+
+    @Override
+    public boolean isOpen() {
+        return false;
+    }
+
+    @Override
+    public boolean isActive() {
+        return false;
+    }
+
+    @Override
+    public ChannelMetadata metadata() {
+        return new ChannelMetadata(true);
+    }
+
+    @Override
     protected AbstractUnsafe newUnsafe() {
         return null;
     }
@@ -54,26 +75,5 @@ class EmptyChannel extends AbstractChannel {
 
     @Override
     protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) {
-    }
-
-    @Override
-    public ChannelConfig config() {
-        config.setAutoRead(true);
-        return config;
-    }
-
-    @Override
-    public boolean isOpen() {
-        return false;
-    }
-
-    @Override
-    public boolean isActive() {
-        return false;
-    }
-
-    @Override
-    public ChannelMetadata metadata() {
-        return new ChannelMetadata(true);
     }
 }

@@ -12,11 +12,12 @@ import java.util.WeakHashMap;
 
 @NullMarked
 public class ClickAction<T> {
+    private final ActionType<T> actionType;
+    private final Map<Player, Long> cooldowns = new WeakHashMap<>();
     private @Nullable String permission;
     private EnumSet<ClickType> clickTypes;
     private Duration cooldown;
     private T input;
-    private final ActionType<T> actionType;
 
     public ClickAction(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input) {
         this(actionType, clickTypes, input, Duration.ZERO, null);
@@ -30,21 +31,8 @@ public class ClickAction<T> {
         this.permission = permission;
     }
 
-    private final Map<Player, Long> cooldowns = new WeakHashMap<>();
-
-    public boolean isOnCooldown(Player player) {
-        return cooldown.isPositive() && cooldowns.computeIfPresent(player, (ignored, lastUsed) -> {
-            if (System.currentTimeMillis() - cooldown.toMillis() > lastUsed) return null;
-            return lastUsed;
-        }) != null;
-    }
-
     public boolean resetCooldown(Player player) {
         return cooldowns.remove(player) != null;
-    }
-
-    public boolean canInvoke(Player player) {
-        return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
     }
 
     public boolean invoke(Player player) {
@@ -54,28 +42,27 @@ public class ClickAction<T> {
         return true;
     }
 
+    public boolean canInvoke(Player player) {
+        return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
+    }
+
+    public boolean isOnCooldown(Player player) {
+        return cooldown.isPositive() && cooldowns.computeIfPresent(player, (ignored, lastUsed) -> {
+            if (System.currentTimeMillis() - cooldown.toMillis() > lastUsed) return null;
+            return lastUsed;
+        }) != null;
+    }
+
     public boolean isSupportedClickType(ClickType type) {
         return clickTypes.contains(type);
     }
 
-    public void setClickTypes(EnumSet<ClickType> clickTypes) {
-        this.clickTypes = clickTypes;
-    }
-
-    public void setCooldown(Duration cooldown) {
-        this.cooldown = cooldown;
-    }
-
-    public void setInput(T input) {
-        this.input = input;
+    public @Nullable String getPermission() {
+        return permission;
     }
 
     public void setPermission(@Nullable String permission) {
         this.permission = permission;
-    }
-
-    public @Nullable String getPermission() {
-        return permission;
     }
 
     public ActionType<T> getActionType() {
@@ -86,12 +73,29 @@ public class ClickAction<T> {
         return cooldown;
     }
 
+    public void setCooldown(Duration cooldown) {
+        this.cooldown = cooldown;
+    }
+
     public EnumSet<ClickType> getClickTypes() {
         return clickTypes;
     }
 
+    public void setClickTypes(EnumSet<ClickType> clickTypes) {
+        this.clickTypes = clickTypes;
+    }
+
     public T getInput() {
         return input;
+    }
+
+    public void setInput(T input) {
+        this.input = input;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(permission, clickTypes, cooldown, input, actionType, cooldowns);
     }
 
     @Override
@@ -103,10 +107,5 @@ public class ClickAction<T> {
                && Objects.equals(cooldown, that.cooldown)
                && Objects.equals(input, that.input)
                && Objects.equals(actionType, that.actionType);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(permission, clickTypes, cooldown, input, actionType, cooldowns);
     }
 }

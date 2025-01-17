@@ -18,11 +18,11 @@ public class CharacterWithActionSuggestionProvider<T> implements SuggestionProvi
 
     @Override
     public CompletableFuture<Suggestions> getSuggestions(CommandContext<T> context, SuggestionsBuilder builder) {
-            plugin.characterController().getCharacters().stream()
-                    .filter(character -> !character.getActions().isEmpty())
-                    .map(Character::getName)
-                    .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
-                    .forEach(builder::suggest);
-            return builder.buildFuture();
+        plugin.characterController().getCharacters().stream()
+                .filter(character -> !character.getActions().isEmpty())
+                .map(Character::getName)
+                .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
+                .forEach(builder::suggest);
+        return builder.buildFuture();
     }
 }

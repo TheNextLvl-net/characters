@@ -32,26 +32,6 @@ class CharacterTeleportCommand {
         return Commands.literal("teleport").then(teleport);
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> entityArgument(CharacterPlugin plugin) {
-        return Commands.argument("entity", ArgumentTypes.entity());
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> positionArgument(CharacterPlugin plugin) {
-        return Commands.argument("position", ArgumentTypes.finePosition(true));
-    }
-
-    private static int teleportEntity(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
-        var selector = context.getArgument("entity", EntitySelectorArgumentResolver.class);
-        var entity = selector.resolve(context.getSource()).getFirst();
-        return teleport(context, plugin, entity.getLocation());
-    }
-
-    private static int teleportPosition(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
-        var resolver = context.getArgument("position", FinePositionResolver.class);
-        var position = resolver.resolve(context.getSource()).toLocation(context.getSource().getLocation().getWorld());
-        return teleport(context, plugin, position);
-    }
-
     private static int teleportSelf(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
 
@@ -68,6 +48,26 @@ class CharacterTeleportCommand {
         plugin.bundle().sendMessage(sender, "character.teleported.self",
                 Placeholder.unparsed("character", character.getName()));
         return Command.SINGLE_SUCCESS;
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> positionArgument(CharacterPlugin plugin) {
+        return Commands.argument("position", ArgumentTypes.finePosition(true));
+    }
+
+    private static int teleportPosition(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
+        var resolver = context.getArgument("position", FinePositionResolver.class);
+        var position = resolver.resolve(context.getSource()).toLocation(context.getSource().getLocation().getWorld());
+        return teleport(context, plugin, position);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> entityArgument(CharacterPlugin plugin) {
+        return Commands.argument("entity", ArgumentTypes.entity());
+    }
+
+    private static int teleportEntity(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
+        var selector = context.getArgument("entity", EntitySelectorArgumentResolver.class);
+        var entity = selector.resolve(context.getSource()).getFirst();
+        return teleport(context, plugin, entity.getLocation());
     }
 
     private static int teleport(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, Location location) {

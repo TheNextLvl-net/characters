@@ -32,7 +32,19 @@ import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.listener.test;
-import net.thenextlvl.character.plugin.serialization.*;
+import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
+import net.thenextlvl.character.plugin.serialization.AddressAdapter;
+import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
+import net.thenextlvl.character.plugin.serialization.ClickActionAdapter;
+import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
+import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
+import net.thenextlvl.character.plugin.serialization.KeyAdapter;
+import net.thenextlvl.character.plugin.serialization.LocationAdapter;
+import net.thenextlvl.character.plugin.serialization.ProfilePropertyAdapter;
+import net.thenextlvl.character.plugin.serialization.SoundAdapter;
+import net.thenextlvl.character.plugin.serialization.TitleAdapter;
+import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
+import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -82,9 +94,22 @@ public class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(Title.class, new TitleAdapter())
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
+
     private final PaperCharacterController characterController = new PaperCharacterController(this);
     private final PaperCharacterProvider characterProvider = new PaperCharacterProvider(this);
     private final PluginMessenger messenger = new PluginMessenger(this);
+
+    public final ActionType<Component> sendActionbar = register(new PaperActionType<>("send_actionbar", Component.class, Audience::sendActionBar));
+    public final ActionType<Component> sendMessage = register(new PaperActionType<>("send_message", Component.class, Audience::sendMessage));
+    public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
+            (player, address) -> player.transfer(address.getHostName(), address.getPort())));
+    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Location.class, Entity::teleportAsync)));
+    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Sound.class, Audience::playSound));
+    public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", String.class,
+            (player, command) -> player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
+    public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", String.class, Player::performCommand));
+    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Title.class, Audience::showTitle));
+    public final ActionType<String> connect = register(new PaperActionType<>("connect", String.class, messenger::connect));
 
     private final ComponentBundle bundle = new ComponentBundle(translations,
             audience -> audience instanceof Player player ? player.locale() : Locale.US)
@@ -102,6 +127,15 @@ public class CharacterPlugin extends JavaPlugin {
     }
 
     @Override
+    public void onDisable() {
+        characterController.getCharacters().forEach(character -> {
+            character.persist();
+            character.despawn();
+        });
+        metrics.shutdown();
+    }
+
+    @Override
     public void onEnable() {
         readAll().forEach(character -> {
             var location = character.getSpawnLocation();
@@ -112,26 +146,26 @@ public class CharacterPlugin extends JavaPlugin {
         registerListeners();
     }
 
-    @Override
-    public void onDisable() {
-        characterController.getCharacters().forEach(character -> {
-            character.persist();
-            character.despawn();
-        });
-        metrics.shutdown();
+    public @Unmodifiable List<Character<?>> readAll() {
+        var files = savesFolder.listFiles((file, name) -> name.endsWith(".dat"));
+        return files == null ? List.of() : Arrays.stream(files)
+                .map(this::readSafe)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableList());
     }
 
-    private void registerCommands() {
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS.newHandler(event ->
-                event.registrar().register(CharacterCommand.create(this), List.of("npc"))));
-    }
-
-    private void registerListeners() {
-        getServer().getPluginManager().registerEvents(new CharacterListener(), this);
-        getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
-        getServer().getPluginManager().registerEvents(new EntityListener(this), this);
-
-        getServer().getPluginManager().registerEvents(new test(this), this);
+    public Character<?> read(File file) throws IOException {
+        try (var inputStream = stream(IO.of(file))) {
+            return read(inputStream);
+        } catch (Exception e) {
+            var io = IO.of(file.getPath() + "_old");
+            if (!io.exists()) throw e;
+            getComponentLogger().warn("Failed to load character from {}", file.getPath(), e);
+            getComponentLogger().warn("Falling back to {}", io);
+            try (var inputStream = stream(io)) {
+                return read(inputStream);
+            }
+        }
     }
 
     public ComponentBundle bundle() {
@@ -154,12 +188,17 @@ public class CharacterPlugin extends JavaPlugin {
         return characterProvider;
     }
 
-    public @Unmodifiable List<Character<?>> readAll() {
-        var files = savesFolder.listFiles((file, name) -> name.endsWith(".dat"));
-        return files == null ? List.of() : Arrays.stream(files)
-                .map(this::readSafe)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableList());
+    private void registerCommands() {
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS.newHandler(event ->
+                event.registrar().register(CharacterCommand.create(this), List.of("npc"))));
+    }
+
+    private void registerListeners() {
+        getServer().getPluginManager().registerEvents(new CharacterListener(), this);
+        getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
+        getServer().getPluginManager().registerEvents(new EntityListener(this), this);
+
+        getServer().getPluginManager().registerEvents(new test(this), this);
     }
 
     private @Nullable Character<?> readSafe(File file) {
@@ -172,20 +211,6 @@ public class CharacterPlugin extends JavaPlugin {
             getComponentLogger().error("Failed to load character from {}", file.getPath(), e);
             getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             return null;
-        }
-    }
-
-    public Character<?> read(File file) throws IOException {
-        try (var inputStream = stream(IO.of(file))) {
-            return read(inputStream);
-        } catch (Exception e) {
-            var io = IO.of(file.getPath() + "_old");
-            if (!io.exists()) throw e;
-            getComponentLogger().warn("Failed to load character from {}", file.getPath(), e);
-            getComponentLogger().warn("Falling back to {}", io);
-            try (var inputStream = stream(io)) {
-                return read(inputStream);
-            }
         }
     }
 
@@ -206,11 +231,6 @@ public class CharacterPlugin extends JavaPlugin {
         return character;
     }
 
-    private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
-        var character = characterController.createCharacter(name, type);
-        return deserialize(root, character);
-    }
-
     private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
         var uuid = root.optional("uuid").map(tag -> nbt.fromTag(tag, UUID.class)).orElseGet(UUID::randomUUID);
         var character = characterController.createCharacter(name, uuid);
@@ -222,6 +242,11 @@ public class CharacterPlugin extends JavaPlugin {
         root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(character::setRealPlayer);
         root.optional("skinParts").map(Tag::getAsByte).ifPresent(raw ->
                 character.setSkinParts(characterProvider.skinPartBuilder().raw(raw).build()));
+        return deserialize(root, character);
+    }
+
+    private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
+        var character = characterController.createCharacter(name, type);
         return deserialize(root, character);
     }
 
@@ -239,18 +264,6 @@ public class CharacterPlugin extends JavaPlugin {
                 character.addAction(name, nbt.fromTag(action, ClickAction.class))));
         return character;
     }
-
-    public final ActionType<Component> sendActionbar = register(new PaperActionType<>("send_actionbar", Component.class, Audience::sendActionBar));
-    public final ActionType<Component> sendMessage = register(new PaperActionType<>("send_message", Component.class, Audience::sendMessage));
-    public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
-            (player, address) -> player.transfer(address.getHostName(), address.getPort())));
-    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Location.class, Entity::teleportAsync)));
-    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Sound.class, Audience::playSound));
-    public final ActionType<String> connect = register(new PaperActionType<>("connect", String.class, messenger::connect));
-    public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", String.class, (player, command) ->
-            player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
-    public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", String.class, Player::performCommand));
-    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Title.class, Audience::showTitle));
 
     private <T> ActionType<T> register(ActionType<T> actionType) {
         return characterProvider().getActionRegistry().register(actionType);

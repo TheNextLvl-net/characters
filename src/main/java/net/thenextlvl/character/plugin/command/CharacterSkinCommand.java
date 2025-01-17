@@ -36,20 +36,10 @@ class CharacterSkinCommand {
                 .then(set(plugin));
     }
 
-
     private static ArgumentBuilder<CommandSourceStack, ?> layer(CharacterPlugin plugin) {
         return Commands.literal("layer")
                 .then(layer("hide", plugin, false))
                 .then(layer("show", plugin, true));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> layer(String name, CharacterPlugin plugin, boolean visible) {
-        return Commands.literal(name).then(layerArgument(plugin).then(playerCharacterArgument(plugin)
-                .executes(context -> layerToggle(context, plugin, visible))));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> layerArgument(CharacterPlugin plugin) {
-        return Commands.argument("layer", new EnumArgument<>(SkinLayer.class));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
@@ -62,6 +52,22 @@ class CharacterSkinCommand {
                 .then(fileSkinArgument(plugin))
                 .then(playerSkinArgument(plugin))
                 .then(urlSkinArgument(plugin)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> layer(String name, CharacterPlugin plugin, boolean visible) {
+        return Commands.literal(name).then(layerArgument(plugin).then(playerCharacterArgument(plugin)
+                .executes(context -> layerToggle(context, plugin, visible))));
+    }
+
+    private static int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures, CharacterPlugin plugin) {
+        var sender = context.getSource().getSender();
+        var character = context.getArgument("character", PlayerCharacter.class);
+
+        var success = textures == null ? character.clearTextures()
+                : character.setTextures(textures.getValue(), textures.getSignature());
+        var message = success ? "character.skin" : "nothing.changed";
+        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
+        return success ? Command.SINGLE_SUCCESS : 0;
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> fileSkinArgument(CharacterPlugin plugin) {
@@ -82,6 +88,35 @@ class CharacterSkinCommand {
         return Commands.literal("url").then(Commands.argument("url", StringArgumentType.string())
                 .then(Commands.literal("slim").executes(context -> setUrlSkin(context, true, plugin)))
                 .executes(context -> setUrlSkin(context, false, plugin)));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> layerArgument(CharacterPlugin plugin) {
+        return Commands.argument("layer", new EnumArgument<>(SkinLayer.class));
+    }
+
+    private static int layerToggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
+        var sender = context.getSource().getSender();
+        var character = context.getArgument("character", PlayerCharacter.class);
+
+        var layer = context.getArgument("layer", SkinLayer.class);
+        var skinParts = plugin.characterProvider()
+                .skinPartBuilder(character.getSkinParts())
+                .toggle(layer, visible)
+                .build();
+
+        if (skinParts.equals(character.getSkinParts())) {
+            plugin.bundle().sendMessage(sender, "nothing.changed");
+            return 0;
+        }
+
+        character.setSkinParts(skinParts);
+
+        var message = visible ? "character.skin_layer.shown" : "character.skin_layer.hidden";
+        plugin.bundle().sendMessage(sender, message,
+                Placeholder.component("layer", Component.translatable(layer)),
+                Placeholder.unparsed("character", character.getName()));
+
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int setFileSkin(CommandContext<CommandSourceStack> context, boolean slim, CharacterPlugin plugin) {
@@ -148,41 +183,5 @@ class CharacterSkinCommand {
             plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.url");
             return 0;
         }
-    }
-
-    private static int layerToggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", PlayerCharacter.class);
-
-        var layer = context.getArgument("layer", SkinLayer.class);
-        var skinParts = plugin.characterProvider()
-                .skinPartBuilder(character.getSkinParts())
-                .toggle(layer, visible)
-                .build();
-
-        if (skinParts.equals(character.getSkinParts())) {
-            plugin.bundle().sendMessage(sender, "nothing.changed");
-            return 0;
-        }
-
-        character.setSkinParts(skinParts);
-
-        var message = visible ? "character.skin_layer.shown" : "character.skin_layer.hidden";
-        plugin.bundle().sendMessage(sender, message,
-                Placeholder.component("layer", Component.translatable(layer)),
-                Placeholder.unparsed("character", character.getName()));
-
-        return Command.SINGLE_SUCCESS;
-    }
-
-    private static int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures, CharacterPlugin plugin) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", PlayerCharacter.class);
-
-        var success = textures == null ? character.clearTextures()
-                : character.setTextures(textures.getValue(), textures.getSignature());
-        var message = success ? "character.skin" : "nothing.changed";
-        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
-        return success ? Command.SINGLE_SUCCESS : 0;
     }
 }

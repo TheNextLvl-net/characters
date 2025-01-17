@@ -30,18 +30,13 @@ public class PaperSkinPartBuilder implements SkinPartBuilder {
     }
 
     @Override
+    public SkinPartBuilder hat(boolean enabled) {
+        return toggle(SkinLayer.HAT, enabled);
+    }
+
+    @Override
     public SkinPartBuilder jacket(boolean enabled) {
         return toggle(SkinLayer.JACKET, enabled);
-    }
-
-    @Override
-    public SkinPartBuilder leftSleeve(boolean enabled) {
-        return toggle(SkinLayer.LEFT_SLEEVE, enabled);
-    }
-
-    @Override
-    public SkinPartBuilder rightSleeve(boolean enabled) {
-        return toggle(SkinLayer.RIGHT_SLEEVE, enabled);
     }
 
     @Override
@@ -50,13 +45,18 @@ public class PaperSkinPartBuilder implements SkinPartBuilder {
     }
 
     @Override
+    public SkinPartBuilder leftSleeve(boolean enabled) {
+        return toggle(SkinLayer.LEFT_SLEEVE, enabled);
+    }
+
+    @Override
     public SkinPartBuilder rightPants(boolean enabled) {
         return toggle(SkinLayer.RIGHT_PANTS_LEG, enabled);
     }
 
     @Override
-    public SkinPartBuilder hat(boolean enabled) {
-        return toggle(SkinLayer.HAT, enabled);
+    public SkinPartBuilder rightSleeve(boolean enabled) {
+        return toggle(SkinLayer.RIGHT_SLEEVE, enabled);
     }
 
     @Override

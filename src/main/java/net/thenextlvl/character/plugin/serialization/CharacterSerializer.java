@@ -15,10 +15,8 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
     public CompoundTag serialize(Character<?> character, TagSerializationContext context) throws ParserException {
         var tag = new CompoundTag();
         tag.add("type", context.serialize(character.getType()));
-        if (character.getDisplayName() != null)
-            tag.add("displayName", context.serialize(character.getDisplayName()));
-        if (character.getSpawnLocation() != null)
-            tag.add("location", context.serialize(character.getSpawnLocation()));
+        if (character.getDisplayName() != null) tag.add("displayName", context.serialize(character.getDisplayName()));
+        if (character.getSpawnLocation() != null) tag.add("location", context.serialize(character.getSpawnLocation()));
         tag.add("collidable", character.isCollidable());
         tag.add("displayNameVisible", character.isDisplayNameVisible());
         tag.add("gravity", character.hasGravity());
@@ -36,8 +34,7 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
         if (character.getGameProfile().getId() != null)
             tag.add("uuid", context.serialize(character.getGameProfile().getId()));
         var properties = new ListTag<>(CompoundTag.ID);
-        character.getGameProfile().getProperties().forEach(property ->
-                properties.add(context.serialize(property)));
+        character.getGameProfile().getProperties().forEach(property -> properties.add(context.serialize(property)));
         tag.add("listed", character.isListed());
         tag.add("properties", properties);
         tag.add("realPlayer", character.isRealPlayer());

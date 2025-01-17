@@ -26,17 +26,9 @@ class EmptyConnection extends Connection {
     }
 
     @Override
-    public void flushChannel() {
-    }
-
-    @Override
-    public boolean isConnected() {
-        return true;
-    }
-
-    @Override
-    public boolean isConnecting() {
-        return false;
+    public void setListenerForServerboundHandshake(PacketListener packetListener) {
+        super.setListenerForServerboundHandshake(packetListener);
+        handleDisconnection();
     }
 
     @Override
@@ -52,8 +44,16 @@ class EmptyConnection extends Connection {
     }
 
     @Override
-    public void setListenerForServerboundHandshake(PacketListener packetListener) {
-        super.setListenerForServerboundHandshake(packetListener);
-        handleDisconnection();
+    public void flushChannel() {
+    }
+
+    @Override
+    public boolean isConnected() {
+        return true;
+    }
+
+    @Override
+    public boolean isConnecting() {
+        return false;
     }
 }

@@ -41,6 +41,12 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 @NullMarked
 public class PaperCharacter<T extends Entity> implements Character<T> {
+    protected final EntityType type;
+    protected final Map<String, ClickAction<?>> actions = new HashMap<>();
+    protected final Set<UUID> viewers = new HashSet<>();
+    protected final String name;
+    protected final CharacterPlugin plugin;
+
     protected @Nullable Component displayName = null;
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor glowColor = null;
@@ -55,13 +61,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected boolean persistent = true;
     protected boolean ticking = false;
     protected boolean visibleByDefault = true;
-
-    protected final EntityType type;
-    protected final Map<String, ClickAction<?>> actions = new HashMap<>();
-    protected final Set<UUID> viewers = new HashSet<>();
-    protected final String name;
-
-    protected final CharacterPlugin plugin;
 
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
         this.name = name;
@@ -80,6 +79,13 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public void setDisplayName(@Nullable Component displayName) {
+        if (displayName == this.displayName) return;
+        this.displayName = displayName;
+        getEntity().ifPresent(this::updateDisplayName);
+    }
+
+    @Override
     public EntityType getType() {
         return type;
     }
@@ -95,6 +101,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public void setSpawnLocation(@Nullable Location location) {
+        this.spawnLocation = location;
+    }
+
+    @Override
     public @Unmodifiable Map<String, ClickAction<?>> getActions() {
         return Map.copyOf(actions);
     }
@@ -105,6 +116,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public void setGlowColor(@Nullable NamedTextColor color) {
+        this.glowColor = color;
+    }
+
+    @Override
     public Optional<T> getEntity() {
         return Optional.ofNullable(entity).filter(Entity::isValid);
     }
@@ -112,6 +128,13 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public Pose getPose() {
         return pose;
+    }
+
+    @Override
+    public void setPose(Pose pose) {
+        if (pose == this.pose) return;
+        this.pose = pose;
+        getEntity().ifPresent(entity -> entity.setPose(pose, true));
     }
 
     @Override
@@ -184,8 +207,25 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public void setCollidable(boolean collidable) {
+        if (collidable == this.collidable) return;
+        this.collidable = collidable;
+        getEntity().ifPresent(entity -> {
+            if (!(entity instanceof LivingEntity living)) return;
+            living.setCollidable(collidable);
+        });
+    }
+
+    @Override
     public boolean isDisplayNameVisible() {
         return displayNameVisible;
+    }
+
+    @Override
+    public void setDisplayNameVisible(boolean visible) {
+        if (visible == displayNameVisible) return;
+        this.displayNameVisible = visible;
+        getEntity().ifPresent(this::updateDisplayName);
     }
 
     @Override
@@ -194,8 +234,20 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public void setInvincible(boolean invincible) {
+        if (invincible == this.invincible) return;
+        this.invincible = invincible;
+        getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
+    }
+
+    @Override
     public boolean isPersistent() {
         return persistent;
+    }
+
+    @Override
+    public void setPersistent(boolean persistent) {
+        this.persistent = persistent;
     }
 
     @Override
@@ -206,6 +258,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean isTicking() {
         return ticking;
+    }
+
+    @Override
+    public void setTicking(boolean ticking) {
+        this.ticking = ticking;
+        // todo: use custom entity impl to make this possible
     }
 
     @Override
@@ -221,6 +279,22 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean isVisibleByDefault() {
         return visibleByDefault;
+    }
+
+    @Override
+    public void setVisibleByDefault(boolean visible) {
+        if (visible == visibleByDefault) return;
+        this.visibleByDefault = visible;
+        getEntity().ifPresent(entity -> {
+            entity.setVisibleByDefault(visible);
+            if (visible) entity.getTrackedBy().forEach(player -> {
+                if (isViewer(player.getUniqueId())) return;
+                player.hideEntity(plugin, entity);
+            });
+            else getViewers().stream().map(plugin.getServer()::getPlayer)
+                    .filter(Objects::nonNull)
+                    .forEach(player -> player.showEntity(plugin, entity));
+        });
     }
 
     @Override
@@ -296,6 +370,20 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         return true;
     }
 
+    @Override
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void remove() {
+        despawn();
+        file().delete();
+        backupFile().delete();
+        plugin.characterController().unregister(name);
+    }
+
+    @Override
+    public void setGravity(boolean gravity) {
+        this.gravity = gravity;
+    }
+
     protected void preSpawn(T entity) {
         if (entity instanceof LivingEntity living) {
             living.setAI(false);
@@ -319,100 +407,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         entity.setCustomNameVisible(displayNameVisible && displayName != null);
     }
 
-    @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void remove() {
-        despawn();
-        file().delete();
-        backupFile().delete();
-        plugin.characterController().unregister(name);
-    }
-
-    @Override
-    public void setCollidable(boolean collidable) {
-        if (collidable == this.collidable) return;
-        this.collidable = collidable;
-        getEntity().ifPresent(entity -> {
-            if (!(entity instanceof LivingEntity living)) return;
-            living.setCollidable(collidable);
-        });
-    }
-
-    @Override
-    public void setDisplayName(@Nullable Component displayName) {
-        if (displayName == this.displayName) return;
-        this.displayName = displayName;
-        getEntity().ifPresent(this::updateDisplayName);
-    }
-
-    @Override
-    public void setDisplayNameVisible(boolean visible) {
-        if (visible == displayNameVisible) return;
-        this.displayNameVisible = visible;
-        getEntity().ifPresent(this::updateDisplayName);
-    }
-
-    @Override
-    public void setGlowColor(@Nullable NamedTextColor color) {
-        this.glowColor = color;
-    }
-
-    @Override
-    public void setGravity(boolean gravity) {
-        this.gravity = gravity;
-    }
-
-    @Override
-    public void setInvincible(boolean invincible) {
-        if (invincible == this.invincible) return;
-        this.invincible = invincible;
-        getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
-    }
-
-    @Override
-    public void setPersistent(boolean persistent) {
-        this.persistent = persistent;
-    }
-
-    @Override
-    public void setPose(Pose pose) {
-        if (pose == this.pose) return;
-        this.pose = pose;
-        getEntity().ifPresent(entity -> entity.setPose(pose, true));
-    }
-
-    @Override
-    public void setSpawnLocation(@Nullable Location location) {
-        this.spawnLocation = location;
-    }
-
-    @Override
-    public void setTicking(boolean ticking) {
-        this.ticking = ticking;
-        // todo: use custom entity impl to make this possible
-    }
-
-    @Override
-    public void setVisibleByDefault(boolean visible) {
-        if (visible == visibleByDefault) return;
-        this.visibleByDefault = visible;
-        getEntity().ifPresent(entity -> {
-            entity.setVisibleByDefault(visible);
-            if (visible) entity.getTrackedBy().forEach(player -> {
-                if (isViewer(player.getUniqueId())) return;
-                player.hideEntity(plugin, entity);
-            });
-            else getViewers().stream().map(plugin.getServer()::getPlayer)
-                    .filter(Objects::nonNull)
-                    .forEach(player -> player.showEntity(plugin, entity));
-        });
+    private File file() {
+        return new File(plugin.savesFolder(), this.name + ".dat");
     }
 
     private File backupFile() {
         return new File(plugin.savesFolder(), this.name + ".dat_old");
-    }
-
-    private File file() {
-        return new File(plugin.savesFolder(), this.name + ".dat");
     }
 }

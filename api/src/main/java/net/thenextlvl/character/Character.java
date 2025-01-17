@@ -27,6 +27,8 @@ public interface Character<T extends Entity> {
     @Nullable
     Component getDisplayName();
 
+    void setDisplayName(@Nullable Component displayName);
+
     EntityType getType();
 
     @Nullable
@@ -35,15 +37,21 @@ public interface Character<T extends Entity> {
     @Nullable
     Location getSpawnLocation();
 
+    void setSpawnLocation(@Nullable Location location);
+
     @Unmodifiable
     Map<String, ClickAction<?>> getActions();
 
     @Nullable
     NamedTextColor getGlowColor();
 
+    void setGlowColor(@Nullable NamedTextColor color);
+
     Optional<T> getEntity();
 
     Pose getPose();
+
+    void setPose(Pose pose);
 
     @Unmodifiable
     Set<UUID> getViewers();
@@ -71,21 +79,33 @@ public interface Character<T extends Entity> {
 
     boolean isCollidable();
 
+    void setCollidable(boolean collidable);
+
     boolean isDisplayNameVisible();
+
+    void setDisplayNameVisible(boolean visible);
 
     boolean isInvincible();
 
+    void setInvincible(boolean invincible);
+
     boolean isPersistent();
+
+    void setPersistent(boolean persistent);
 
     boolean isSpawned();
 
     boolean isTicking();
+
+    void setTicking(boolean ticking);
 
     boolean isTrackedBy(Player player);
 
     boolean isViewer(UUID player);
 
     boolean isVisibleByDefault();
+
+    void setVisibleByDefault(boolean visible);
 
     boolean persist();
 
@@ -105,25 +125,5 @@ public interface Character<T extends Entity> {
 
     void remove();
 
-    void setCollidable(boolean collidable);
-
-    void setDisplayName(@Nullable Component displayName);
-
-    void setDisplayNameVisible(boolean visible);
-
-    void setGlowColor(@Nullable NamedTextColor color);
-
     void setGravity(boolean gravity);
-
-    void setInvincible(boolean invincible);
-
-    void setPersistent(boolean persistent);
-
-    void setPose(Pose pose);
-
-    void setSpawnLocation(@Nullable Location location);
-
-    void setTicking(boolean ticking);
-
-    void setVisibleByDefault(boolean visible);
 }

@@ -36,15 +36,6 @@ class CharacterActionPermissionCommand {
                 .executes(context -> set(context, plugin)));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> permissionArgument() {
-        return Commands.argument("permission", StringArgumentType.string());
-    }
-
-    private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var permission = context.getArgument("permission", String.class);
-        return set(context, permission, plugin);
-    }
-
     private static int set(CommandContext<CommandSourceStack> context, @Nullable String permission, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
@@ -69,5 +60,14 @@ class CharacterActionPermissionCommand {
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("permission", String.valueOf(permission)));
         return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> permissionArgument() {
+        return Commands.argument("permission", StringArgumentType.string());
+    }
+
+    private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var permission = context.getArgument("permission", String.class);
+        return set(context, permission, plugin);
     }
 }

@@ -27,14 +27,14 @@ class CharacterTagCommand {
                 .then(show(plugin));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
-        return Commands.literal("reset").then(characterArgument(plugin)
-                .executes(context -> reset(context, plugin)));
-    }
-
     private static ArgumentBuilder<CommandSourceStack, ?> hide(CharacterPlugin plugin) {
         return Commands.literal("hide").then(characterArgument(plugin)
                 .executes(context -> toggle(context, plugin, false)));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
+        return Commands.literal("reset").then(characterArgument(plugin)
+                .executes(context -> reset(context, plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
@@ -45,6 +45,34 @@ class CharacterTagCommand {
     private static ArgumentBuilder<CommandSourceStack, ?> show(CharacterPlugin plugin) {
         return Commands.literal("show").then(characterArgument(plugin)
                 .executes(context -> toggle(context, plugin, true)));
+    }
+
+    private static int toggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
+        var sender = context.getSource().getSender();
+        var character = context.getArgument("character", Character.class);
+
+        var success = character.isDisplayNameVisible() != visible;
+        var message = !success ? "nothing.changed" : visible ? "character.tag.shown" : "character.tag.hidden";
+
+        if (success) character.setDisplayNameVisible(visible);
+        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
+
+        return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int reset(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var sender = context.getSource().getSender();
+        var character = context.getArgument("character", Character.class);
+
+        if (character.getDisplayName() == null) {
+            plugin.bundle().sendMessage(sender, "nothing.changed");
+            return 0;
+        }
+
+        character.setDisplayName(null);
+        plugin.bundle().sendMessage(sender, "character.tag.reset",
+                Placeholder.unparsed("character", character.getName()));
+        return Command.SINGLE_SUCCESS;
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> tagArgument(CharacterPlugin plugin) {
@@ -67,33 +95,5 @@ class CharacterTagCommand {
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.component("tag", displayName));
         return Command.SINGLE_SUCCESS;
-    }
-
-    private static int reset(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
-
-        if (character.getDisplayName() == null) {
-            plugin.bundle().sendMessage(sender, "nothing.changed");
-            return 0;
-        }
-
-        character.setDisplayName(null);
-        plugin.bundle().sendMessage(sender, "character.tag.reset",
-                Placeholder.unparsed("character", character.getName()));
-        return Command.SINGLE_SUCCESS;
-    }
-
-    private static int toggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
-
-        var success = character.isDisplayNameVisible() != visible;
-        var message = !success ? "nothing.changed" : visible ? "character.tag.shown" : "character.tag.hidden";
-
-        if (success) character.setDisplayNameVisible(visible);
-        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
-
-        return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
