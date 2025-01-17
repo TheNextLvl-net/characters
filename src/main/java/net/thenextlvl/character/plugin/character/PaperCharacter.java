@@ -17,6 +17,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -395,6 +396,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
         entity.setGravity(hasGravity());
         entity.setInvulnerable(isInvincible());
+        entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setPersistent(false);
         entity.setPose(getPose(), true);
         entity.setSilent(true);
