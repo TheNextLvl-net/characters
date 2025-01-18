@@ -13,8 +13,6 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.Objects;
-
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
@@ -25,6 +23,10 @@ class CharacterTagCommand {
                 .then(reset(plugin))
                 .then(set(plugin))
                 .then(show(plugin));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> tagArgument(CharacterPlugin plugin) {
+        return Commands.argument("tag", StringArgumentType.greedyString());
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> hide(CharacterPlugin plugin) {
@@ -51,12 +53,10 @@ class CharacterTagCommand {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
 
-        var success = character.isDisplayNameVisible() != visible;
+        var success = character.setDisplayNameVisible(visible);
         var message = !success ? "nothing.changed" : visible ? "character.tag.shown" : "character.tag.hidden";
 
-        if (success) character.setDisplayNameVisible(visible);
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
-
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
@@ -64,19 +64,11 @@ class CharacterTagCommand {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
 
-        if (character.getDisplayName() == null) {
-            plugin.bundle().sendMessage(sender, "nothing.changed");
-            return 0;
-        }
+        var success = character.setDisplayName(null);
+        var message = success ? "character.tag.reset" : "nothing.changed";
 
-        character.setDisplayName(null);
-        plugin.bundle().sendMessage(sender, "character.tag.reset",
-                Placeholder.unparsed("character", character.getName()));
-        return Command.SINGLE_SUCCESS;
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> tagArgument(CharacterPlugin plugin) {
-        return Commands.argument("tag", StringArgumentType.greedyString());
+        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
+        return success ? Command.SINGLE_SUCCESS : 0;
     }
 
     private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
@@ -85,15 +77,12 @@ class CharacterTagCommand {
         var tag = context.getArgument("tag", String.class);
         var displayName = MiniMessage.miniMessage().deserialize(tag);
 
-        if (Objects.equals(character.getDisplayName(), displayName)) {
-            plugin.bundle().sendMessage(sender, "nothing.changed");
-            return 0;
-        }
+        var success = character.setDisplayName(displayName);
+        var message = success ? "character.tag.set" : "nothing.changed";
 
-        character.setDisplayName(displayName);
-        plugin.bundle().sendMessage(sender, "character.tag.set",
+        plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.component("tag", displayName));
-        return Command.SINGLE_SUCCESS;
+        return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
