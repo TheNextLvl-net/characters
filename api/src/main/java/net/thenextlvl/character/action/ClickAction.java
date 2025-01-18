@@ -31,8 +31,28 @@ public class ClickAction<T> {
         this.permission = permission;
     }
 
-    public boolean resetCooldown(Player player) {
-        return cooldowns.remove(player) != null;
+    public boolean canInvoke(Player player) {
+        return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
+    }
+
+    public ActionType<T> getActionType() {
+        return actionType;
+    }
+
+    public EnumSet<ClickType> getClickTypes() {
+        return clickTypes;
+    }
+
+    public Duration getCooldown() {
+        return cooldown;
+    }
+
+    public T getInput() {
+        return input;
+    }
+
+    public @Nullable String getPermission() {
+        return permission;
     }
 
     public boolean invoke(Player player) {
@@ -40,10 +60,6 @@ public class ClickAction<T> {
         if (cooldown.isPositive()) cooldowns.put(player, System.currentTimeMillis());
         actionType.invoke(player, input);
         return true;
-    }
-
-    public boolean canInvoke(Player player) {
-        return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
     }
 
     public boolean isOnCooldown(Player player) {
@@ -57,40 +73,32 @@ public class ClickAction<T> {
         return clickTypes.contains(type);
     }
 
-    public @Nullable String getPermission() {
-        return permission;
+    public boolean resetCooldown(Player player) {
+        return cooldowns.remove(player) != null;
     }
 
-    public void setPermission(@Nullable String permission) {
-        this.permission = permission;
-    }
-
-    public ActionType<T> getActionType() {
-        return actionType;
-    }
-
-    public Duration getCooldown() {
-        return cooldown;
-    }
-
-    public void setCooldown(Duration cooldown) {
-        this.cooldown = cooldown;
-    }
-
-    public EnumSet<ClickType> getClickTypes() {
-        return clickTypes;
-    }
-
-    public void setClickTypes(EnumSet<ClickType> clickTypes) {
+    public boolean setClickTypes(EnumSet<ClickType> clickTypes) {
+        if (Objects.equals(this.clickTypes, clickTypes)) return false;
         this.clickTypes = clickTypes;
+        return true;
     }
 
-    public T getInput() {
-        return input;
+    public boolean setCooldown(Duration cooldown) {
+        if (Objects.equals(this.cooldown, cooldown)) return false;
+        this.cooldown = cooldown;
+        return true;
     }
 
-    public void setInput(T input) {
+    public boolean setInput(T input) {
+        if (Objects.equals(this.input, input)) return false;
         this.input = input;
+        return true;
+    }
+
+    public boolean setPermission(@Nullable String permission) {
+        if (Objects.equals(this.permission, permission)) return false;
+        this.permission = permission;
+        return true;
     }
 
     @Override
