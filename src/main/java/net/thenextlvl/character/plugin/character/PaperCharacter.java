@@ -70,90 +70,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public ClickAction<?> getAction(String name) {
-        return actions.get(name);
-    }
-
-    @Override
-    public @Nullable Component getDisplayName() {
-        return displayName;
-    }
-
-    @Override
-    public void setDisplayName(@Nullable Component displayName) {
-        if (displayName == this.displayName) return;
-        this.displayName = displayName;
-        getEntity().ifPresent(this::updateDisplayName);
-    }
-
-    @Override
-    public EntityType getType() {
-        return type;
-    }
-
-    @Override
-    public @Nullable Location getLocation() {
-        return getEntity().map(Entity::getLocation).orElse(null);
-    }
-
-    @Override
-    public @Nullable Location getSpawnLocation() {
-        return spawnLocation;
-    }
-
-    @Override
-    public void setSpawnLocation(@Nullable Location location) {
-        this.spawnLocation = location;
-    }
-
-    @Override
-    public @Unmodifiable Map<String, ClickAction<?>> getActions() {
-        return Map.copyOf(actions);
-    }
-
-    @Override
-    public @Nullable NamedTextColor getGlowColor() {
-        return glowColor;
-    }
-
-    @Override
-    public void setGlowColor(@Nullable NamedTextColor color) {
-        this.glowColor = color;
-    }
-
-    @Override
-    public Optional<T> getEntity() {
-        return Optional.ofNullable(entity).filter(Entity::isValid);
-    }
-
-    @Override
-    public Pose getPose() {
-        return pose;
-    }
-
-    @Override
-    public void setPose(Pose pose) {
-        if (pose == this.pose) return;
-        this.pose = pose;
-        getEntity().ifPresent(entity -> entity.setPose(pose, true));
-    }
-
-    @Override
-    public @Unmodifiable Set<UUID> getViewers() {
-        return Set.copyOf(viewers);
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public @Nullable World getWorld() {
-        return getEntity().map(Entity::getWorld).orElse(null);
-    }
-
-    @Override
     public boolean addAction(String name, ClickAction<?> action) {
         return !action.equals(actions.put(name, action));
     }
@@ -185,6 +101,90 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         entity.remove();
         entity = null;
         return true;
+    }
+
+    @Override
+    public ClickAction<?> getAction(String name) {
+        return actions.get(name);
+    }
+
+    @Override
+    public @Unmodifiable Map<String, ClickAction<?>> getActions() {
+        return Map.copyOf(actions);
+    }
+
+    @Override
+    public @Nullable Component getDisplayName() {
+        return displayName;
+    }
+
+    @Override
+    public void setDisplayName(@Nullable Component displayName) {
+        if (displayName == this.displayName) return;
+        this.displayName = displayName;
+        getEntity().ifPresent(this::updateDisplayName);
+    }
+
+    @Override
+    public Optional<T> getEntity() {
+        return Optional.ofNullable(entity).filter(Entity::isValid);
+    }
+
+    @Override
+    public @Nullable NamedTextColor getGlowColor() {
+        return glowColor;
+    }
+
+    @Override
+    public void setGlowColor(@Nullable NamedTextColor color) {
+        this.glowColor = color;
+    }
+
+    @Override
+    public @Nullable Location getLocation() {
+        return getEntity().map(Entity::getLocation).orElse(null);
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public Pose getPose() {
+        return pose;
+    }
+
+    @Override
+    public void setPose(Pose pose) {
+        if (pose == this.pose) return;
+        this.pose = pose;
+        getEntity().ifPresent(entity -> entity.setPose(pose, true));
+    }
+
+    @Override
+    public @Nullable Location getSpawnLocation() {
+        return spawnLocation;
+    }
+
+    @Override
+    public void setSpawnLocation(@Nullable Location location) {
+        this.spawnLocation = location;
+    }
+
+    @Override
+    public EntityType getType() {
+        return type;
+    }
+
+    @Override
+    public @Unmodifiable Set<UUID> getViewers() {
+        return Set.copyOf(viewers);
+    }
+
+    @Override
+    public @Nullable World getWorld() {
+        return getEntity().map(Entity::getWorld).orElse(null);
     }
 
     @Override
@@ -227,6 +227,16 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (visible == displayNameVisible) return;
         this.displayNameVisible = visible;
         getEntity().ifPresent(this::updateDisplayName);
+    }
+
+    @Override
+    public boolean isGlowing() {
+        return false;
+    }
+
+    @Override
+    public void setGlowing(boolean glowing) {
+
     }
 
     @Override
@@ -328,6 +338,15 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void remove() {
+        despawn();
+        file().delete();
+        backupFile().delete();
+        plugin.characterController().unregister(name);
+    }
+
+    @Override
     public boolean removeAction(String name) {
         return actions.remove(name) != null;
     }
@@ -357,6 +376,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public void setGravity(boolean gravity) {
+        this.gravity = gravity;
+    }
+
+    @Override
     public boolean spawn() {
         return spawnLocation != null && spawn(spawnLocation);
     }
@@ -369,20 +393,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type %s", type);
         this.entity = location.getWorld().spawn(location, (Class<T>) type.getEntityClass(), this::preSpawn);
         return true;
-    }
-
-    @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void remove() {
-        despawn();
-        file().delete();
-        backupFile().delete();
-        plugin.characterController().unregister(name);
-    }
-
-    @Override
-    public void setGravity(boolean gravity) {
-        this.gravity = gravity;
     }
 
     protected void preSpawn(T entity) {
@@ -409,11 +419,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         entity.setCustomNameVisible(displayNameVisible && displayName != null);
     }
 
-    private File file() {
-        return new File(plugin.savesFolder(), this.name + ".dat");
-    }
-
     private File backupFile() {
         return new File(plugin.savesFolder(), this.name + ".dat_old");
+    }
+
+    private File file() {
+        return new File(plugin.savesFolder(), this.name + ".dat");
     }
 }

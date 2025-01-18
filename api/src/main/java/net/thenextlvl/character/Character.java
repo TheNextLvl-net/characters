@@ -21,46 +21,6 @@ import java.util.UUID;
 
 @NullMarked
 public interface Character<T extends Entity> {
-    @Nullable
-    ClickAction<?> getAction(String name);
-
-    @Nullable
-    Component getDisplayName();
-
-    void setDisplayName(@Nullable Component displayName);
-
-    EntityType getType();
-
-    @Nullable
-    Location getLocation();
-
-    @Nullable
-    Location getSpawnLocation();
-
-    void setSpawnLocation(@Nullable Location location);
-
-    @Unmodifiable
-    Map<String, ClickAction<?>> getActions();
-
-    @Nullable
-    NamedTextColor getGlowColor();
-
-    void setGlowColor(@Nullable NamedTextColor color);
-
-    Optional<T> getEntity();
-
-    Pose getPose();
-
-    void setPose(Pose pose);
-
-    @Unmodifiable
-    Set<UUID> getViewers();
-
-    String getName();
-
-    @Nullable
-    World getWorld();
-
     boolean addAction(String name, ClickAction<?> action);
 
     boolean addViewer(UUID player);
@@ -70,6 +30,46 @@ public interface Character<T extends Entity> {
     boolean canSee(Player player);
 
     boolean despawn();
+
+    @Nullable
+    ClickAction<?> getAction(String name);
+
+    @Unmodifiable
+    Map<String, ClickAction<?>> getActions();
+
+    @Nullable
+    Component getDisplayName();
+
+    void setDisplayName(@Nullable Component displayName);
+
+    Optional<T> getEntity();
+
+    @Nullable
+    NamedTextColor getGlowColor();
+
+    void setGlowColor(@Nullable NamedTextColor color);
+
+    @Nullable
+    Location getLocation();
+
+    String getName();
+
+    Pose getPose();
+
+    void setPose(Pose pose);
+
+    @Nullable
+    Location getSpawnLocation();
+
+    void setSpawnLocation(@Nullable Location location);
+
+    EntityType getType();
+
+    @Unmodifiable
+    Set<UUID> getViewers();
+
+    @Nullable
+    World getWorld();
 
     boolean hasAction(ClickAction<?> action);
 
@@ -84,6 +84,10 @@ public interface Character<T extends Entity> {
     boolean isDisplayNameVisible();
 
     void setDisplayNameVisible(boolean visible);
+
+    boolean isGlowing();
+
+    void setGlowing(boolean glowing);
 
     boolean isInvincible();
 
@@ -109,6 +113,8 @@ public interface Character<T extends Entity> {
 
     boolean persist();
 
+    void remove();
+
     boolean removeAction(String name);
 
     boolean removeViewer(UUID player);
@@ -119,11 +125,9 @@ public interface Character<T extends Entity> {
 
     boolean respawn(Location location);
 
+    void setGravity(boolean gravity);
+
     boolean spawn();
 
     boolean spawn(Location location);
-
-    void remove();
-
-    void setGravity(boolean gravity);
 }
