@@ -31,15 +31,11 @@ class CharacterPoseCommand {
         var character = context.getArgument("character", Character.class);
         var pose = context.getArgument("pose", Pose.class);
 
-        if (character.getPose().equals(pose)) {
-            plugin.bundle().sendMessage(sender, "nothing.changed");
-            return 0;
-        }
-
-        character.setPose(pose);
-        plugin.bundle().sendMessage(sender, "character.pose",
+        var success = character.setPose(pose);
+        var message = success ? "character.pose" : "nothing.changed";
+        plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("pose", pose.name().toLowerCase()));
-        return Command.SINGLE_SUCCESS;
+        return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
