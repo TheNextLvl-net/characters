@@ -24,6 +24,7 @@ class CharacterAttributeCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
         return Commands.literal("reset").then(characterArgument(plugin)
                 .then(resetAI(plugin))
+                .then(resetColliding(plugin))
                 .then(resetGlowing(plugin))
                 .then(resetGravity(plugin))
                 .then(resetPathfinding(plugin))
@@ -33,6 +34,7 @@ class CharacterAttributeCommand {
     private static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
         return Commands.literal("set").then(characterArgument(plugin)
                 .then(setAI(plugin))
+                .then(setColliding(plugin))
                 .then(setGlowing(plugin))
                 .then(setGravity(plugin))
                 .then(setPathfinding(plugin))
@@ -57,7 +59,11 @@ class CharacterAttributeCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetAI(CharacterPlugin plugin) {
-        return reset("ai", character -> character.setTicking(false), plugin);
+        return reset("ai", character -> character.setAI(false), plugin);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> resetColliding(CharacterPlugin plugin) {
+        return reset("colliding", character -> character.setCollidable(false), plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetGlowing(CharacterPlugin plugin) {
@@ -69,10 +75,7 @@ class CharacterAttributeCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetPathfinding(CharacterPlugin plugin) {
-        return reset("pathfinding", character -> {
-            // todo: add pathfinding config
-            return false;
-        }, plugin);
+        return reset("pathfinding", character -> character.setPathfinding(false), plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetTicking(CharacterPlugin plugin) {
@@ -80,10 +83,11 @@ class CharacterAttributeCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setAI(CharacterPlugin plugin) {
-        return attribute("ai", (character, enabled) -> {
-            // todo: add ai config
-            return false;
-        }, plugin);
+        return attribute("ai", Character::setAI, plugin);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setColliding(CharacterPlugin plugin) {
+        return attribute("colliding", Character::setCollidable, plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setGlowing(CharacterPlugin plugin) {
@@ -95,7 +99,7 @@ class CharacterAttributeCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setPathfinding(CharacterPlugin plugin) {
-        return attribute("pathfinding", (v, x) -> true, plugin);
+        return attribute("pathfinding", Character::setPathfinding, plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setTicking(CharacterPlugin plugin) {

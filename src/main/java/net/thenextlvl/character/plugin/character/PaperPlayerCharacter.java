@@ -5,6 +5,7 @@ import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.common.base.Preconditions;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
@@ -69,6 +70,30 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         var packet = new ClientboundRemoveEntitiesPacket(entity.getEntityId());
         plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
         ((CraftPlayer) entity).getHandle().discard();
+        return true;
+    }
+
+    @Override
+    public void remove() {
+        plugin.getServer().getOnlinePlayers().forEach(player -> {
+            var team = player.getScoreboard().getTeam(getUniqueId().toString());
+            if (team != null) team.unregister();
+        });
+        removeDisplayNameHologram();
+        super.remove();
+    }
+
+    @Override
+    public boolean setCollidable(boolean collidable) {
+        if (!super.setCollidable(collidable)) return false;
+        updateTeamOptions();
+        return true;
+    }
+
+    @Override
+    public boolean setGlowColor(@Nullable NamedTextColor color) {
+        if (!super.setGlowColor(color)) return false;
+        updateTeamOptions();
         return true;
     }
 
@@ -138,41 +163,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public void remove() {
-        plugin.getServer().getOnlinePlayers().forEach(player -> {
-            var team = player.getScoreboard().getTeam(getUniqueId().toString());
-            if (team != null) team.unregister();
-        });
-        removeDisplayNameHologram();
-        super.remove();
-    }
-
-    @Override
     protected void updateDisplayName(Player player) {
         updateDisplayNameHologram(player);
-        plugin.getServer().getOnlinePlayers().forEach(all ->
-                updateDisplayName(getCharacterSettingsTeam(all)));
-    }
-
-    public void loadCharacter(Player player) {
-        getEntity().ifPresent(entity -> {
-            var handle = ((CraftPlayer) entity).getHandle();
-            if (isVisibleByDefault()) sendPacket(player, new ClientboundBundlePacket(List.of(
-                    createAddPacket(handle), createInitializationPacket(handle))));
-            else if (canSee(player)) player.showEntity(plugin, entity);
-            else player.hideEntity(plugin, entity);
-            updateDisplayName(getCharacterSettingsTeam(player));
-        });
-    }
-
-    public void broadcastCharacter() {
-        getEntity().ifPresent(entity -> {
-            var handle = ((CraftPlayer) entity).getHandle();
-            var packets = new ClientboundBundlePacket(List.of(
-                    createInitializationPacket(handle), createAddPacket(handle)
-            ));
-            entity.getWorld().getPlayers().forEach(player -> sendPacket(player, packets));
-        });
+        updateTeamOptions();
     }
 
     @Override
@@ -250,8 +243,29 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return true;
     }
 
-    private void sendPacket(Player player, Packet<?> packet) {
-        ((CraftPlayer) player).getHandle().connection.send(packet);
+    public void loadCharacter(Player player) {
+        getEntity().ifPresent(entity -> {
+            var handle = ((CraftPlayer) entity).getHandle();
+            if (isVisibleByDefault()) sendPacket(player, new ClientboundBundlePacket(List.of(
+                    createAddPacket(handle), createInitializationPacket(handle))));
+            else if (canSee(player)) player.showEntity(plugin, entity);
+            else player.hideEntity(plugin, entity);
+            updateTeamOptions(getCharacterSettingsTeam(player));
+        });
+    }
+
+    private void applySkinPartConfig(ServerPlayer player) {
+        player.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) getSkinParts().getRaw());
+    }
+
+    private void broadcastCharacter() {
+        getEntity().ifPresent(entity -> {
+            var handle = ((CraftPlayer) entity).getHandle();
+            var packets = new ClientboundBundlePacket(List.of(
+                    createInitializationPacket(handle), createAddPacket(handle)
+            ));
+            entity.getWorld().getPlayers().forEach(player -> sendPacket(player, packets));
+        });
     }
 
     private ClientboundAddEntityPacket createAddPacket(ServerPlayer entity) {
@@ -260,52 +274,24 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
                 entity.getType(), 0, entity.getDeltaMovement(), entity.getYHeadRot());
     }
 
+    private @NotNull ClientInformation createClientInformation() {
+        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
+    }
+
     private ClientboundPlayerInfoUpdatePacket createInitializationPacket(ServerPlayer entity) {
         return ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
     }
 
-    private void updateDisplayName(Team team) {
-        var status = displayNameVisible && displayName == null ? OptionStatus.ALWAYS : OptionStatus.NEVER;
-        team.setOption(Option.NAME_TAG_VISIBILITY, status);
-        team.color(glowColor);
+    private OptionStatus fromBoolean(boolean value) {
+        return value ? OptionStatus.ALWAYS : OptionStatus.NEVER;
     }
 
     private Team getCharacterSettingsTeam(Player player) {
         var characterSettings = player.getScoreboard().getTeam(getUniqueId().toString());
         if (characterSettings != null) return characterSettings;
         var team = player.getScoreboard().registerNewTeam(getUniqueId().toString());
-        team.addEntry(getName());
+        team.addEntry(getScoreboardName());
         return team;
-    }
-
-    private @NotNull ClientInformation createClientInformation() {
-        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
-    }
-
-    private void applySkinPartConfig(ServerPlayer player) {
-        player.getEntityData().set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) getSkinParts().getRaw());
-    }
-
-    private void updateDisplayNameHologram(Player player) {
-        if (displayName == null || !displayNameVisible) {
-            removeDisplayNameHologram();
-        } else if (displayNameHologram == null) {
-            spawnDisplayNameHologram(player);
-        } else {
-            displayNameHologram.teleportAsync(getDisplayNameHologramPosition(player));
-            displayNameHologram.text(displayName);
-        }
-    }
-
-    private void spawnDisplayNameHologram(Player player) {
-        Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
-        var location = getDisplayNameHologramPosition(player);
-        displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, display -> {
-            display.setBillboard(Display.Billboard.CENTER);
-            display.setGravity(false);
-            display.setPersistent(false);
-            display.text(displayName);
-        });
     }
 
     private Location getDisplayNameHologramPosition(Player player) {
@@ -324,6 +310,21 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         displayNameHologram = null;
     }
 
+    private void sendPacket(Player player, Packet<?> packet) {
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    private void spawnDisplayNameHologram(Player player) {
+        Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
+        var location = getDisplayNameHologramPosition(player);
+        displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, display -> {
+            display.setBillboard(Display.Billboard.CENTER);
+            display.setGravity(false);
+            display.setPersistent(false);
+            display.text(displayName);
+        });
+    }
+
     private boolean update() {
         if (entity == null) return false;
         var handle = ((CraftPlayer) entity).getHandle();
@@ -335,6 +336,28 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         ));
         entity.getTrackedBy().forEach(player -> sendPacket(player, packets));
         return true;
+    }
+
+    private void updateDisplayNameHologram(Player player) {
+        if (displayName == null || !displayNameVisible) {
+            removeDisplayNameHologram();
+        } else if (displayNameHologram == null) {
+            spawnDisplayNameHologram(player);
+        } else {
+            displayNameHologram.teleportAsync(getDisplayNameHologramPosition(player));
+            displayNameHologram.text(displayName);
+        }
+    }
+
+    private void updateTeamOptions() {
+        plugin.getServer().getOnlinePlayers().forEach(player ->
+                updateTeamOptions(getCharacterSettingsTeam(player)));
+    }
+
+    private void updateTeamOptions(Team team) {
+        team.color(glowColor);
+        team.setOption(Option.COLLISION_RULE, fromBoolean(collidable));
+        team.setOption(Option.NAME_TAG_VISIBILITY, fromBoolean(displayNameVisible && displayName == null));
     }
 
     private class CraftCharacter extends CraftPlayer {
@@ -359,7 +382,20 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             super.setPos(x, y, z);
             PaperPlayerCharacter.this.getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
         }
+
+        @Override
+        public String getScoreboardName() {
+            return PaperPlayerCharacter.this.getScoreboardName();
+        }
+
+        @Override
+        public boolean isCollidable(boolean ignoreClimbing) {
+            return false;
+        }
+
+        @Override
+        public boolean isPushable() {
+            return false;
+        }
     }
-
-
 }

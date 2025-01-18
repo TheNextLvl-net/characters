@@ -3,6 +3,7 @@ package net.thenextlvl.character.plugin.character;
 import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.nbt.NBTOutputStream;
+import core.util.StringUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
@@ -42,11 +43,13 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 @NullMarked
 public class PaperCharacter<T extends Entity> implements Character<T> {
-    protected final EntityType type;
     protected final Map<String, ClickAction<?>> actions = new HashMap<>();
     protected final Set<UUID> viewers = new HashSet<>();
-    protected final String name;
+    protected final String scoreboardName = StringUtil.random(32);
+
     protected final CharacterPlugin plugin;
+    protected final EntityType type;
+    protected final String name;
 
     protected @Nullable Component displayName = null;
     protected @Nullable Location spawnLocation = null;
@@ -55,11 +58,13 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     protected Pose pose = Pose.STANDING;
 
+    protected boolean ai = false;
     protected boolean collidable = false;
     protected boolean displayNameVisible = true;
     protected boolean glowing = false;
     protected boolean gravity = false;
     protected boolean invincible = true;
+    protected boolean pathfinding = false;
     protected boolean persistent = true;
     protected boolean ticking = false;
     protected boolean visibleByDefault = true;
@@ -120,6 +125,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public <V> Optional<V> getEntity(Class<V> type) {
+        return getEntity().filter(type::isInstance).map(type::cast);
+    }
+
+    @Override
     public Optional<T> getEntity() {
         return Optional.ofNullable(entity).filter(Entity::isValid);
     }
@@ -137,6 +147,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getScoreboardName() {
+        return scoreboardName;
     }
 
     @Override
@@ -162,6 +177,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Nullable World getWorld() {
         return getEntity().map(Entity::getWorld).orElse(null);
+    }
+
+    @Override
+    public boolean hasAI() {
+        return ai;
     }
 
     @Override
@@ -197,6 +217,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean isInvincible() {
         return invincible;
+    }
+
+    @Override
+    public boolean isPathfinding() {
+        return pathfinding;
     }
 
     @Override
@@ -297,13 +322,20 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public boolean setAI(boolean ai) {
+        if (ai == this.ai) return false;
+        getEntity(LivingEntity.class).ifPresent(entity ->
+                entity.setAI(ai));
+        this.ai = ai;
+        return true;
+    }
+
+    @Override
     public boolean setCollidable(boolean collidable) {
         if (collidable == this.collidable) return false;
+        getEntity(LivingEntity.class).ifPresent(entity ->
+                entity.setCollidable(collidable));
         this.collidable = collidable;
-        getEntity().ifPresent(entity -> {
-            if (!(entity instanceof LivingEntity living)) return;
-            living.setCollidable(collidable);
-        });
         return true;
     }
 
@@ -333,14 +365,15 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean setGlowing(boolean glowing) {
         if (glowing == this.glowing) return false;
-        this.glowing = glowing;
         getEntity().ifPresent(entity -> entity.setGlowing(glowing));
+        this.glowing = glowing;
         return true;
     }
 
     @Override
     public boolean setGravity(boolean gravity) {
         if (gravity == this.gravity) return false;
+        getEntity().ifPresent(entity -> entity.setGravity(gravity));
         this.gravity = gravity;
         return true;
     }
@@ -348,8 +381,16 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean setInvincible(boolean invincible) {
         if (invincible == this.invincible) return false;
-        this.invincible = invincible;
         getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
+        this.invincible = invincible;
+        return true;
+    }
+
+    @Override
+    public boolean setPathfinding(boolean pathfinding) {
+        if (pathfinding == this.pathfinding) return false;
+        this.pathfinding = pathfinding;
+        getEntity(Mob.class).ifPresent(this::updatePathfinderGoals);
         return true;
     }
 
@@ -363,8 +404,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean setPose(Pose pose) {
         if (pose == this.pose) return false;
-        this.pose = pose;
         getEntity().ifPresent(entity -> entity.setPose(pose, true));
+        this.pose = pose;
         return true;
     }
 
@@ -417,26 +458,32 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     protected void preSpawn(T entity) {
         if (entity instanceof LivingEntity living) {
-            living.setAI(false);
+            living.setAI(ai);
             living.setCanPickupItems(false);
-            living.setCollidable(isCollidable());
+            living.setCollidable(collidable);
         }
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
+            updatePathfinderGoals(mob);
         }
-        entity.setGravity(hasGravity());
-        entity.setInvulnerable(isInvincible());
+        entity.setGlowing(glowing);
+        entity.setGravity(gravity);
+        entity.setInvulnerable(invincible);
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setPersistent(false);
-        entity.setPose(getPose(), true);
+        entity.setPose(pose, true);
         entity.setSilent(true);
-        entity.setVisibleByDefault(isVisibleByDefault());
+        entity.setVisibleByDefault(visibleByDefault);
         updateDisplayName(entity);
     }
 
     protected void updateDisplayName(T entity) {
         entity.customName(displayNameVisible ? displayName : null);
         entity.setCustomNameVisible(displayNameVisible && displayName != null);
+    }
+
+    protected void updatePathfinderGoals(Mob mob) {
+        if (!pathfinding) plugin.getServer().getMobGoals().removeAllGoals(mob);
     }
 
     private File backupFile() {

@@ -14,6 +14,7 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -40,6 +41,7 @@ import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.KeyAdapter;
 import net.thenextlvl.character.plugin.serialization.LocationAdapter;
+import net.thenextlvl.character.plugin.serialization.NamedTextColorAdapter;
 import net.thenextlvl.character.plugin.serialization.ProfilePropertyAdapter;
 import net.thenextlvl.character.plugin.serialization.SoundAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleAdapter;
@@ -81,13 +83,14 @@ public class CharacterPlugin extends JavaPlugin {
 
     private final NBT nbt = NBT.builder()
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter(this))
-            .registerTypeHierarchyAdapter(InetSocketAddress.class, new AddressAdapter())
             .registerTypeHierarchyAdapter(Character.class, new CharacterSerializer())
             .registerTypeHierarchyAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
             .registerTypeHierarchyAdapter(EntityType.class, new EntityTypeAdapter())
+            .registerTypeHierarchyAdapter(InetSocketAddress.class, new AddressAdapter())
             .registerTypeHierarchyAdapter(Key.class, new KeyAdapter())
             .registerTypeHierarchyAdapter(Location.class, new LocationAdapter())
+            .registerTypeHierarchyAdapter(NamedTextColor.class, new NamedTextColorAdapter())
             .registerTypeHierarchyAdapter(ProfileProperty.class, new ProfilePropertyAdapter())
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
             .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
@@ -251,12 +254,15 @@ public class CharacterPlugin extends JavaPlugin {
     }
 
     private <T extends Character<?>> T deserialize(CompoundTag root, T character) {
+        root.optional("ai").map(Tag::getAsBoolean).ifPresent(character::setAI);
         root.optional("collidable").map(Tag::getAsBoolean).ifPresent(character::setCollidable);
-        root.optional("displayName").map(tag -> nbt.fromTag(tag, Component.class))
-                .ifPresent(character::setDisplayName);
+        root.optional("displayName").map(tag -> nbt.fromTag(tag, Component.class)).ifPresent(character::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(character::setDisplayNameVisible);
+        root.optional("glowColor").map(tag -> nbt.fromTag(tag, NamedTextColor.class)).ifPresent(character::setGlowColor);
+        root.optional("glowing").map(Tag::getAsBoolean).ifPresent(character::setGlowing);
         root.optional("gravity").map(Tag::getAsBoolean).ifPresent(character::setGravity);
         root.optional("invincible").map(Tag::getAsBoolean).ifPresent(character::setInvincible);
+        root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(character::setPathfinding);
         root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(character::setPose);
         root.optional("ticking").map(Tag::getAsBoolean).ifPresent(character::setTicking);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(character::setVisibleByDefault);

@@ -14,15 +14,19 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
     @Override
     public CompoundTag serialize(Character<?> character, TagSerializationContext context) throws ParserException {
         var tag = new CompoundTag();
-        tag.add("type", context.serialize(character.getType()));
         if (character.getDisplayName() != null) tag.add("displayName", context.serialize(character.getDisplayName()));
+        if (character.getGlowColor() != null) tag.add("glowColor", context.serialize(character.getGlowColor()));
         if (character.getSpawnLocation() != null) tag.add("location", context.serialize(character.getSpawnLocation()));
+        tag.add("ai", character.hasAI());
         tag.add("collidable", character.isCollidable());
         tag.add("displayNameVisible", character.isDisplayNameVisible());
+        tag.add("glowing", character.isGlowing());
         tag.add("gravity", character.hasGravity());
         tag.add("invincible", character.isInvincible());
+        tag.add("pathfinding", character.isPathfinding());
         tag.add("pose", character.getPose().name());
         tag.add("ticking", character.isTicking());
+        tag.add("type", context.serialize(character.getType()));
         tag.add("visibleByDefault", character.isVisibleByDefault());
         var actions = new CompoundTag();
         character.getActions().forEach((name, clickAction) -> actions.add(name, context.serialize(clickAction)));

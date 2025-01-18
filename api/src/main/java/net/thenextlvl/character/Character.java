@@ -40,6 +40,8 @@ public interface Character<T extends Entity> {
     @Nullable
     Component getDisplayName();
 
+    <V> Optional<V> getEntity(Class<V> type);
+
     Optional<T> getEntity();
 
     @Nullable
@@ -49,6 +51,8 @@ public interface Character<T extends Entity> {
     Location getLocation();
 
     String getName();
+
+    String getScoreboardName();
 
     Pose getPose();
 
@@ -63,6 +67,8 @@ public interface Character<T extends Entity> {
     @Nullable
     World getWorld();
 
+    boolean hasAI();
+
     boolean hasAction(ClickAction<?> action);
 
     boolean hasAction(String name);
@@ -76,6 +82,8 @@ public interface Character<T extends Entity> {
     boolean isGlowing();
 
     boolean isInvincible();
+
+    boolean isPathfinding();
 
     boolean isPersistent();
 
@@ -103,6 +111,8 @@ public interface Character<T extends Entity> {
 
     boolean respawn(Location location);
 
+    boolean setAI(boolean ai);
+
     boolean setCollidable(boolean collidable);
 
     boolean setDisplayName(@Nullable Component displayName);
@@ -116,6 +126,8 @@ public interface Character<T extends Entity> {
     boolean setGravity(boolean gravity);
 
     boolean setInvincible(boolean invincible);
+
+    boolean setPathfinding(boolean pathfinding);
 
     boolean setPersistent(boolean persistent);
 
