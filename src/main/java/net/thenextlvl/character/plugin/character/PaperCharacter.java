@@ -57,6 +57,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     protected boolean collidable = false;
     protected boolean displayNameVisible = true;
+    protected boolean glowing = false;
     protected boolean gravity = false;
     protected boolean invincible = true;
     protected boolean persistent = true;
@@ -119,13 +120,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public void setDisplayName(@Nullable Component displayName) {
-        if (displayName == this.displayName) return;
-        this.displayName = displayName;
-        getEntity().ifPresent(this::updateDisplayName);
-    }
-
-    @Override
     public Optional<T> getEntity() {
         return Optional.ofNullable(entity).filter(Entity::isValid);
     }
@@ -133,11 +127,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Nullable NamedTextColor getGlowColor() {
         return glowColor;
-    }
-
-    @Override
-    public void setGlowColor(@Nullable NamedTextColor color) {
-        this.glowColor = color;
     }
 
     @Override
@@ -156,20 +145,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public void setPose(Pose pose) {
-        if (pose == this.pose) return;
-        this.pose = pose;
-        getEntity().ifPresent(entity -> entity.setPose(pose, true));
-    }
-
-    @Override
     public @Nullable Location getSpawnLocation() {
         return spawnLocation;
-    }
-
-    @Override
-    public void setSpawnLocation(@Nullable Location location) {
-        this.spawnLocation = location;
     }
 
     @Override
@@ -208,35 +185,13 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public void setCollidable(boolean collidable) {
-        if (collidable == this.collidable) return;
-        this.collidable = collidable;
-        getEntity().ifPresent(entity -> {
-            if (!(entity instanceof LivingEntity living)) return;
-            living.setCollidable(collidable);
-        });
-    }
-
-    @Override
     public boolean isDisplayNameVisible() {
         return displayNameVisible;
     }
 
     @Override
-    public void setDisplayNameVisible(boolean visible) {
-        if (visible == displayNameVisible) return;
-        this.displayNameVisible = visible;
-        getEntity().ifPresent(this::updateDisplayName);
-    }
-
-    @Override
     public boolean isGlowing() {
-        return false;
-    }
-
-    @Override
-    public void setGlowing(boolean glowing) {
-
+        return glowing;
     }
 
     @Override
@@ -245,20 +200,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public void setInvincible(boolean invincible) {
-        if (invincible == this.invincible) return;
-        this.invincible = invincible;
-        getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
-    }
-
-    @Override
     public boolean isPersistent() {
         return persistent;
-    }
-
-    @Override
-    public void setPersistent(boolean persistent) {
-        this.persistent = persistent;
     }
 
     @Override
@@ -269,12 +212,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean isTicking() {
         return ticking;
-    }
-
-    @Override
-    public void setTicking(boolean ticking) {
-        this.ticking = ticking;
-        // todo: use custom entity impl to make this possible
     }
 
     @Override
@@ -290,22 +227,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean isVisibleByDefault() {
         return visibleByDefault;
-    }
-
-    @Override
-    public void setVisibleByDefault(boolean visible) {
-        if (visible == visibleByDefault) return;
-        this.visibleByDefault = visible;
-        getEntity().ifPresent(entity -> {
-            entity.setVisibleByDefault(visible);
-            if (visible) entity.getTrackedBy().forEach(player -> {
-                if (isViewer(player.getUniqueId())) return;
-                player.hideEntity(plugin, entity);
-            });
-            else getViewers().stream().map(plugin.getServer()::getPlayer)
-                    .filter(Objects::nonNull)
-                    .forEach(player -> player.showEntity(plugin, entity));
-        });
     }
 
     @Override
@@ -376,8 +297,107 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public void setGravity(boolean gravity) {
+    public boolean setCollidable(boolean collidable) {
+        if (collidable == this.collidable) return false;
+        this.collidable = collidable;
+        getEntity().ifPresent(entity -> {
+            if (!(entity instanceof LivingEntity living)) return;
+            living.setCollidable(collidable);
+        });
+        return true;
+    }
+
+    @Override
+    public boolean setDisplayName(@Nullable Component displayName) {
+        if (Objects.equals(displayName, this.displayName)) return false;
+        this.displayName = displayName;
+        getEntity().ifPresent(this::updateDisplayName);
+        return true;
+    }
+
+    @Override
+    public boolean setDisplayNameVisible(boolean visible) {
+        if (visible == displayNameVisible) return false;
+        this.displayNameVisible = visible;
+        getEntity().ifPresent(this::updateDisplayName);
+        return true;
+    }
+
+    @Override
+    public boolean setGlowColor(@Nullable NamedTextColor color) {
+        if (color == this.glowColor) return false;
+        this.glowColor = color;
+        return true;
+    }
+
+    @Override
+    public boolean setGlowing(boolean glowing) {
+        if (glowing == this.glowing) return false;
+        this.glowing = glowing;
+        getEntity().ifPresent(entity -> entity.setGlowing(glowing));
+        return true;
+    }
+
+    @Override
+    public boolean setGravity(boolean gravity) {
+        if (gravity == this.gravity) return false;
         this.gravity = gravity;
+        return true;
+    }
+
+    @Override
+    public boolean setInvincible(boolean invincible) {
+        if (invincible == this.invincible) return false;
+        this.invincible = invincible;
+        getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
+        return true;
+    }
+
+    @Override
+    public boolean setPersistent(boolean persistent) {
+        if (persistent == this.persistent) return false;
+        this.persistent = persistent;
+        return true;
+    }
+
+    @Override
+    public boolean setPose(Pose pose) {
+        if (pose == this.pose) return false;
+        this.pose = pose;
+        getEntity().ifPresent(entity -> entity.setPose(pose, true));
+        return true;
+    }
+
+    @Override
+    public boolean setSpawnLocation(@Nullable Location location) {
+        if (Objects.equals(location, spawnLocation)) return false;
+        this.spawnLocation = location;
+        return true;
+    }
+
+    @Override
+    public boolean setTicking(boolean ticking) {
+        if (ticking == this.ticking) return false;
+        this.ticking = ticking;
+        // todo: use custom entity impl to make this possible
+        return true;
+    }
+
+    @Override
+    public boolean setVisibleByDefault(boolean visible) {
+        if (visible == visibleByDefault) return false;
+        this.visibleByDefault = visible;
+        getEntity().ifPresent(entity -> {
+            entity.setVisibleByDefault(visible);
+            if (visible) entity.getTrackedBy().forEach(player -> {
+                if (isViewer(player.getUniqueId())) return;
+                player.hideEntity(plugin, entity);
+            });
+            else getViewers().stream().map(plugin.getServer()::getPlayer)
+                    .filter(Objects::nonNull)
+                    .forEach(player -> player.showEntity(plugin, entity));
+        });
+        return true;
     }
 
     @Override

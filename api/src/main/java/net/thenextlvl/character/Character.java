@@ -40,14 +40,10 @@ public interface Character<T extends Entity> {
     @Nullable
     Component getDisplayName();
 
-    void setDisplayName(@Nullable Component displayName);
-
     Optional<T> getEntity();
 
     @Nullable
     NamedTextColor getGlowColor();
-
-    void setGlowColor(@Nullable NamedTextColor color);
 
     @Nullable
     Location getLocation();
@@ -56,12 +52,8 @@ public interface Character<T extends Entity> {
 
     Pose getPose();
 
-    void setPose(Pose pose);
-
     @Nullable
     Location getSpawnLocation();
-
-    void setSpawnLocation(@Nullable Location location);
 
     EntityType getType();
 
@@ -79,37 +71,23 @@ public interface Character<T extends Entity> {
 
     boolean isCollidable();
 
-    void setCollidable(boolean collidable);
-
     boolean isDisplayNameVisible();
-
-    void setDisplayNameVisible(boolean visible);
 
     boolean isGlowing();
 
-    void setGlowing(boolean glowing);
-
     boolean isInvincible();
 
-    void setInvincible(boolean invincible);
-
     boolean isPersistent();
-
-    void setPersistent(boolean persistent);
 
     boolean isSpawned();
 
     boolean isTicking();
-
-    void setTicking(boolean ticking);
 
     boolean isTrackedBy(Player player);
 
     boolean isViewer(UUID player);
 
     boolean isVisibleByDefault();
-
-    void setVisibleByDefault(boolean visible);
 
     boolean persist();
 
@@ -125,7 +103,29 @@ public interface Character<T extends Entity> {
 
     boolean respawn(Location location);
 
-    void setGravity(boolean gravity);
+    boolean setCollidable(boolean collidable);
+
+    boolean setDisplayName(@Nullable Component displayName);
+
+    boolean setDisplayNameVisible(boolean visible);
+
+    boolean setGlowColor(@Nullable NamedTextColor color);
+
+    boolean setGlowing(boolean glowing);
+
+    boolean setGravity(boolean gravity);
+
+    boolean setInvincible(boolean invincible);
+
+    boolean setPersistent(boolean persistent);
+
+    boolean setPose(Pose pose);
+
+    boolean setSpawnLocation(@Nullable Location location);
+
+    boolean setTicking(boolean ticking);
+
+    boolean setVisibleByDefault(boolean visible);
 
     boolean spawn();
 
