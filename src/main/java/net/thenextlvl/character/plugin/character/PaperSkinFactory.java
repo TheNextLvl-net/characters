@@ -10,6 +10,7 @@ import org.mineskin.request.GenerateRequest;
 
 import java.io.File;
 import java.net.URL;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 // https://docs.mineskin.org/docs/category/mineskin-api
@@ -21,7 +22,7 @@ public class PaperSkinFactory implements SkinFactory {
                 .requestHandler((userAgent, apiKey, timeout, gson) ->
                         new Java11RequestHandler(userAgent, apiKey.isBlank() ? null : apiKey, timeout, gson))
                 .userAgent("Characters/" + plugin.getPluginMeta().getVersion())
-                .apiKey("")
+                .apiKey(Objects.requireNonNullElse(System.getenv("MINESKIN_API_KEY"), ""))
                 .timeout(3000)
                 .build();
     }
