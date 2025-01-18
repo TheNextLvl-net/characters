@@ -75,9 +75,10 @@ class CharacterTeleportCommand {
         var character = (Character<?>) context.getArgument("character", Character.class);
 
         character.getEntity().ifPresent(entity -> entity.teleportAsync(location));
-        character.setSpawnLocation(location);
+        var success = character.setSpawnLocation(location);
+        var message = success ? "character.teleported" : "nothing.changed";
 
-        plugin.bundle().sendMessage(sender, "character.teleported",
+        plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("world", location.getWorld().getName()),
                 Formatter.number("x", location.x()),
                 Formatter.number("y", location.y()),
@@ -85,6 +86,6 @@ class CharacterTeleportCommand {
                 Formatter.number("yaw", location.getYaw()),
                 Formatter.number("pitch", location.getPitch()),
                 Placeholder.unparsed("character", character.getName()));
-        return Command.SINGLE_SUCCESS;
+        return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
