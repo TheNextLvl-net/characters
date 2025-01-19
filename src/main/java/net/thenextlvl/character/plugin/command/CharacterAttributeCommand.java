@@ -6,8 +6,10 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.argument.NamedTextColorArgument;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.function.BiFunction;
@@ -25,6 +27,7 @@ class CharacterAttributeCommand {
         return Commands.literal("reset").then(characterArgument(plugin)
                 .then(resetAI(plugin))
                 .then(resetColliding(plugin))
+                .then(resetGlowColor(plugin))
                 .then(resetGlowing(plugin))
                 .then(resetGravity(plugin))
                 .then(resetPathfinding(plugin))
@@ -36,17 +39,10 @@ class CharacterAttributeCommand {
                 .then(setAI(plugin))
                 .then(setColliding(plugin))
                 .then(setGlowing(plugin))
+                .then(setGlowColor(plugin))
                 .then(setGravity(plugin))
                 .then(setPathfinding(plugin))
                 .then(setTicking(plugin)));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> reset(String name, Function<Character<?>, Boolean> function, CharacterPlugin plugin) {
-        return Commands.literal(name).executes(context -> {
-            var character = context.getArgument("character", Character.class);
-            var success = function.apply(character);
-            return success ? Command.SINGLE_SUCCESS : 0;
-        });
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> attribute(String name, BiFunction<Character<?>, Boolean, Boolean> function, CharacterPlugin plugin) {
@@ -58,12 +54,24 @@ class CharacterAttributeCommand {
         }));
     }
 
+    private static ArgumentBuilder<CommandSourceStack, ?> reset(String name, Function<Character<?>, Boolean> function, CharacterPlugin plugin) {
+        return Commands.literal(name).executes(context -> {
+            var character = context.getArgument("character", Character.class);
+            var success = function.apply(character);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        });
+    }
+
     private static ArgumentBuilder<CommandSourceStack, ?> resetAI(CharacterPlugin plugin) {
         return reset("ai", character -> character.setAI(false), plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetColliding(CharacterPlugin plugin) {
         return reset("colliding", character -> character.setCollidable(false), plugin);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> resetGlowColor(CharacterPlugin plugin) {
+        return reset("glow-color", character -> character.setGlowColor(null), plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetGlowing(CharacterPlugin plugin) {
@@ -92,6 +100,16 @@ class CharacterAttributeCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> setGlowing(CharacterPlugin plugin) {
         return attribute("glowing", Character::setGlowing, plugin);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setGlowColor(CharacterPlugin plugin) {
+        return Commands.literal("glow-color").then(Commands.argument("color", new NamedTextColorArgument())
+                .executes(context -> {
+                    var character = context.getArgument("character", Character.class);
+                    var color = context.getArgument("color", NamedTextColor.class);
+                    var success = character.setGlowColor(color);
+                    return success ? Command.SINGLE_SUCCESS : 0;
+                }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setGravity(CharacterPlugin plugin) {
