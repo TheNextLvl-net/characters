@@ -29,8 +29,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,7 +43,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 @NullMarked
 public class PaperCharacter<T extends Entity> implements Character<T> {
-    protected final Map<String, ClickAction<?>> actions = new HashMap<>();
+    protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
 
