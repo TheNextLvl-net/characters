@@ -315,13 +315,14 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     private void spawnDisplayNameHologram(Player player) {
+        Preconditions.checkNotNull(displayName, "DisplayName cannot be null");
         Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
         var location = getDisplayNameHologramPosition(player);
         displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, display -> {
             display.setBillboard(Display.Billboard.CENTER);
             display.setGravity(false);
             display.setPersistent(false);
-            display.text(displayName);
+            display.text(displayName.colorIfAbsent(teamColor));
         });
     }
 
@@ -345,7 +346,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             spawnDisplayNameHologram(player);
         } else {
             displayNameHologram.teleportAsync(getDisplayNameHologramPosition(player));
-            displayNameHologram.text(displayName);
+            displayNameHologram.text(displayName.colorIfAbsent(teamColor));
         }
     }
 
