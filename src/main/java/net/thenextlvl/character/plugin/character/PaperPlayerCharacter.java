@@ -414,13 +414,13 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         @Override
         public void setPose(Pose pose) {
             super.setPose(pose);
-            PaperPlayerCharacter.this.getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
+            getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
         }
 
         @Override
         public void setPos(double x, double y, double z) {
             super.setPos(x, y, z);
-            PaperPlayerCharacter.this.getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
+            getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
         }
 
         @Override
