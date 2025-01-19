@@ -324,8 +324,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean setAI(boolean ai) {
         if (ai == this.ai) return false;
-        getEntity(LivingEntity.class).ifPresent(entity ->
-                entity.setAI(ai));
+        getEntity(LivingEntity.class).ifPresent(entity -> entity.setAI(ai));
         this.ai = ai;
         return true;
     }
@@ -333,8 +332,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean setCollidable(boolean collidable) {
         if (collidable == this.collidable) return false;
-        getEntity(LivingEntity.class).ifPresent(entity ->
-                entity.setCollidable(collidable));
+        getEntity(LivingEntity.class).ifPresent(entity -> entity.setCollidable(collidable));
         this.collidable = collidable;
         return true;
     }
