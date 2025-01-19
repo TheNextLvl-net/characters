@@ -158,13 +158,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             entity.setSleepingIgnored(true);
         }
 
-        if (ticking) plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
-            if (!ticking || entity == null) scheduledTask.cancel();
-            else if (entity.isValid()) serverPlayer.doTick();
-        }, 1, 1);
-
         preSpawn(this.entity);
         applySkinPartConfig(serverPlayer);
+        startTicking(serverPlayer);
         return true;
     }
 
@@ -329,6 +325,21 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
         var location = getDisplayNameHologramPosition(player);
         displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, this::updateDisplayNameHologram);
+    }
+
+    @Override
+    public boolean setTicking(boolean ticking) {
+        if (!super.setTicking(ticking)) return false;
+        getEntity(CraftPlayer.class).map(CraftPlayer::getHandle)
+                .ifPresent(this::startTicking);
+        return true;
+    }
+
+    private void startTicking(ServerPlayer serverPlayer) {
+        if (ticking) plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
+            if (!ticking || entity == null) scheduledTask.cancel();
+            else if (serverPlayer.valid) serverPlayer.doTick();
+        }, 1, 1);
     }
 
     private boolean update() {
