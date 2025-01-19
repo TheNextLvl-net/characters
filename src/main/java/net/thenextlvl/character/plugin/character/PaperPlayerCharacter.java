@@ -83,15 +83,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public void remove() {
-        plugin.getServer().getOnlinePlayers().forEach(player -> {
-            var team = player.getScoreboard().getTeam(getScoreboardName());
-            if (team != null) team.unregister();
-        });
-        super.remove();
-    }
-
-    @Override
     public boolean setCollidable(boolean collidable) {
         if (!super.setCollidable(collidable)) return false;
         updateTeamOptions();
@@ -175,6 +166,15 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         preSpawn(this.entity);
         applySkinPartConfig(serverPlayer);
         return true;
+    }
+
+    @Override
+    public void remove() {
+        plugin.getServer().getOnlinePlayers().forEach(player -> {
+            var team = player.getScoreboard().getTeam(getScoreboardName());
+            if (team != null) team.unregister();
+        });
+        super.remove();
     }
 
     @Override
