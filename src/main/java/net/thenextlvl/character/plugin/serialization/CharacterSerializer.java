@@ -25,6 +25,7 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
         tag.add("invincible", character.isInvincible());
         tag.add("pathfinding", character.isPathfinding());
         tag.add("pose", character.getPose().name());
+        tag.add("scale", character.getScale());
         tag.add("ticking", character.isTicking());
         tag.add("type", context.serialize(character.getType()));
         tag.add("visibleByDefault", character.isVisibleByDefault());

@@ -263,6 +263,7 @@ public class CharacterPlugin extends JavaPlugin {
         root.optional("invincible").map(Tag::getAsBoolean).ifPresent(character::setInvincible);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(character::setPathfinding);
         root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(character::setPose);
+        root.optional("scale").map(Tag::getAsDouble).ifPresent(character::setScale);
         root.optional("teamColor").map(tag -> nbt.fromTag(tag, NamedTextColor.class)).ifPresent(character::setTeamColor);
         root.optional("ticking").map(Tag::getAsBoolean).ifPresent(character::setTicking);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(character::setVisibleByDefault);
