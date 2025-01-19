@@ -12,6 +12,8 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attributable;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -68,6 +70,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected boolean persistent = true;
     protected boolean ticking = false;
     protected boolean visibleByDefault = true;
+
+    protected double scale = 1;
 
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
         this.name = name;
@@ -408,6 +412,15 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public boolean setScale(double scale) {
+        if (scale == this.scale) return false;
+        getEntity(Attributable.class).map(instance -> instance.getAttribute(Attribute.SCALE))
+                .ifPresent(attribute -> attribute.setBaseValue(scale));
+        this.scale = scale;
+        return true;
+    }
+
+    @Override
     public boolean setSpawnLocation(@Nullable Location location) {
         if (Objects.equals(location, spawnLocation)) return false;
         this.spawnLocation = location;
@@ -454,7 +467,16 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         return true;
     }
 
+    @Override
+    public double getScale() {
+        return scale;
+    }
+
     protected void preSpawn(T entity) {
+        if (entity instanceof Attributable attributable) {
+            var scale = attributable.getAttribute(Attribute.SCALE);
+            if (scale != null) scale.setBaseValue(this.scale);
+        }
         if (entity instanceof LivingEntity living) {
             living.setAI(ai);
             living.setCanPickupItems(false);
