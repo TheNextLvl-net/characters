@@ -31,6 +31,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 
 import static net.thenextlvl.character.plugin.command.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
@@ -226,7 +227,11 @@ class CharacterActionAddCommand {
         var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
 
-        var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input);
+        var previous = character.getAction(actionName);
+        var cooldown = previous != null ? previous.getCooldown() : Duration.ZERO;
+        var permission = previous != null ? previous.getPermission() : null;
+
+        var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input, cooldown, permission);
         var success = character.addAction(actionName, action);
 
         var message = success ? "character.action.added" : "nothing.changed";
