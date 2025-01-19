@@ -99,8 +99,6 @@ public interface Character<T extends Entity> {
 
     boolean persist();
 
-    void remove();
-
     boolean removeAction(String name);
 
     boolean removeViewer(UUID player);
@@ -131,6 +129,8 @@ public interface Character<T extends Entity> {
 
     boolean setPose(Pose pose);
 
+    boolean setScale(double scale);
+
     boolean setSpawnLocation(@Nullable Location location);
 
     boolean setTeamColor(@Nullable NamedTextColor color);
@@ -142,4 +142,8 @@ public interface Character<T extends Entity> {
     boolean spawn();
 
     boolean spawn(Location location);
+
+    double getScale();
+
+    void remove();
 }
