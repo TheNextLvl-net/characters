@@ -62,7 +62,6 @@ public class PaperCharacterController implements CharacterController {
     @SuppressWarnings("unchecked")
     public <T extends Entity> Optional<Character<T>> getCharacter(T entity) {
         return characters.values().stream()
-                .filter(character -> character.getType().equals(entity.getType()))
                 .filter(character -> character.getEntity()
                         .filter(entity::equals)
                         .isPresent()
