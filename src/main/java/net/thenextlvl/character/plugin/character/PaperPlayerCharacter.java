@@ -91,8 +91,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public boolean setGlowColor(@Nullable NamedTextColor color) {
-        if (!super.setGlowColor(color)) return false;
+    public boolean setTeamColor(@Nullable NamedTextColor color) {
+        if (!super.setTeamColor(color)) return false;
         updateTeamOptions();
         return true;
     }

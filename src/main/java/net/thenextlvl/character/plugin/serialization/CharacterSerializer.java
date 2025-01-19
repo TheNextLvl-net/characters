@@ -15,8 +15,8 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
     public CompoundTag serialize(Character<?> character, TagSerializationContext context) throws ParserException {
         var tag = new CompoundTag();
         if (character.getDisplayName() != null) tag.add("displayName", context.serialize(character.getDisplayName()));
-        if (character.getGlowColor() != null) tag.add("glowColor", context.serialize(character.getGlowColor()));
         if (character.getSpawnLocation() != null) tag.add("location", context.serialize(character.getSpawnLocation()));
+        if (character.getTeamColor() != null) tag.add("teamColor", context.serialize(character.getTeamColor()));
         tag.add("ai", character.hasAI());
         tag.add("collidable", character.isCollidable());
         tag.add("displayNameVisible", character.isDisplayNameVisible());

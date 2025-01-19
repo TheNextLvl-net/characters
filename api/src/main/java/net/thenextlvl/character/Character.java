@@ -45,7 +45,7 @@ public interface Character<T extends Entity> {
     Optional<T> getEntity();
 
     @Nullable
-    NamedTextColor getGlowColor();
+    NamedTextColor getTeamColor();
 
     @Nullable
     Location getLocation();
@@ -119,8 +119,6 @@ public interface Character<T extends Entity> {
 
     boolean setDisplayNameVisible(boolean visible);
 
-    boolean setGlowColor(@Nullable NamedTextColor color);
-
     boolean setGlowing(boolean glowing);
 
     boolean setGravity(boolean gravity);
@@ -134,6 +132,8 @@ public interface Character<T extends Entity> {
     boolean setPose(Pose pose);
 
     boolean setSpawnLocation(@Nullable Location location);
+
+    boolean setTeamColor(@Nullable NamedTextColor color);
 
     boolean setTicking(boolean ticking);
 

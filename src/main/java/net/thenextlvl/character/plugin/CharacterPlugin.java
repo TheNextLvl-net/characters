@@ -258,12 +258,12 @@ public class CharacterPlugin extends JavaPlugin {
         root.optional("collidable").map(Tag::getAsBoolean).ifPresent(character::setCollidable);
         root.optional("displayName").map(tag -> nbt.fromTag(tag, Component.class)).ifPresent(character::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(character::setDisplayNameVisible);
-        root.optional("glowColor").map(tag -> nbt.fromTag(tag, NamedTextColor.class)).ifPresent(character::setGlowColor);
         root.optional("glowing").map(Tag::getAsBoolean).ifPresent(character::setGlowing);
         root.optional("gravity").map(Tag::getAsBoolean).ifPresent(character::setGravity);
         root.optional("invincible").map(Tag::getAsBoolean).ifPresent(character::setInvincible);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(character::setPathfinding);
         root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(character::setPose);
+        root.optional("teamColor").map(tag -> nbt.fromTag(tag, NamedTextColor.class)).ifPresent(character::setTeamColor);
         root.optional("ticking").map(Tag::getAsBoolean).ifPresent(character::setTicking);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(character::setVisibleByDefault);
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->

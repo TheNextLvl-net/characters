@@ -53,7 +53,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     protected @Nullable Component displayName = null;
     protected @Nullable Location spawnLocation = null;
-    protected @Nullable NamedTextColor glowColor = null;
+    protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable T entity;
 
     protected Pose pose = Pose.STANDING;
@@ -135,8 +135,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public @Nullable NamedTextColor getGlowColor() {
-        return glowColor;
+    public @Nullable NamedTextColor getTeamColor() {
+        return teamColor;
     }
 
     @Override
@@ -354,9 +354,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public boolean setGlowColor(@Nullable NamedTextColor color) {
-        if (color == this.glowColor) return false;
-        this.glowColor = color;
+    public boolean setTeamColor(@Nullable NamedTextColor color) {
+        if (color == this.teamColor) return false;
+        this.teamColor = color;
         return true;
     }
 
