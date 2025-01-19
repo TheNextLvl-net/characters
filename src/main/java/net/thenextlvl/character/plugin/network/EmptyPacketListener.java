@@ -15,8 +15,6 @@ public class EmptyPacketListener extends ServerGamePacketListenerImpl {
     public EmptyPacketListener(PaperPlayerCharacter character, MinecraftServer server, ServerPlayer player, CommonListenerCookie cookie) {
         super(server, new EmptyConnection(character), player, cookie);
         this.character = character;
-        if (!(connection instanceof EmptyConnection emptyConnection)) return;
-        emptyConnection.setupInboundProtocol(null, this);
     }
 
     @Override

@@ -3,13 +3,9 @@ package net.thenextlvl.character.plugin.network;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.PacketSendListener;
-import net.minecraft.network.ProtocolInfo;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
-import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -25,18 +21,6 @@ class EmptyConnection extends Connection {
         this.channel = new EmptyChannel();
         this.address = new SocketAddress() {
         };
-    }
-
-    @Override
-    public <T extends PacketListener> void setupInboundProtocol(@Nullable ProtocolInfo<T> protocolInfo, @NonNull T packetInfo) {
-        try {
-            var packetListener = Connection.class.getDeclaredField("packetListener");
-            packetListener.trySetAccessible();
-            packetListener.set(this, packetInfo);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            var plugin = JavaPlugin.getPlugin(CharacterPlugin.class);
-            plugin.getComponentLogger().error("Failed to set field packetListener", e);
-        }
     }
 
     @Override
