@@ -2,6 +2,7 @@ package net.thenextlvl.character.plugin.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -33,6 +34,7 @@ class CharacterAttributeCommand {
                 .then(resetGlowing(plugin))
                 .then(resetGravity(plugin))
                 .then(resetPathfinding(plugin))
+                .then(resetScale(plugin))
                 .then(resetTeamColor(plugin))
                 .then(resetTicking(plugin)));
     }
@@ -44,6 +46,7 @@ class CharacterAttributeCommand {
                 .then(setGlowing(plugin))
                 .then(setGravity(plugin))
                 .then(setPathfinding(plugin))
+                .then(setScale(plugin))
                 .then(setTeamColor(plugin))
                 .then(setTicking(plugin)));
     }
@@ -96,6 +99,10 @@ class CharacterAttributeCommand {
         return reset("pathfinding", character -> character.setPathfinding(false), Character::isPathfinding, plugin);
     }
 
+    private static ArgumentBuilder<CommandSourceStack, ?> resetScale(CharacterPlugin plugin) {
+        return reset("scale", character -> character.setScale(1), Character::getScale, plugin);
+    }
+
     private static ArgumentBuilder<CommandSourceStack, ?> resetTeamColor(CharacterPlugin plugin) {
         return reset("team-color", character -> character.setTeamColor(null), Character::getTeamColor, plugin);
     }
@@ -122,6 +129,17 @@ class CharacterAttributeCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> setPathfinding(CharacterPlugin plugin) {
         return attribute("pathfinding", Character::setPathfinding, plugin);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setScale(CharacterPlugin plugin) {
+        return Commands.literal("scale").then(Commands.argument("scale", DoubleArgumentType.doubleArg(0, 16))
+                .executes(context -> {
+                    var scale = context.getArgument("scale", double.class);
+                    var success = set(context, "scale",
+                            character -> character.setScale(scale),
+                            character -> scale, plugin);
+                    return success ? Command.SINGLE_SUCCESS : 0;
+                }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setTeamColor(CharacterPlugin plugin) {
