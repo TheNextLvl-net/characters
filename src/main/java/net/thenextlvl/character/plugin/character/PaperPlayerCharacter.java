@@ -23,7 +23,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.HumanoidArm;
-import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -86,13 +85,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     public boolean setCollidable(boolean collidable) {
         if (!super.setCollidable(collidable)) return false;
         updateTeamOptions();
-        return true;
-    }
-
-    @Override
-    public boolean setScale(double scale) {
-        if (!super.setScale(scale)) return false;
-        getEntity().ifPresent(this::updateDisplayName);
         return true;
     }
 
@@ -359,6 +351,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         display.setBillboard(Display.Billboard.CENTER);
         display.setGravity(false);
         display.setPersistent(false);
+        display.setTeleportDuration(3);
         var component = displayName == null ? Component.text(getName()) : displayName;
         display.text(component.color(teamColor));
     }
@@ -370,7 +363,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             spawnDisplayNameHologram(player);
         } else {
             updateDisplayNameHologram(displayNameHologram);
-            displayNameHologram.teleportAsync(getDisplayNameHologramPosition(player));
         }
     }
 
@@ -423,15 +415,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         }
 
         @Override
-        public void setPose(Pose pose) {
-            super.setPose(pose);
-            getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
-        }
-
-        @Override
         public void setPos(double x, double y, double z) {
             super.setPos(x, y, z);
-            getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
+            updateDisplayNameHologramPosition();
         }
 
         @Override
@@ -443,6 +429,11 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         @Override
         public void doTick() {
             if (ticking) super.doTick();
+        }
+
+        private void updateDisplayNameHologramPosition() {
+            if (displayNameHologram == null || entity == null) return;
+            displayNameHologram.teleport(getDisplayNameHologramPosition(entity));
         }
     }
 }
