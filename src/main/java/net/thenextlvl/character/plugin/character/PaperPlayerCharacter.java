@@ -297,7 +297,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     private Location getDisplayNameHologramPosition(Player player) {
         var location = player.getLocation().clone();
         return switch (player.getPose()) {
-            case DYING, SLEEPING -> location;
+            case DYING, SLEEPING -> location.add(0, 0.475, 0);
             case SWIMMING, FALL_FLYING -> location.add(0, 0.9, 0);
             case SITTING, SNEAKING -> location.add(0, 1.65, 0);
             default -> location.add(0, 2.08, 0);
