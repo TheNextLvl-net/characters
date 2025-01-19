@@ -9,13 +9,11 @@ import core.nbt.tag.Tag;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.Objects;
-
 @NullMarked
 public class NamedTextColorAdapter implements TagAdapter<NamedTextColor> {
     @Override
     public NamedTextColor deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        return Objects.requireNonNull(NamedTextColor.NAMES.value(tag.getAsString()), "Unknown color");
+        return NamedTextColor.NAMES.valueOrThrow(tag.getAsString());
     }
 
     @Override
