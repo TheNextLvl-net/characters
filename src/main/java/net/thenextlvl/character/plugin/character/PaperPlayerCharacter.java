@@ -363,7 +363,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         @Override
         public void remove() {
-            despawn();
+            PaperPlayerCharacter.this.remove();
         }
     }
 

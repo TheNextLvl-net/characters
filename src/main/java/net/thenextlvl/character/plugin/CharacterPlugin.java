@@ -133,7 +133,7 @@ public class CharacterPlugin extends JavaPlugin {
     public void onDisable() {
         characterController.getCharacters().forEach(character -> {
             character.persist();
-            character.despawn();
+            character.remove();
         });
         metrics.shutdown();
     }

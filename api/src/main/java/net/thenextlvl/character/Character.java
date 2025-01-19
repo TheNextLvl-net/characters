@@ -145,5 +145,7 @@ public interface Character<T extends Entity> {
 
     double getScale();
 
+    void delete();
+
     void remove();
 }

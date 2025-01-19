@@ -288,15 +288,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public void remove() {
-        despawn();
-        file().delete();
-        backupFile().delete();
-        plugin.characterController().unregister(name);
-    }
-
-    @Override
     public boolean removeAction(String name) {
         return actions.remove(name) != null;
     }
@@ -354,13 +345,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (visible == displayNameVisible) return false;
         this.displayNameVisible = visible;
         getEntity().ifPresent(this::updateDisplayName);
-        return true;
-    }
-
-    @Override
-    public boolean setTeamColor(@Nullable NamedTextColor color) {
-        if (color == this.teamColor) return false;
-        this.teamColor = color;
         return true;
     }
 
@@ -428,6 +412,13 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public boolean setTeamColor(@Nullable NamedTextColor color) {
+        if (color == this.teamColor) return false;
+        this.teamColor = color;
+        return true;
+    }
+
+    @Override
     public boolean setTicking(boolean ticking) {
         if (ticking == this.ticking) return false;
         this.ticking = ticking;
@@ -470,6 +461,20 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public double getScale() {
         return scale;
+    }
+
+    @Override
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void delete() {
+        remove();
+        backupFile().delete();
+        file().delete();
+        plugin.characterController().unregister(name);
+    }
+
+    @Override
+    public void remove() {
+        despawn();
     }
 
     protected void preSpawn(T entity) {
