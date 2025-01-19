@@ -348,7 +348,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         display.setBillboard(Display.Billboard.CENTER);
         display.setGravity(false);
         display.setPersistent(false);
-        display.text(displayName != null ? displayName : Component.text(getName(), teamColor));
+        var component = displayName == null ? Component.text(getName()) : displayName;
+        display.text(component.color(teamColor));
     }
 
     private void updateDisplayNameHologram(Player player) {
