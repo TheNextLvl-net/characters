@@ -6,6 +6,9 @@ import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.ProtocolInfo;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
+import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -14,15 +17,26 @@ import java.net.SocketAddress;
 
 @NullMarked
 class EmptyConnection extends Connection {
-    public EmptyConnection() {
+    private final PaperPlayerCharacter character;
+
+    public EmptyConnection(PaperPlayerCharacter character) {
         super(PacketFlow.CLIENTBOUND);
+        this.character = character;
         this.channel = new EmptyChannel();
         this.address = new SocketAddress() {
         };
     }
 
     @Override
-    public <T extends PacketListener> void setupInboundProtocol(ProtocolInfo<T> protocolInfo, @NonNull T packetInfo) {
+    public <T extends PacketListener> void setupInboundProtocol(@Nullable ProtocolInfo<T> protocolInfo, @NonNull T packetInfo) {
+        try {
+            var packetListener = Connection.class.getDeclaredField("packetListener");
+            packetListener.trySetAccessible();
+            packetListener.set(this, packetInfo);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            var plugin = JavaPlugin.getPlugin(CharacterPlugin.class);
+            plugin.getComponentLogger().error("Failed to set field packetListener", e);
+        }
     }
 
     @Override
@@ -55,5 +69,10 @@ class EmptyConnection extends Connection {
     @Override
     public boolean isConnecting() {
         return false;
+    }
+
+    @Override
+    public void tick() {
+        if (character.isTicking()) super.tick();
     }
 }

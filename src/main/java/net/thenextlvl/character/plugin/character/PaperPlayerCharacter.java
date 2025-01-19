@@ -152,11 +152,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             entity.setSleepingIgnored(true);
         }
 
-        if (ticking) plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
-            if (!ticking || entity == null) scheduledTask.cancel();
-            else if (entity.isValid()) serverPlayer.doTick();
-        }, 1, 1);
-
         preSpawn(this.entity);
         applySkinPartConfig(serverPlayer);
         return true;
@@ -397,6 +392,17 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         @Override
         public boolean isPushable() {
             return false;
+        }
+
+        @Override
+        public void doTick() {
+            if (ticking) super.doTick();
+        }
+
+        @Override
+        public void tick() {
+            refreshDimensions();
+            if (ticking) super.tick();
         }
     }
 }
