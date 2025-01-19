@@ -5,6 +5,8 @@ import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.common.base.Preconditions;
+import core.util.StringUtil;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
@@ -21,6 +23,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -61,7 +64,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     public PaperPlayerCharacter(CharacterPlugin plugin, String name, UUID uuid) {
         super(plugin, name, EntityType.PLAYER);
-        this.profile = new CraftPlayerProfile(uuid, name);
+        this.profile = new CraftPlayerProfile(uuid, "NPC_" + StringUtil.random(12));
     }
 
     @Override
@@ -70,16 +73,21 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         var packet = new ClientboundRemoveEntitiesPacket(entity.getEntityId());
         plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
         ((CraftPlayer) entity).getHandle().discard();
+        removeDisplayNameHologram();
         return true;
+    }
+
+    @Override
+    public String getScoreboardName() {
+        return Objects.requireNonNull(profile.getName());
     }
 
     @Override
     public void remove() {
         plugin.getServer().getOnlinePlayers().forEach(player -> {
-            var team = player.getScoreboard().getTeam(getUniqueId().toString());
+            var team = player.getScoreboard().getTeam(getScoreboardName());
             if (team != null) team.unregister();
         });
-        removeDisplayNameHologram();
         super.remove();
     }
 
@@ -94,6 +102,13 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     public boolean setTeamColor(@Nullable NamedTextColor color) {
         if (!super.setTeamColor(color)) return false;
         updateTeamOptions();
+        return true;
+    }
+
+    @Override
+    public boolean setScale(double scale) {
+        if (!super.setScale(scale)) return false;
+        getEntity().ifPresent(this::updateDisplayName);
         return true;
     }
 
@@ -277,26 +292,22 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
     }
 
-    private OptionStatus fromBoolean(boolean value) {
-        return value ? OptionStatus.ALWAYS : OptionStatus.NEVER;
-    }
-
     private Team getCharacterSettingsTeam(Player player) {
-        var characterSettings = player.getScoreboard().getTeam(getUniqueId().toString());
+        var characterSettings = player.getScoreboard().getTeam(getScoreboardName());
         if (characterSettings != null) return characterSettings;
-        var team = player.getScoreboard().registerNewTeam(getUniqueId().toString());
-        team.addEntry(getScoreboardName());
-        return team;
+        characterSettings = player.getScoreboard().registerNewTeam(getScoreboardName());
+        characterSettings.addEntry(getScoreboardName());
+        return characterSettings;
     }
 
     private Location getDisplayNameHologramPosition(Player player) {
         var location = player.getLocation().clone();
-        return switch (player.getPose()) {
-            case DYING, SLEEPING -> location.add(0, 0.475, 0);
-            case SWIMMING, FALL_FLYING -> location.add(0, 0.9, 0);
-            case SITTING, SNEAKING -> location.add(0, 1.65, 0);
-            default -> location.add(0, 2.08, 0);
+        var incrementor = switch (getPose()) {
+            case SNEAKING -> 0.15;
+            default -> 0.27;
         };
+        location.setY(player.getBoundingBox().getMaxY() + incrementor);
+        return location;
     }
 
     private void removeDisplayNameHologram() {
@@ -310,15 +321,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     private void spawnDisplayNameHologram(Player player) {
-        Preconditions.checkNotNull(displayName, "DisplayName cannot be null");
         Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
         var location = getDisplayNameHologramPosition(player);
-        displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, display -> {
-            display.setBillboard(Display.Billboard.CENTER);
-            display.setGravity(false);
-            display.setPersistent(false);
-            display.text(displayName.colorIfAbsent(teamColor));
-        });
+        displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, this::updateDisplayNameHologram);
     }
 
     private boolean update() {
@@ -334,14 +339,21 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return true;
     }
 
+    private void updateDisplayNameHologram(TextDisplay display) {
+        display.setBillboard(Display.Billboard.CENTER);
+        display.setGravity(false);
+        display.setPersistent(false);
+        display.text(displayName != null ? displayName : Component.text(getName(), teamColor));
+    }
+
     private void updateDisplayNameHologram(Player player) {
-        if (displayName == null || !displayNameVisible) {
+        if (!displayNameVisible) {
             removeDisplayNameHologram();
         } else if (displayNameHologram == null) {
             spawnDisplayNameHologram(player);
         } else {
+            updateDisplayNameHologram(displayNameHologram);
             displayNameHologram.teleportAsync(getDisplayNameHologramPosition(player));
-            displayNameHologram.text(displayName.colorIfAbsent(teamColor));
         }
     }
 
@@ -352,8 +364,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     private void updateTeamOptions(Team team) {
         team.color(teamColor);
-        team.setOption(Option.COLLISION_RULE, fromBoolean(collidable));
-        team.setOption(Option.NAME_TAG_VISIBILITY, fromBoolean(displayNameVisible && displayName == null));
+        team.setOption(Option.COLLISION_RULE, collidable ? OptionStatus.ALWAYS : OptionStatus.NEVER);
+        team.setOption(Option.NAME_TAG_VISIBILITY, OptionStatus.NEVER);
     }
 
     private class CraftCharacter extends CraftPlayer {
@@ -370,7 +382,33 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     private class ServerCharacter extends ServerPlayer {
         public ServerCharacter(MinecraftServer server, ServerLevel level, ClientInformation information, CommonListenerCookie cookie) {
             super(server, level, PaperPlayerCharacter.this.profile.getGameProfile(), information);
-            this.connection = new EmptyPacketListener(server, this, cookie);
+            this.connection = new EmptyPacketListener(PaperPlayerCharacter.this, server, this, cookie);
+        }
+
+        @Override
+        public boolean isPushable() {
+            return false;
+        }
+
+        @Override
+        public boolean isCollidable(boolean ignoreClimbing) {
+            return false;
+        }
+
+        @Override
+        public boolean isPushedByFluid() {
+            return true;
+        }
+
+        @Override
+        public String getScoreboardName() {
+            return PaperPlayerCharacter.this.getScoreboardName();
+        }
+
+        @Override
+        public void setPose(Pose pose) {
+            super.setPose(pose);
+            PaperPlayerCharacter.this.getEntity().ifPresent(PaperPlayerCharacter.this::updateDisplayNameHologram);
         }
 
         @Override
@@ -380,29 +418,14 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         }
 
         @Override
-        public String getScoreboardName() {
-            return PaperPlayerCharacter.this.getScoreboardName();
-        }
-
-        @Override
-        public boolean isCollidable(boolean ignoreClimbing) {
-            return false;
-        }
-
-        @Override
-        public boolean isPushable() {
-            return false;
+        public void tick() {
+            refreshDimensions();
+            if (ticking) super.tick();
         }
 
         @Override
         public void doTick() {
             if (ticking) super.doTick();
-        }
-
-        @Override
-        public void tick() {
-            refreshDimensions();
-            if (ticking) super.tick();
         }
     }
 }
