@@ -32,8 +32,6 @@ class CharacterActionListCommand {
         plugin.bundle().sendMessage(sender, "character.action.list.header",
                 Placeholder.parsed("character", character.getName()));
         character.getActions().forEach((name, action) -> plugin.bundle().sendMessage(sender, "character.action.list",
-                Placeholder.parsed("cooldown", action.getCooldown().toString()),
-                Placeholder.parsed("permission", action.getPermission() == null ? "undefined" : action.getPermission()),
                 Placeholder.parsed("action_type", action.getActionType().name()),
                 Placeholder.parsed("character", character.getName()),
                 Placeholder.parsed("action", name)));
