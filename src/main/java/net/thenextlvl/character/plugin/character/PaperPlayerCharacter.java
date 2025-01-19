@@ -99,16 +99,16 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public boolean setTeamColor(@Nullable NamedTextColor color) {
-        if (!super.setTeamColor(color)) return false;
-        updateTeamOptions();
+    public boolean setScale(double scale) {
+        if (!super.setScale(scale)) return false;
+        getEntity().ifPresent(this::updateDisplayName);
         return true;
     }
 
     @Override
-    public boolean setScale(double scale) {
-        if (!super.setScale(scale)) return false;
-        getEntity().ifPresent(this::updateDisplayName);
+    public boolean setTeamColor(@Nullable NamedTextColor color) {
+        if (!super.setTeamColor(color)) return false;
+        updateTeamOptions();
         return true;
     }
 
