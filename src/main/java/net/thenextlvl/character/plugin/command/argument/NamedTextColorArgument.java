@@ -9,7 +9,9 @@ public class NamedTextColorArgument extends WrappedArgumentType<String, NamedTex
         super(StringArgumentType.word(), (reader, type) ->
                         NamedTextColor.NAMES.valueOrThrow(type),
                 (context, builder) -> {
-                    NamedTextColor.NAMES.keys().forEach(builder::suggest);
+                    NamedTextColor.NAMES.keys().stream()
+                            .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
+                            .forEach(builder::suggest);
                     return builder.buildFuture();
                 });
     }
