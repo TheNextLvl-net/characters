@@ -355,7 +355,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     private void updateTeamOptions(Team team) {
-        team.color(glowColor);
+        team.color(teamColor);
         team.setOption(Option.COLLISION_RULE, fromBoolean(collidable));
         team.setOption(Option.NAME_TAG_VISIBILITY, fromBoolean(displayNameVisible && displayName == null));
     }
