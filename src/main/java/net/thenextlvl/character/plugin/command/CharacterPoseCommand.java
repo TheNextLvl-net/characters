@@ -18,18 +18,37 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterPoseCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("pose").then(characterArgument(plugin).then(poseArgument(plugin)
-                .executes(context -> pose(context, plugin))));
+        return Commands.literal("pose")
+                .then(reset(plugin))
+                .then(set(plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> poseArgument(CharacterPlugin plugin) {
         return Commands.argument("pose", new EnumArgument<>(Pose.class));
     }
 
-    private static int pose(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
+        return Commands.literal("reset").then(characterArgument(plugin)
+                .executes(context -> reset(context, plugin)));
+    }
+
+    private static int reset(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        return set(context, Pose.STANDING, plugin);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
+        return Commands.literal("set").then(characterArgument(plugin).then(poseArgument(plugin)
+                .executes(context -> set(context, plugin))));
+    }
+
+    private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var pose = context.getArgument("pose", Pose.class);
+        return set(context, pose, plugin);
+    }
+
+    private static int set(CommandContext<CommandSourceStack> context, Pose pose, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
-        var pose = context.getArgument("pose", Pose.class);
 
         var success = character.setPose(pose);
         var message = success ? "character.pose" : "nothing.changed";
