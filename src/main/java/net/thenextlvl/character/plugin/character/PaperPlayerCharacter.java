@@ -91,7 +91,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     @Override
     public boolean setTeamColor(@Nullable NamedTextColor color) {
         if (!super.setTeamColor(color)) return false;
-        updateTeamOptions();
+        getEntity().ifPresent(this::updateDisplayName);
         return true;
     }
 
