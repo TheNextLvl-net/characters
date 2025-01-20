@@ -389,7 +389,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     @Override
     public boolean setPose(Pose pose) {
-        if (pose == this.pose) return false;
+        if (pose == this.pose || !canHavePose(type, pose)) return false;
         getEntity().ifPresent(entity -> entity.setPose(pose, true));
         this.pose = pose;
         return true;
@@ -475,6 +475,25 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public void remove() {
         despawn();
+    }
+
+    public static boolean canHavePose(EntityType type, Pose pose) {
+        return switch (pose) {
+            case EMERGING, ROARING, DIGGING, SNIFFING -> type == EntityType.WARDEN;
+            case FALL_FLYING, SPIN_ATTACK, SWIMMING -> type == EntityType.PLAYER;
+            case INHALING, SHOOTING, SLIDING -> type == EntityType.BREEZE;
+            case LONG_JUMPING -> switch (type) {
+                case GOAT, FROG, BREEZE -> true;
+                default -> false;
+            };
+            case SITTING -> type == EntityType.CAMEL;
+            case SNEAKING -> switch (type) {
+                case CAT, OCELOT, PLAYER -> true;
+                default -> false;
+            };
+            case USING_TONGUE, CROAKING -> type == EntityType.FROG;
+            default -> true;
+        };
     }
 
     protected void preSpawn(T entity) {

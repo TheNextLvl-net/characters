@@ -9,6 +9,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.entity.Pose;
 import org.jspecify.annotations.NullMarked;
@@ -24,7 +25,10 @@ class CharacterPoseCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> poseArgument(CharacterPlugin plugin) {
-        return Commands.argument("pose", new EnumArgument<>(Pose.class));
+        return Commands.argument("pose", new EnumArgument<>(Pose.class, (context, pose) -> {
+            var character = context.getLastChild().getArgument("character", Character.class);
+            return PaperCharacter.canHavePose(character.getType(), pose);
+        }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
