@@ -27,11 +27,11 @@ class CharacterTagCommand {
                 .then(set(plugin));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> alignmentArgument(CharacterPlugin plugin) {
+    private static ArgumentBuilder<CommandSourceStack, ?> alignmentArgument() {
         return Commands.argument("alignment", new EnumArgument<>(TextDisplay.TextAlignment.class));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> billboardArgument(CharacterPlugin plugin) {
+    private static ArgumentBuilder<CommandSourceStack, ?> billboardArgument() {
         return Commands.argument("billboard", new EnumArgument<>(Display.Billboard.class));
     }
 
@@ -68,7 +68,7 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setAlignment(CharacterPlugin plugin) {
-        return Commands.literal("alignment").then(alignmentArgument(plugin).executes(context -> {
+        return Commands.literal("alignment").then(alignmentArgument().executes(context -> {
             var alignment = context.getArgument("alignment", TextDisplay.TextAlignment.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setAlignment(alignment);
@@ -77,7 +77,7 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setText(CharacterPlugin plugin) {
-        return Commands.literal("text").then(textArgument(plugin).executes(context -> {
+        return Commands.literal("text").then(textArgument().executes(context -> {
             var text = context.getArgument("text", String.class);
             var character = context.getArgument("character", Character.class);
             var success = character.setDisplayName(MiniMessage.miniMessage().deserialize(text));
@@ -86,7 +86,7 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setBillboard(CharacterPlugin plugin) {
-        return Commands.literal("billboard").then(billboardArgument(plugin).executes(context -> {
+        return Commands.literal("billboard").then(billboardArgument().executes(context -> {
             var billboard = context.getArgument("billboard", Display.Billboard.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setBillboard(billboard);
