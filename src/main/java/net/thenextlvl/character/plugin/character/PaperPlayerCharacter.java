@@ -385,7 +385,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         display.setPersistent(false);
         display.setTeleportDuration(3);
         var component = displayName == null ? Component.text(getName()) : displayName;
-        display.text(component.color(teamColor));
+        display.text(component.colorIfAbsent(teamColor));
     }
 
     private void updateDisplayNameHologram(Player player) {
