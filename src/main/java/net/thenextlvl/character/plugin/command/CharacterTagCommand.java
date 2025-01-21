@@ -77,12 +77,8 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setText(CharacterPlugin plugin) {
-        return Commands.literal("text").then(textArgument().executes(context -> {
-            var text = context.getArgument("text", String.class);
-            var character = context.getArgument("character", Character.class);
-            var success = character.setDisplayName(MiniMessage.miniMessage().deserialize(text));
-            return success ? Command.SINGLE_SUCCESS : 0;
-        }));
+        return Commands.literal("text").then(textArgument()
+                .executes(context -> setText(context, plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setBillboard(CharacterPlugin plugin) {
@@ -122,18 +118,18 @@ class CharacterTagCommand {
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private static int setText(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
-        var tag = context.getArgument("tag", String.class);
-        var displayName = MiniMessage.miniMessage().deserialize(tag);
+        var text = context.getArgument("text", String.class);
+        var displayName = MiniMessage.miniMessage().deserialize(text);
 
         var success = character.setDisplayName(displayName);
         var message = success ? "character.tag.set" : "nothing.changed";
 
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("character", character.getName()),
-                Placeholder.component("tag", displayName));
+                Placeholder.component("text", displayName));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
