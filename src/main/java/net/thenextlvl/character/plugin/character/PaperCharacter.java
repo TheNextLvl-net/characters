@@ -3,6 +3,10 @@ package net.thenextlvl.character.plugin.character;
 import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.nbt.NBTOutputStream;
+import core.nbt.serialization.ParserException;
+import core.nbt.tag.CompoundTag;
+import core.nbt.tag.StringTag;
+import core.nbt.tag.Tag;
 import core.util.StringUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -484,6 +488,52 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public void remove() {
         despawn();
+    }
+
+    @Override
+    public CompoundTag serialize() throws ParserException {
+        var tag = new CompoundTag();
+        if (getDisplayName() != null) tag.add("displayName", plugin.nbt().toTag(getDisplayName()));
+        if (getSpawnLocation() != null) tag.add("location", plugin.nbt().toTag(getSpawnLocation()));
+        if (getTeamColor() != null) tag.add("teamColor", plugin.nbt().toTag(getTeamColor()));
+        tag.add("ai", hasAI());
+        tag.add("collidable", isCollidable());
+        tag.add("displayNameVisible", isDisplayNameVisible());
+        tag.add("glowing", isGlowing());
+        tag.add("gravity", hasGravity());
+        tag.add("invincible", isInvincible());
+        tag.add("pathfinding", isPathfinding());
+        tag.add("pose", getPose().name());
+        tag.add("scale", getScale());
+        tag.add("tagOptions", getTagOptions().serialize());
+        tag.add("ticking", isTicking());
+        tag.add("type", plugin.nbt().toTag(getType()));
+        tag.add("visibleByDefault", isVisibleByDefault());
+        var actions = new CompoundTag();
+        getActions().forEach((name, clickAction) -> actions.add(name, plugin.nbt().toTag(clickAction)));
+        if (!actions.isEmpty()) tag.add("clickActions", actions);
+        return tag;
+    }
+
+    @Override
+    public void deserialize(Tag tag) throws ParserException {
+        var root = tag.getAsCompound();
+        root.optional("ai").map(Tag::getAsBoolean).ifPresent(this::setAI);
+        root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
+                addAction(name, plugin.nbt().fromTag(action, ClickAction.class))));
+        root.optional("collidable").map(Tag::getAsBoolean).ifPresent(this::setCollidable);
+        root.optional("displayName").map(t -> plugin.nbt().fromTag(t, Component.class)).ifPresent(this::setDisplayName);
+        root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
+        root.optional("glowing").map(Tag::getAsBoolean).ifPresent(this::setGlowing);
+        root.optional("gravity").map(Tag::getAsBoolean).ifPresent(this::setGravity);
+        root.optional("invincible").map(Tag::getAsBoolean).ifPresent(this::setInvincible);
+        root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
+        root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(this::setPose);
+        root.optional("scale").map(Tag::getAsDouble).ifPresent(this::setScale);
+        root.optional("tagOptions").ifPresent(getTagOptions()::deserialize);
+        root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
+        root.optional("ticking").map(Tag::getAsBoolean).ifPresent(this::setTicking);
+        root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
     }
 
     public static boolean canHavePose(EntityType type, Pose pose) {

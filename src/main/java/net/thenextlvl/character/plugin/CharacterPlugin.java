@@ -7,7 +7,6 @@ import core.nbt.NBTInputStream;
 import core.nbt.serialization.NBT;
 import core.nbt.serialization.ParserException;
 import core.nbt.tag.CompoundTag;
-import core.nbt.tag.Tag;
 import core.paper.messenger.PluginMessenger;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.audience.Audience;
@@ -53,7 +52,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Pose;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Unmodifiable;
@@ -237,38 +235,13 @@ public class CharacterPlugin extends JavaPlugin {
     private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
         var uuid = root.optional("uuid").map(tag -> nbt.fromTag(tag, UUID.class)).orElseGet(UUID::randomUUID);
         var character = characterController.createCharacter(name, uuid);
-        root.optional("properties").map(Tag::getAsList).map(tags -> tags.stream()
-                .map(tag -> nbt.fromTag(tag, ProfileProperty.class))
-                .toList()
-        ).ifPresent(character.getGameProfile()::setProperties);
-        root.optional("listed").map(Tag::getAsBoolean).ifPresent(character::setListed);
-        root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(character::setRealPlayer);
-        root.optional("skinParts").map(Tag::getAsByte).ifPresent(raw ->
-                character.setSkinParts(characterProvider.skinPartBuilder().raw(raw).build()));
-        return deserialize(root, character);
+        character.deserialize(root);
+        return character;
     }
 
     private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
         var character = characterController.createCharacter(name, type);
-        return deserialize(root, character);
-    }
-
-    private <T extends Character<?>> T deserialize(CompoundTag root, T character) {
-        root.optional("ai").map(Tag::getAsBoolean).ifPresent(character::setAI);
-        root.optional("collidable").map(Tag::getAsBoolean).ifPresent(character::setCollidable);
-        root.optional("displayName").map(tag -> nbt.fromTag(tag, Component.class)).ifPresent(character::setDisplayName);
-        root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(character::setDisplayNameVisible);
-        root.optional("glowing").map(Tag::getAsBoolean).ifPresent(character::setGlowing);
-        root.optional("gravity").map(Tag::getAsBoolean).ifPresent(character::setGravity);
-        root.optional("invincible").map(Tag::getAsBoolean).ifPresent(character::setInvincible);
-        root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(character::setPathfinding);
-        root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(character::setPose);
-        root.optional("scale").map(Tag::getAsDouble).ifPresent(character::setScale);
-        root.optional("teamColor").map(tag -> nbt.fromTag(tag, NamedTextColor.class)).ifPresent(character::setTeamColor);
-        root.optional("ticking").map(Tag::getAsBoolean).ifPresent(character::setTicking);
-        root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(character::setVisibleByDefault);
-        root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
-                character.addAction(name, nbt.fromTag(action, ClickAction.class))));
+        character.deserialize(root);
         return character;
     }
 

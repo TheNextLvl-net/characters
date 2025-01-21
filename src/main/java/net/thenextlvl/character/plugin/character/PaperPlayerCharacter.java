@@ -1,10 +1,15 @@
 package net.thenextlvl.character.plugin.character;
 
+import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.common.base.Preconditions;
+import core.nbt.serialization.ParserException;
+import core.nbt.tag.CompoundTag;
+import core.nbt.tag.ListTag;
+import core.nbt.tag.Tag;
 import core.util.StringUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -163,6 +168,33 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             if (team != null) team.unregister();
         });
         super.remove();
+    }
+
+    @Override
+    public CompoundTag serialize() throws ParserException {
+        var tag = super.serialize();
+        if (getGameProfile().getId() != null)
+            tag.add("uuid", plugin.nbt().toTag(getGameProfile().getId()));
+        var properties = new ListTag<>(CompoundTag.ID);
+        getGameProfile().getProperties().forEach(property -> properties.add(plugin.nbt().toTag(property)));
+        tag.add("listed", isListed());
+        tag.add("properties", properties);
+        tag.add("realPlayer", isRealPlayer());
+        tag.add("skinParts", (byte) getSkinParts().getRaw());
+        return tag;
+    }
+
+    @Override
+    public void deserialize(Tag tag) throws ParserException {
+        var root = tag.getAsCompound();
+        root.optional("listed").map(Tag::getAsBoolean).ifPresent(this::setListed);
+        root.optional("properties").map(Tag::getAsList).map(tags -> tags.stream()
+                .map(t -> plugin.nbt().fromTag(t, ProfileProperty.class))
+                .toList()
+        ).ifPresent(getGameProfile()::setProperties);
+        root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(this::setRealPlayer);
+        root.optional("skinParts").map(Tag::getAsByte).map(PaperSkinParts::new).ifPresent(this::setSkinParts);
+        super.deserialize(tag);
     }
 
     @Override
