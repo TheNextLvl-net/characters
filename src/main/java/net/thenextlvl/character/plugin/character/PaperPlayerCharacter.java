@@ -36,7 +36,6 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.entity.Display;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -380,7 +379,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     private void updateDisplayNameHologram(TextDisplay display) {
-        display.setBillboard(Display.Billboard.CENTER);
+        display.setAlignment(tagOptions.getAlignment());
+        display.setBillboard(tagOptions.getBillboard());
         display.setGravity(false);
         display.setPersistent(false);
         display.setTeleportDuration(3);
