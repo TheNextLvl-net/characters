@@ -10,16 +10,19 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
+import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.TextDisplay.TextAlignment;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
@@ -48,6 +51,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
+    protected final TagOptions tagOptions = new PaperTagOptions();
 
     protected final CharacterPlugin plugin;
     protected final EntityType type;
@@ -166,6 +170,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Nullable Location getSpawnLocation() {
         return spawnLocation;
+    }
+
+    @Override
+    public TagOptions getTagOptions() {
+        return tagOptions;
     }
 
     @Override
@@ -536,5 +545,51 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     private File file() {
         return new File(plugin.savesFolder(), this.name + ".dat");
+    }
+
+    private class PaperTagOptions implements TagOptions {
+        private Billboard billboard = Billboard.CENTER;
+        private TextAlignment alignment = TextAlignment.CENTER;
+
+        @Override
+        public Billboard getBillboard() {
+            return billboard;
+        }
+
+        @Override
+        public TextAlignment getAlignment() {
+            return alignment;
+        }
+
+        @Override
+        public boolean setAlignment(TextAlignment alignment) {
+            if (Objects.equals(alignment, this.alignment)) return false;
+            this.alignment = alignment;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setBillboard(Billboard billboard) {
+            if (Objects.equals(billboard, this.billboard)) return false;
+            this.billboard = billboard;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public Tag serialize() throws ParserException {
+            var tag = new CompoundTag();
+            tag.add("alignment", new StringTag(alignment.name()));
+            tag.add("billboard", new StringTag(billboard.name()));
+            return tag;
+        }
+
+        @Override
+        public void deserialize(Tag tag) throws ParserException {
+            var root = tag.getAsCompound();
+            root.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
+            root.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
+        }
     }
 }
