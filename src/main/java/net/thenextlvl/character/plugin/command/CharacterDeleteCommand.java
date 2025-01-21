@@ -21,7 +21,7 @@ class CharacterDeleteCommand {
 
     private static int delete(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var character = context.getArgument("character", Character.class);
-        character.remove();
+        character.delete();
         plugin.bundle().sendMessage(context.getSource().getSender(), "character.deleted",
                 Placeholder.unparsed("character", character.getName()));
         return Command.SINGLE_SUCCESS;
