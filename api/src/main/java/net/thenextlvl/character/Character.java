@@ -3,6 +3,7 @@ package net.thenextlvl.character;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -58,6 +59,8 @@ public interface Character<T extends Entity> {
 
     @Nullable
     Location getSpawnLocation();
+
+    TagOptions getTagOptions();
 
     EntityType getType();
 
