@@ -1,5 +1,6 @@
 package net.thenextlvl.character;
 
+import core.nbt.serialization.TagSerializable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
@@ -21,7 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
-public interface Character<T extends Entity> {
+public interface Character<T extends Entity> extends TagSerializable {
     @Nullable
     ClickAction<?> getAction(String name);
 
