@@ -12,7 +12,9 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.argument.ColorArgument;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
+import org.bukkit.Color;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.TextDisplay;
 import org.jspecify.annotations.NullMarked;
@@ -29,6 +31,10 @@ class CharacterTagCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> alignmentArgument() {
         return Commands.argument("alignment", new EnumArgument<>(TextDisplay.TextAlignment.class));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> colorArgument() {
+        return Commands.argument("color", new ColorArgument());
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> billboardArgument() {
@@ -50,7 +56,7 @@ class CharacterTagCommand {
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
         return Commands.literal("set").then(characterArgument(plugin)
                 .then(setAlignment(plugin))
-                // .then(set("background-color", Color.class, , plugin))
+                .then(setBackgroundColor(plugin))
                 .then(setBillboard(plugin))
                 // .then(set("brightness", Display.Brightness.class, , plugin))
                 // .then(set("default-background", boolean.class, BoolArgumentType.bool(), plugin))
@@ -72,6 +78,15 @@ class CharacterTagCommand {
             var alignment = context.getArgument("alignment", TextDisplay.TextAlignment.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setAlignment(alignment);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setBackgroundColor(CharacterPlugin plugin) {
+        return Commands.literal("background-color").then(colorArgument().executes(context -> {
+            var color = context.getArgument("color", Color.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setBackgroundColor(color);
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }

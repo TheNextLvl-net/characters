@@ -5,7 +5,6 @@ import core.io.IO;
 import core.nbt.NBTOutputStream;
 import core.nbt.serialization.ParserException;
 import core.nbt.tag.CompoundTag;
-import core.nbt.tag.StringTag;
 import core.nbt.tag.Tag;
 import core.util.StringUtil;
 import net.kyori.adventure.text.Component;
@@ -15,6 +14,7 @@ import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.tag.TagOptions;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
@@ -598,12 +598,18 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     private class PaperTagOptions implements TagOptions {
+        private @Nullable Color backgroundColor = null;
         private Billboard billboard = Billboard.CENTER;
         private TextAlignment alignment = TextAlignment.CENTER;
 
         @Override
         public Billboard getBillboard() {
             return billboard;
+        }
+
+        @Override
+        public @Nullable Color getBackgroundColor() {
+            return backgroundColor;
         }
 
         @Override
@@ -620,6 +626,14 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
+        public boolean setBackgroundColor(@Nullable Color color) {
+            if (Objects.equals(color, this.backgroundColor)) return false;
+            this.backgroundColor = color;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
         public boolean setBillboard(Billboard billboard) {
             if (Objects.equals(billboard, this.billboard)) return false;
             this.billboard = billboard;
@@ -630,8 +644,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         @Override
         public Tag serialize() throws ParserException {
             var tag = new CompoundTag();
-            tag.add("alignment", new StringTag(alignment.name()));
-            tag.add("billboard", new StringTag(billboard.name()));
+            if (backgroundColor != null) tag.add("backgroundColor", backgroundColor.asARGB());
+            tag.add("alignment", alignment.name());
+            tag.add("billboard", billboard.name());
             return tag;
         }
 
@@ -639,6 +654,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         public void deserialize(Tag tag) throws ParserException {
             var root = tag.getAsCompound();
             root.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
+            root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).ifPresent(this::setBackgroundColor);
             root.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
         }
     }

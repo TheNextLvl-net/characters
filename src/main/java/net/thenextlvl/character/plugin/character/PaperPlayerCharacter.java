@@ -380,6 +380,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     private void updateDisplayNameHologram(TextDisplay display) {
         display.setAlignment(tagOptions.getAlignment());
+        if (tagOptions.getBackgroundColor() != null)
+            display.setBackgroundColor(tagOptions.getBackgroundColor());
         display.setBillboard(tagOptions.getBillboard());
         display.setGravity(false);
         display.setPersistent(false);
