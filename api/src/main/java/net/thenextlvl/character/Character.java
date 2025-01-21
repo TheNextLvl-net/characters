@@ -22,16 +22,6 @@ import java.util.UUID;
 
 @NullMarked
 public interface Character<T extends Entity> {
-    boolean addAction(String name, ClickAction<?> action);
-
-    boolean addViewer(UUID player);
-
-    boolean addViewers(Collection<UUID> players);
-
-    boolean canSee(Player player);
-
-    boolean despawn();
-
     @Nullable
     ClickAction<?> getAction(String name);
 
@@ -69,6 +59,16 @@ public interface Character<T extends Entity> {
 
     @Nullable
     World getWorld();
+
+    boolean addAction(String name, ClickAction<?> action);
+
+    boolean addViewer(UUID player);
+
+    boolean addViewers(Collection<UUID> players);
+
+    boolean canSee(Player player);
+
+    boolean despawn();
 
     boolean hasAI();
 
