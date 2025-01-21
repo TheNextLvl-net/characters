@@ -1,6 +1,7 @@
 package net.thenextlvl.character.plugin.command;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -34,7 +35,11 @@ class CharacterTagCommand {
         return Commands.argument("billboard", new EnumArgument<>(Display.Billboard.class));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> textArgument(CharacterPlugin plugin) {
+    private static ArgumentBuilder<CommandSourceStack, ?> visibleArgument() {
+        return Commands.argument("visible", BoolArgumentType.bool());
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> textArgument() {
         return Commands.argument("text", StringArgumentType.greedyString());
     }
 
@@ -59,8 +64,7 @@ class CharacterTagCommand {
                 // .then(set("shadow-strength", float.class, FloatArgumentType.floatArg(), plugin))
                 // .then(set("shadowed", boolean.class, BoolArgumentType.bool(), plugin))
                 .then(setText(plugin))
-        );
-                // .then(set("visible", boolean.class, BoolArgumentType.bool(), plugin)));
+                .then(setVisible(plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setAlignment(CharacterPlugin plugin) {
@@ -90,8 +94,14 @@ class CharacterTagCommand {
         }));
     }
 
-    private static int setVisible(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
+    private static ArgumentBuilder<CommandSourceStack, ?> setVisible(CharacterPlugin plugin) {
+        return Commands.literal("visible").then(visibleArgument()
+                .executes(context -> setVisible(context, plugin)));
+    }
+
+    private static int setVisible(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
+        var visible = context.getArgument("visible", boolean.class);
         var character = context.getArgument("character", Character.class);
 
         var success = character.setDisplayNameVisible(visible);
