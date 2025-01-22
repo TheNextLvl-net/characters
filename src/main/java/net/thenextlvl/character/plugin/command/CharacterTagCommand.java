@@ -11,6 +11,7 @@ import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -44,15 +45,14 @@ class CharacterTagCommand {
                 .then(setBillboard(plugin))
                 .then(setBrightness(plugin))
                 .then(setDefaultBackground(plugin))
-                .then(setDisplayHeight(plugin))
-                .then(setDisplayWidth(plugin))
-                .then(setTextOpacity(plugin))
+                .then(setLineWidth(plugin))
                 .then(setScale(plugin))
                 .then(setSeeThrough(plugin))
-                .then(setTextShadow(plugin))
                 .then(setShadowRadius(plugin))
                 .then(setShadowStrength(plugin))
                 .then(setText(plugin))
+                .then(setTextOpacity(plugin))
+                .then(setTextShadow(plugin))
                 .then(setVisible(plugin)));
     }
 
@@ -63,6 +63,10 @@ class CharacterTagCommand {
             var alignment = context.getArgument("alignment", TextAlignment.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setAlignment(alignment);
+            var message = success ? "character.tag.alignment" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", alignment.name().toLowerCase()));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -74,6 +78,10 @@ class CharacterTagCommand {
             var color = context.getArgument("color", Color.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setBackgroundColor(color);
+            var message = success ? "character.tag.background-color" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", Integer.toHexString(color.asARGB())));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -91,6 +99,10 @@ class CharacterTagCommand {
             var billboard = context.getArgument("billboard", Billboard.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setBillboard(billboard);
+            var message = success ? "character.tag.billboard" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", billboard.name().toLowerCase()));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -105,6 +117,11 @@ class CharacterTagCommand {
             var skyLight = context.getArgument("sky-light", int.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setBrightness(new Brightness(blockLight, skyLight));
+            var message = success ? "character.tag.brightness" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("block_light", String.valueOf(blockLight)),
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("sky_light", String.valueOf(skyLight)));
             return success ? Command.SINGLE_SUCCESS : 0;
         })));
     }
@@ -116,28 +133,25 @@ class CharacterTagCommand {
             var enabled = context.getArgument("enabled", boolean.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setDefaultBackground(enabled);
+            var message = success ? "character.tag.background" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", String.valueOf(enabled)));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> setDisplayHeight(CharacterPlugin plugin) {
-        return Commands.literal("display-height").then(Commands.argument(
-                "height", FloatArgumentType.floatArg()
+    private static ArgumentBuilder<CommandSourceStack, ?> setLineWidth(CharacterPlugin plugin) {
+        return Commands.literal("line-width").then(Commands.argument(
+                "width", IntegerArgumentType.integer(0)
         ).executes(context -> {
-            var height = context.getArgument("height", float.class);
+            var width = context.getArgument("width", int.class);
             var character = context.getArgument("character", Character.class);
-            var success = character.getTagOptions().setDisplayHeight(height);
-            return success ? Command.SINGLE_SUCCESS : 0;
-        }));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> setDisplayWidth(CharacterPlugin plugin) {
-        return Commands.literal("display-width").then(Commands.argument(
-                "width", FloatArgumentType.floatArg()
-        ).executes(context -> {
-            var width = context.getArgument("width", float.class);
-            var character = context.getArgument("character", Character.class);
-            var success = character.getTagOptions().setDisplayWidth(width);
+            var success = character.getTagOptions().setLineWidth(width);
+            var message = success ? "character.tag.line-width" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", String.valueOf(width)));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -150,6 +164,10 @@ class CharacterTagCommand {
             var alpha = Math.round(25 + ((100 - opacity) * 2.3));
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setTextOpacity((byte) alpha);
+            var message = success ? "character.tag.text-opacity" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Formatter.number("value", opacity),
+                    Placeholder.unparsed("character", character.getName()));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -161,6 +179,10 @@ class CharacterTagCommand {
             var scale = context.getArgument("scale", float.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setScale(new Vector3f(scale));
+            var message = success ? "character.tag.scale" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Formatter.number("value", scale),
+                    Placeholder.unparsed("character", character.getName()));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -172,6 +194,10 @@ class CharacterTagCommand {
             var seeThrough = context.getArgument("see-through", boolean.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setSeeThrough(seeThrough);
+            var message = !success ? "nothing.changed" : seeThrough
+                    ? "character.tag.see-through" : "character.tag.not-see-through";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("character", character.getName()));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -183,6 +209,10 @@ class CharacterTagCommand {
             var enabled = context.getArgument("enabled", boolean.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setTextShadow(enabled);
+            var message = success ? "character.tag.text-shadow" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", String.valueOf(enabled)));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -194,6 +224,10 @@ class CharacterTagCommand {
             var radius = context.getArgument("radius", float.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setShadowRadius(radius);
+            var message = success ? "character.tag.shadow-radius" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Formatter.number("value", radius),
+                    Placeholder.unparsed("character", character.getName()));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -205,6 +239,10 @@ class CharacterTagCommand {
             var strength = context.getArgument("strength", float.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setShadowStrength(strength);
+            var message = success ? "character.tag.shadow-strength" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Formatter.number("value", strength),
+                    Placeholder.unparsed("character", character.getName()));
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
@@ -221,7 +259,7 @@ class CharacterTagCommand {
         var character = context.getArgument("character", Character.class);
 
         var success = character.setDisplayNameVisible(visible);
-        var message = !success ? "nothing.changed" : visible ? "character.tag.shown" : "character.tag.hidden";
+        var message = !success ? "nothing.changed" : visible ? "character.tag.visible" : "character.tag.invisible";
 
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
@@ -245,7 +283,7 @@ class CharacterTagCommand {
         var displayName = MiniMessage.miniMessage().deserialize(text);
 
         var success = character.setDisplayName(displayName);
-        var message = success ? "character.tag.set" : "nothing.changed";
+        var message = success ? "character.tag.text" : "nothing.changed";
 
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("character", character.getName()),
