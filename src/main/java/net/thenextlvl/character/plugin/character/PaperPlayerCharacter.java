@@ -386,8 +386,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         display.setBillboard(tagOptions.getBillboard());
         display.setBrightness(tagOptions.getBrightness());
         display.setDefaultBackground(tagOptions.isDefaultBackground());
-        display.setDisplayHeight(tagOptions.getDisplayHeight());
-        display.setDisplayWidth(tagOptions.getDisplayWidth());
+        display.setLineWidth(tagOptions.getLineWidth());
         display.setGravity(false);
         display.setPersistent(false);
         display.setSeeThrough(tagOptions.isSeeThrough());

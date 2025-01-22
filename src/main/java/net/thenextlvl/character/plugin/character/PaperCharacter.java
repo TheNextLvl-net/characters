@@ -609,10 +609,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         private boolean seeThrough = false;
         private boolean textShadow = false;
         private byte textOpacity;
-        private float displayHeight;
-        private float displayWidth;
         private float shadowRadius;
         private float shadowStrength;
+        private int lineWidth = 200;
 
         @Override
         public Billboard getBillboard() {
@@ -695,17 +694,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
-        public boolean setDisplayHeight(float height) {
-            if (height == displayHeight) return false;
-            this.displayHeight = height;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
-            return true;
-        }
-
-        @Override
-        public boolean setDisplayWidth(float width) {
-            if (width == displayWidth) return false;
-            this.displayWidth = width;
+        public boolean setLineWidth(int width) {
+            if (width == lineWidth) return false;
+            this.lineWidth = width;
             getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
@@ -764,16 +755,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
-        public float getDisplayHeight() {
-            return displayHeight;
-        }
-
-        @Override
-        public float getDisplayWidth() {
-            return displayWidth;
-        }
-
-        @Override
         public float getShadowRadius() {
             return shadowRadius;
         }
@@ -784,6 +765,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
+        public int getLineWidth() {
+            return lineWidth;
+        }
+
+        @Override
         public Tag serialize() throws ParserException {
             var tag = new CompoundTag();
             if (backgroundColor != null) tag.add("backgroundColor", backgroundColor.asARGB());
@@ -791,8 +777,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             tag.add("alignment", alignment.name());
             tag.add("billboard", billboard.name());
             tag.add("defaultBackground", defaultBackground);
-            tag.add("displayHeight", displayHeight);
-            tag.add("displayWidth", displayWidth);
+            tag.add("lineWidth", lineWidth);
             tag.add("scale", plugin.nbt().toTag(scale));
             tag.add("seeThrough", seeThrough);
             tag.add("shadowRadius", shadowRadius);
@@ -808,8 +793,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             root.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
             root.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
             root.optional("defaultBackground").map(Tag::getAsBoolean).ifPresent(this::setDefaultBackground);
-            root.optional("displayHeight").map(Tag::getAsFloat).ifPresent(this::setDisplayHeight);
-            root.optional("displayWidth").map(Tag::getAsFloat).ifPresent(this::setDisplayWidth);
+            root.optional("lineWidth").map(Tag::getAsInt).ifPresent(this::setLineWidth);
             root.optional("scale").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setScale);
             root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
             root.optional("shadowRadius").map(Tag::getAsFloat).ifPresent(this::setShadowRadius);

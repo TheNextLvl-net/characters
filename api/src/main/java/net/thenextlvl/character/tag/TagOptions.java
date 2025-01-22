@@ -39,9 +39,7 @@ public interface TagOptions extends TagSerializable {
 
     boolean setDefaultBackground(boolean enabled);
 
-    boolean setDisplayHeight(float height);
-
-    boolean setDisplayWidth(float width);
+    boolean setLineWidth(int width);
 
     boolean setScale(Vector3f vector3f);
 
@@ -57,11 +55,9 @@ public interface TagOptions extends TagSerializable {
 
     byte getTextOpacity();
 
-    float getDisplayHeight();
-
-    float getDisplayWidth();
-
     float getShadowRadius();
 
     float getShadowStrength();
+
+    int getLineWidth();
 }
