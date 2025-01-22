@@ -23,6 +23,8 @@ public interface TagOptions extends TagSerializable {
 
     Vector3f getScale();
 
+    boolean hasTextShadow();
+
     boolean isDefaultBackground();
 
     boolean isSeeThrough();
@@ -45,11 +47,21 @@ public interface TagOptions extends TagSerializable {
 
     boolean setSeeThrough(boolean seeThrough);
 
+    boolean setShadowRadius(float radius);
+
+    boolean setShadowStrength(float strength);
+
     boolean setTextOpacity(byte opacity);
+
+    boolean setTextShadow(boolean enabled);
 
     byte getTextOpacity();
 
     float getDisplayHeight();
 
     float getDisplayWidth();
+
+    float getShadowRadius();
+
+    float getShadowStrength();
 }

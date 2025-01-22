@@ -607,9 +607,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         private Vector3f scale = new Vector3f(1);
         private boolean defaultBackground = false;
         private boolean seeThrough = false;
+        private boolean textShadow = false;
         private byte textOpacity;
         private float displayHeight;
         private float displayWidth;
+        private float shadowRadius;
+        private float shadowStrength;
 
         @Override
         public Billboard getBillboard() {
@@ -644,6 +647,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         @Override
         public boolean isSeeThrough() {
             return seeThrough;
+        }
+
+        @Override
+        public boolean hasTextShadow() {
+            return textShadow;
         }
 
         @Override
@@ -719,6 +727,30 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
+        public boolean setShadowRadius(float radius) {
+            if (radius == shadowRadius) return false;
+            this.shadowRadius = radius;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setShadowStrength(float strength) {
+            if (strength == shadowStrength) return false;
+            this.shadowStrength = strength;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setTextShadow(boolean enabled) {
+            if (enabled == textShadow) return false;
+            this.textShadow = enabled;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
         public boolean setTextOpacity(byte opacity) {
             if (opacity == textOpacity) return false;
             this.textOpacity = opacity;
@@ -742,6 +774,16 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
+        public float getShadowRadius() {
+            return shadowRadius;
+        }
+
+        @Override
+        public float getShadowStrength() {
+            return shadowStrength;
+        }
+
+        @Override
         public Tag serialize() throws ParserException {
             var tag = new CompoundTag();
             if (backgroundColor != null) tag.add("backgroundColor", backgroundColor.asARGB());
@@ -753,7 +795,10 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             tag.add("displayWidth", displayWidth);
             tag.add("scale", plugin.nbt().toTag(scale));
             tag.add("seeThrough", seeThrough);
+            tag.add("shadowRadius", shadowRadius);
+            tag.add("shadowStrength", shadowStrength);
             tag.add("textOpacity", textOpacity);
+            tag.add("textShadow", textShadow);
             return tag;
         }
 
@@ -767,7 +812,10 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             root.optional("displayWidth").map(Tag::getAsFloat).ifPresent(this::setDisplayWidth);
             root.optional("scale").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setScale);
             root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
+            root.optional("shadowRadius").map(Tag::getAsFloat).ifPresent(this::setShadowRadius);
+            root.optional("shadowStrength").map(Tag::getAsFloat).ifPresent(this::setShadowStrength);
             root.optional("textOpacity").map(Tag::getAsByte).ifPresent(this::setTextOpacity);
+            root.optional("textShadow").map(Tag::getAsBoolean).ifPresent(this::setTextShadow);
             setBackgroundColor(root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).orElse(null));
             setBrightness(root.optional("brightness").map(t -> plugin.nbt().fromTag(t, Brightness.class)).orElse(null));
         }

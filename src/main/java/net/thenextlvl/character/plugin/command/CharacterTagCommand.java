@@ -49,9 +49,9 @@ class CharacterTagCommand {
                 .then(setTextOpacity(plugin))
                 .then(setScale(plugin))
                 .then(setSeeThrough(plugin))
-                // .then(set("shadow-radius", float.class, FloatArgumentType.floatArg(), plugin))
-                // .then(set("shadow-strength", float.class, FloatArgumentType.floatArg(), plugin))
-                // .then(set("shadowed", boolean.class, BoolArgumentType.bool(), plugin))
+                .then(setTextShadow(plugin))
+                .then(setShadowRadius(plugin))
+                .then(setShadowStrength(plugin))
                 .then(setText(plugin))
                 .then(setVisible(plugin)));
     }
@@ -172,6 +172,39 @@ class CharacterTagCommand {
             var seeThrough = context.getArgument("see-through", boolean.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setSeeThrough(seeThrough);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setTextShadow(CharacterPlugin plugin) {
+        return Commands.literal("text-shadow").then(Commands.argument(
+                "enabled", BoolArgumentType.bool()
+        ).executes(context -> {
+            var enabled = context.getArgument("enabled", boolean.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setTextShadow(enabled);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setShadowRadius(CharacterPlugin plugin) {
+        return Commands.literal("shadow-radius").then(Commands.argument(
+                "radius", FloatArgumentType.floatArg(0)
+        ).executes(context -> {
+            var radius = context.getArgument("radius", float.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setShadowRadius(radius);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setShadowStrength(CharacterPlugin plugin) {
+        return Commands.literal("shadow-strength").then(Commands.argument(
+                "strength", FloatArgumentType.floatArg(0)
+        ).executes(context -> {
+            var strength = context.getArgument("strength", float.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setShadowStrength(strength);
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
