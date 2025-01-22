@@ -34,6 +34,7 @@ import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.listener.test;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.AddressAdapter;
+import net.thenextlvl.character.plugin.serialization.BrightnessAdapter;
 import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
 import net.thenextlvl.character.plugin.serialization.ClickActionAdapter;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
@@ -45,16 +46,19 @@ import net.thenextlvl.character.plugin.serialization.ProfilePropertyAdapter;
 import net.thenextlvl.character.plugin.serialization.SoundAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
+import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Unmodifiable;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -81,6 +85,7 @@ public class CharacterPlugin extends JavaPlugin {
 
     private final NBT nbt = NBT.builder()
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter(this))
+            .registerTypeHierarchyAdapter(Brightness.class, new BrightnessAdapter())
             .registerTypeHierarchyAdapter(Character.class, new CharacterSerializer())
             .registerTypeHierarchyAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
@@ -93,6 +98,7 @@ public class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
             .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
             .registerTypeHierarchyAdapter(Title.class, new TitleAdapter())
+            .registerTypeHierarchyAdapter(Vector3f.class, new Vector3fAdapter())
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
 

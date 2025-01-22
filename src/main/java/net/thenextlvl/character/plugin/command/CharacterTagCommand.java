@@ -2,6 +2,8 @@ package net.thenextlvl.character.plugin.command;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -16,7 +18,9 @@ import net.thenextlvl.character.plugin.command.argument.ColorArgument;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.Color;
 import org.bukkit.entity.Display;
+import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.TextDisplay;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
@@ -41,6 +45,18 @@ class CharacterTagCommand {
         return Commands.argument("billboard", new EnumArgument<>(Display.Billboard.class));
     }
 
+    private static ArgumentBuilder<CommandSourceStack, ?> blockLightArgument() {
+        return Commands.argument("block-light", IntegerArgumentType.integer(0, 15));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> skyLightArgument() {
+        return Commands.argument("sky-light", IntegerArgumentType.integer(0, 15));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> defaultBackgroundArgument() {
+        return Commands.argument("enabled", BoolArgumentType.bool());
+    }
+
     private static ArgumentBuilder<CommandSourceStack, ?> visibleArgument() {
         return Commands.argument("visible", BoolArgumentType.bool());
     }
@@ -58,14 +74,13 @@ class CharacterTagCommand {
                 .then(setAlignment(plugin))
                 .then(setBackgroundColor(plugin))
                 .then(setBillboard(plugin))
-                // .then(set("brightness", Display.Brightness.class, , plugin))
-                // .then(set("default-background", boolean.class, BoolArgumentType.bool(), plugin))
-                // .then(set("display-height", float.class, FloatArgumentType.floatArg(), plugin))
-                // .then(set("display-width", float.class, FloatArgumentType.floatArg(), plugin))
-                // .then(set("line-width", int.class, IntegerArgumentType.integer(), plugin))
-                // .then(set("text-opacity", byte.class, IntegerArgumentType.integer(Byte.MIN_VALUE, Byte.MAX_VALUE), plugin))
-                // .then(set("scale", Vector3f.class, FloatArgumentType.floatArg(), plugin))
-                // .then(set("see-through", boolean.class, BoolArgumentType.bool(), plugin))
+                .then(setBrightness(plugin))
+                .then(setDefaultBackground(plugin))
+                .then(setDisplayHeight(plugin))
+                .then(setDisplayWidth(plugin))
+                .then(setTextOpacity(plugin))
+                .then(setScale(plugin))
+                .then(setSeeThrough(plugin))
                 // .then(set("shadow-radius", float.class, FloatArgumentType.floatArg(), plugin))
                 // .then(set("shadow-strength", float.class, FloatArgumentType.floatArg(), plugin))
                 // .then(set("shadowed", boolean.class, BoolArgumentType.bool(), plugin))
@@ -103,6 +118,79 @@ class CharacterTagCommand {
             var success = character.getTagOptions().setBillboard(billboard);
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setBrightness(CharacterPlugin plugin) {
+        return Commands.literal("brightness").then(blockLightArgument()
+                .then(skyLightArgument().executes(context -> {
+                    var blockLight = context.getArgument("block-light", int.class);
+                    var skyLight = context.getArgument("sky-light", int.class);
+                    var character = context.getArgument("character", Character.class);
+                    var success = character.getTagOptions().setBrightness(new Brightness(blockLight, skyLight));
+                    return success ? Command.SINGLE_SUCCESS : 0;
+                })));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setDefaultBackground(CharacterPlugin plugin) {
+        return Commands.literal("default-background").then(defaultBackgroundArgument().executes(context -> {
+            var enabled = context.getArgument("enabled", boolean.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setDefaultBackground(enabled);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setDisplayHeight(CharacterPlugin plugin) {
+        return Commands.literal("display-height").then(Commands.argument("height", FloatArgumentType.floatArg())
+                .executes(context -> {
+                    var height = context.getArgument("height", float.class);
+                    var character = context.getArgument("character", Character.class);
+                    var success = character.getTagOptions().setDisplayHeight(height);
+                    return success ? Command.SINGLE_SUCCESS : 0;
+                }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setDisplayWidth(CharacterPlugin plugin) {
+        return Commands.literal("display-width").then(Commands.argument("width", FloatArgumentType.floatArg())
+                .executes(context -> {
+                    var width = context.getArgument("width", float.class);
+                    var character = context.getArgument("character", Character.class);
+                    var success = character.getTagOptions().setDisplayWidth(width);
+                    return success ? Command.SINGLE_SUCCESS : 0;
+                }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setTextOpacity(CharacterPlugin plugin) {
+        return Commands.literal("text-opacity").then(Commands.argument("percentage",
+                FloatArgumentType.floatArg(0, 100)
+        ).executes(context -> {
+            var opacity = context.getArgument("percentage", float.class);
+            var alpha = Math.round(25 + ((100 - opacity) * 2.3));
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setTextOpacity((byte) alpha);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setScale(CharacterPlugin plugin) {
+        return Commands.literal("scale").then(Commands.argument("scale",
+                FloatArgumentType.floatArg(0.05f, 10)
+        ).executes(context -> {
+            var scale = context.getArgument("scale", float.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setScale(new Vector3f(scale));
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setSeeThrough(CharacterPlugin plugin) {
+        return Commands.literal("see-through").then(Commands.argument("see-through", BoolArgumentType.bool())
+                .executes(context -> {
+                    var seeThrough = context.getArgument("see-through", boolean.class);
+                    var character = context.getArgument("character", Character.class);
+                    var success = character.getTagOptions().setSeeThrough(seeThrough);
+                    return success ? Command.SINGLE_SUCCESS : 0;
+                }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setVisible(CharacterPlugin plugin) {

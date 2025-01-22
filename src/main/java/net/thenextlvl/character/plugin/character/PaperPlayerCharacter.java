@@ -44,6 +44,7 @@ import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.scoreboard.Team.Option;
 import org.bukkit.scoreboard.Team.OptionStatus;
+import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -383,9 +384,21 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         if (tagOptions.getBackgroundColor() != null)
             display.setBackgroundColor(tagOptions.getBackgroundColor());
         display.setBillboard(tagOptions.getBillboard());
+        display.setBrightness(tagOptions.getBrightness());
+        display.setDefaultBackground(tagOptions.isDefaultBackground());
+        display.setDisplayHeight(tagOptions.getDisplayHeight());
+        display.setDisplayWidth(tagOptions.getDisplayWidth());
         display.setGravity(false);
         display.setPersistent(false);
+        display.setSeeThrough(tagOptions.isSeeThrough());
         display.setTeleportDuration(3);
+        display.setTextOpacity(tagOptions.getTextOpacity());
+        display.setTransformation(new Transformation(
+                display.getTransformation().getTranslation(),
+                display.getTransformation().getLeftRotation(),
+                tagOptions.getScale(),
+                display.getTransformation().getRightRotation()
+        ));
         var component = displayName == null ? Component.text(getName()) : displayName;
         display.text(component.colorIfAbsent(teamColor));
     }

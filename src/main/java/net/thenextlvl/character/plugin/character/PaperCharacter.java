@@ -20,6 +20,7 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Display.Billboard;
+import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -29,6 +30,7 @@ import org.bukkit.entity.Pose;
 import org.bukkit.entity.TextDisplay.TextAlignment;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.jetbrains.annotations.Unmodifiable;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -598,13 +600,25 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     private class PaperTagOptions implements TagOptions {
+        private @Nullable Brightness brightness = new Brightness(15, 0);
         private @Nullable Color backgroundColor = null;
         private Billboard billboard = Billboard.CENTER;
         private TextAlignment alignment = TextAlignment.CENTER;
+        private Vector3f scale = new Vector3f(1);
+        private boolean defaultBackground = false;
+        private boolean seeThrough = false;
+        private byte textOpacity;
+        private float displayHeight;
+        private float displayWidth;
 
         @Override
         public Billboard getBillboard() {
             return billboard;
+        }
+
+        @Override
+        public @Nullable Brightness getBrightness() {
+            return brightness;
         }
 
         @Override
@@ -615,6 +629,21 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         @Override
         public TextAlignment getAlignment() {
             return alignment;
+        }
+
+        @Override
+        public Vector3f getScale() {
+            return scale;
+        }
+
+        @Override
+        public boolean isDefaultBackground() {
+            return defaultBackground;
+        }
+
+        @Override
+        public boolean isSeeThrough() {
+            return seeThrough;
         }
 
         @Override
@@ -642,11 +671,89 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
+        public boolean setBrightness(@Nullable Brightness brightness) {
+            if (Objects.equals(brightness, this.brightness)) return false;
+            this.brightness = brightness;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setDefaultBackground(boolean enabled) {
+            if (enabled == defaultBackground) return false;
+            this.defaultBackground = enabled;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setDisplayHeight(float height) {
+            if (height == displayHeight) return false;
+            this.displayHeight = height;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setDisplayWidth(float width) {
+            if (width == displayWidth) return false;
+            this.displayWidth = width;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setScale(Vector3f vector3f) {
+            if (Objects.equals(vector3f, this.scale)) return false;
+            this.scale = vector3f;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setSeeThrough(boolean seeThrough) {
+            if (seeThrough == this.seeThrough) return false;
+            this.seeThrough = seeThrough;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setTextOpacity(byte opacity) {
+            if (opacity == textOpacity) return false;
+            this.textOpacity = opacity;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public byte getTextOpacity() {
+            return textOpacity;
+        }
+
+        @Override
+        public float getDisplayHeight() {
+            return displayHeight;
+        }
+
+        @Override
+        public float getDisplayWidth() {
+            return displayWidth;
+        }
+
+        @Override
         public Tag serialize() throws ParserException {
             var tag = new CompoundTag();
             if (backgroundColor != null) tag.add("backgroundColor", backgroundColor.asARGB());
+            if (brightness != null) tag.add("brightness", plugin.nbt().toTag(brightness));
             tag.add("alignment", alignment.name());
             tag.add("billboard", billboard.name());
+            tag.add("defaultBackground", defaultBackground);
+            tag.add("displayHeight", displayHeight);
+            tag.add("displayWidth", displayWidth);
+            tag.add("scale", plugin.nbt().toTag(scale));
+            tag.add("seeThrough", seeThrough);
+            tag.add("textOpacity", textOpacity);
             return tag;
         }
 
@@ -654,8 +761,15 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         public void deserialize(Tag tag) throws ParserException {
             var root = tag.getAsCompound();
             root.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
-            root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).ifPresent(this::setBackgroundColor);
             root.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
+            root.optional("defaultBackground").map(Tag::getAsBoolean).ifPresent(this::setDefaultBackground);
+            root.optional("displayHeight").map(Tag::getAsFloat).ifPresent(this::setDisplayHeight);
+            root.optional("displayWidth").map(Tag::getAsFloat).ifPresent(this::setDisplayWidth);
+            root.optional("scale").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setScale);
+            root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
+            root.optional("textOpacity").map(Tag::getAsByte).ifPresent(this::setTextOpacity);
+            setBackgroundColor(root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).orElse(null));
+            setBrightness(root.optional("brightness").map(t -> plugin.nbt().fromTag(t, Brightness.class)).orElse(null));
         }
     }
 }
