@@ -17,9 +17,9 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.ColorArgument;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.Color;
-import org.bukkit.entity.Display;
+import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
-import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.TextDisplay.TextAlignment;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 
@@ -31,38 +31,6 @@ class CharacterTagCommand {
         return Commands.literal("tag")
                 .then(reset(plugin))
                 .then(set(plugin));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> alignmentArgument() {
-        return Commands.argument("alignment", new EnumArgument<>(TextDisplay.TextAlignment.class));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> colorArgument() {
-        return Commands.argument("color", new ColorArgument());
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> billboardArgument() {
-        return Commands.argument("billboard", new EnumArgument<>(Display.Billboard.class));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> blockLightArgument() {
-        return Commands.argument("block-light", IntegerArgumentType.integer(0, 15));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> skyLightArgument() {
-        return Commands.argument("sky-light", IntegerArgumentType.integer(0, 15));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> defaultBackgroundArgument() {
-        return Commands.argument("enabled", BoolArgumentType.bool());
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> visibleArgument() {
-        return Commands.argument("visible", BoolArgumentType.bool());
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> textArgument() {
-        return Commands.argument("text", StringArgumentType.greedyString());
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
@@ -89,8 +57,10 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setAlignment(CharacterPlugin plugin) {
-        return Commands.literal("alignment").then(alignmentArgument().executes(context -> {
-            var alignment = context.getArgument("alignment", TextDisplay.TextAlignment.class);
+        return Commands.literal("alignment").then(Commands.argument(
+                "alignment", new EnumArgument<>(TextAlignment.class)
+        ).executes(context -> {
+            var alignment = context.getArgument("alignment", TextAlignment.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setAlignment(alignment);
             return success ? Command.SINGLE_SUCCESS : 0;
@@ -98,7 +68,9 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setBackgroundColor(CharacterPlugin plugin) {
-        return Commands.literal("background-color").then(colorArgument().executes(context -> {
+        return Commands.literal("background-color").then(Commands.argument(
+                "color", new ColorArgument()
+        ).executes(context -> {
             var color = context.getArgument("color", Color.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setBackgroundColor(color);
@@ -107,13 +79,16 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setText(CharacterPlugin plugin) {
-        return Commands.literal("text").then(textArgument()
-                .executes(context -> setText(context, plugin)));
+        return Commands.literal("text").then(Commands.argument(
+                "text", StringArgumentType.greedyString()
+        ).executes(context -> setText(context, plugin)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setBillboard(CharacterPlugin plugin) {
-        return Commands.literal("billboard").then(billboardArgument().executes(context -> {
-            var billboard = context.getArgument("billboard", Display.Billboard.class);
+        return Commands.literal("billboard").then(Commands.argument(
+                "billboard", new EnumArgument<>(Billboard.class)
+        ).executes(context -> {
+            var billboard = context.getArgument("billboard", Billboard.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setBillboard(billboard);
             return success ? Command.SINGLE_SUCCESS : 0;
@@ -121,18 +96,23 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setBrightness(CharacterPlugin plugin) {
-        return Commands.literal("brightness").then(blockLightArgument()
-                .then(skyLightArgument().executes(context -> {
-                    var blockLight = context.getArgument("block-light", int.class);
-                    var skyLight = context.getArgument("sky-light", int.class);
-                    var character = context.getArgument("character", Character.class);
-                    var success = character.getTagOptions().setBrightness(new Brightness(blockLight, skyLight));
-                    return success ? Command.SINGLE_SUCCESS : 0;
-                })));
+        return Commands.literal("brightness").then(Commands.argument(
+                "block-light", IntegerArgumentType.integer(0, 15)
+        ).then(Commands.argument(
+                "sky-light", IntegerArgumentType.integer(0, 15)
+        ).executes(context -> {
+            var blockLight = context.getArgument("block-light", int.class);
+            var skyLight = context.getArgument("sky-light", int.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setBrightness(new Brightness(blockLight, skyLight));
+            return success ? Command.SINGLE_SUCCESS : 0;
+        })));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setDefaultBackground(CharacterPlugin plugin) {
-        return Commands.literal("default-background").then(defaultBackgroundArgument().executes(context -> {
+        return Commands.literal("default-background").then(Commands.argument(
+                "enabled", BoolArgumentType.bool()
+        ).executes(context -> {
             var enabled = context.getArgument("enabled", boolean.class);
             var character = context.getArgument("character", Character.class);
             var success = character.getTagOptions().setDefaultBackground(enabled);
@@ -141,28 +121,30 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setDisplayHeight(CharacterPlugin plugin) {
-        return Commands.literal("display-height").then(Commands.argument("height", FloatArgumentType.floatArg())
-                .executes(context -> {
-                    var height = context.getArgument("height", float.class);
-                    var character = context.getArgument("character", Character.class);
-                    var success = character.getTagOptions().setDisplayHeight(height);
-                    return success ? Command.SINGLE_SUCCESS : 0;
-                }));
+        return Commands.literal("display-height").then(Commands.argument(
+                "height", FloatArgumentType.floatArg()
+        ).executes(context -> {
+            var height = context.getArgument("height", float.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setDisplayHeight(height);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setDisplayWidth(CharacterPlugin plugin) {
-        return Commands.literal("display-width").then(Commands.argument("width", FloatArgumentType.floatArg())
-                .executes(context -> {
-                    var width = context.getArgument("width", float.class);
-                    var character = context.getArgument("character", Character.class);
-                    var success = character.getTagOptions().setDisplayWidth(width);
-                    return success ? Command.SINGLE_SUCCESS : 0;
-                }));
+        return Commands.literal("display-width").then(Commands.argument(
+                "width", FloatArgumentType.floatArg()
+        ).executes(context -> {
+            var width = context.getArgument("width", float.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setDisplayWidth(width);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setTextOpacity(CharacterPlugin plugin) {
-        return Commands.literal("text-opacity").then(Commands.argument("percentage",
-                FloatArgumentType.floatArg(0, 100)
+        return Commands.literal("text-opacity").then(Commands.argument(
+                "percentage", FloatArgumentType.floatArg(0, 100)
         ).executes(context -> {
             var opacity = context.getArgument("percentage", float.class);
             var alpha = Math.round(25 + ((100 - opacity) * 2.3));
@@ -173,8 +155,8 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setScale(CharacterPlugin plugin) {
-        return Commands.literal("scale").then(Commands.argument("scale",
-                FloatArgumentType.floatArg(0.05f, 10)
+        return Commands.literal("scale").then(Commands.argument(
+                "scale", FloatArgumentType.floatArg(0.05f, 10)
         ).executes(context -> {
             var scale = context.getArgument("scale", float.class);
             var character = context.getArgument("character", Character.class);
@@ -184,18 +166,20 @@ class CharacterTagCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setSeeThrough(CharacterPlugin plugin) {
-        return Commands.literal("see-through").then(Commands.argument("see-through", BoolArgumentType.bool())
-                .executes(context -> {
-                    var seeThrough = context.getArgument("see-through", boolean.class);
-                    var character = context.getArgument("character", Character.class);
-                    var success = character.getTagOptions().setSeeThrough(seeThrough);
-                    return success ? Command.SINGLE_SUCCESS : 0;
-                }));
+        return Commands.literal("see-through").then(Commands.argument(
+                "see-through", BoolArgumentType.bool()
+        ).executes(context -> {
+            var seeThrough = context.getArgument("see-through", boolean.class);
+            var character = context.getArgument("character", Character.class);
+            var success = character.getTagOptions().setSeeThrough(seeThrough);
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setVisible(CharacterPlugin plugin) {
-        return Commands.literal("visible").then(visibleArgument()
-                .executes(context -> setVisible(context, plugin)));
+        return Commands.literal("visible").then(Commands.argument(
+                "visible", BoolArgumentType.bool()
+        ).executes(context -> setVisible(context, plugin)));
     }
 
     private static int setVisible(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
