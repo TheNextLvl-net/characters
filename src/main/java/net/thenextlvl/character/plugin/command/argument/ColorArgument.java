@@ -31,8 +31,9 @@ public class ColorArgument extends WrappedArgumentType<String, Color> {
         super(StringArgumentType.word(), (reader, type) -> {
             var predefined = ColorArgument.predefined.get(type);
             if (predefined != null) return predefined;
-            int argb = Integer.decode("0x" + type);
-            return Color.fromRGB(argb);
+
+            var argb = Long.decode("0x" + type);
+            return Color.fromARGB(argb.intValue());
         }, (context, builder) -> {
             ColorArgument.predefined.keySet().stream()
                     .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
