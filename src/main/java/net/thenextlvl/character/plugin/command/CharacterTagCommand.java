@@ -265,17 +265,6 @@ class CharacterTagCommand {
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static int reset(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
-
-        var success = character.setDisplayName(null);
-        var message = success ? "character.tag.reset" : "nothing.changed";
-
-        plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
-        return success ? Command.SINGLE_SUCCESS : 0;
-    }
-
     private static int setText(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
