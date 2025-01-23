@@ -90,40 +90,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public boolean addAction(String name, ClickAction<?> action) {
-        return !action.equals(actions.put(name, action));
-    }
-
-    @Override
-    public boolean addViewer(UUID player) {
-        if (!viewers.add(player)) return false;
-        if (entity == null || isVisibleByDefault()) return true;
-        var online = plugin.getServer().getPlayer(player);
-        if (online != null) online.showEntity(plugin, entity);
-        return true;
-    }
-
-    @Override
-    public boolean addViewers(Collection<UUID> players) {
-        return players.stream().map(this::addViewer).reduce(false, Boolean::logicalOr);
-    }
-
-    @Override
-    public boolean canSee(Player player) {
-        if (entity == null || !isSpawned()) return false;
-        if (!player.getWorld().equals(entity.getWorld())) return false;
-        return isVisibleByDefault() || isViewer(player.getUniqueId());
-    }
-
-    @Override
-    public boolean despawn() {
-        if (entity == null) return false;
-        entity.remove();
-        entity = null;
-        return true;
-    }
-
-    @Override
     public ClickAction<?> getAction(String name) {
         return actions.get(name);
     }
@@ -196,6 +162,40 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Nullable World getWorld() {
         return getEntity().map(Entity::getWorld).orElse(null);
+    }
+
+    @Override
+    public boolean addAction(String name, ClickAction<?> action) {
+        return !action.equals(actions.put(name, action));
+    }
+
+    @Override
+    public boolean addViewer(UUID player) {
+        if (!viewers.add(player)) return false;
+        if (entity == null || isVisibleByDefault()) return true;
+        var online = plugin.getServer().getPlayer(player);
+        if (online != null) online.showEntity(plugin, entity);
+        return true;
+    }
+
+    @Override
+    public boolean addViewers(Collection<UUID> players) {
+        return players.stream().map(this::addViewer).reduce(false, Boolean::logicalOr);
+    }
+
+    @Override
+    public boolean canSee(Player player) {
+        if (entity == null || !isSpawned()) return false;
+        if (!player.getWorld().equals(entity.getWorld())) return false;
+        return isVisibleByDefault() || isViewer(player.getUniqueId());
+    }
+
+    @Override
+    public boolean despawn() {
+        if (entity == null) return false;
+        entity.remove();
+        entity = null;
+        return true;
     }
 
     @Override
@@ -538,25 +538,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
     }
 
-    public static boolean canHavePose(EntityType type, Pose pose) {
-        return switch (pose) {
-            case EMERGING, ROARING, DIGGING, SNIFFING -> type == EntityType.WARDEN;
-            case FALL_FLYING, SPIN_ATTACK, SWIMMING -> type == EntityType.PLAYER;
-            case INHALING, SHOOTING, SLIDING -> type == EntityType.BREEZE;
-            case LONG_JUMPING -> switch (type) {
-                case GOAT, FROG, BREEZE -> true;
-                default -> false;
-            };
-            case SITTING -> type == EntityType.CAMEL;
-            case SNEAKING -> switch (type) {
-                case CAT, OCELOT, PLAYER -> true;
-                default -> false;
-            };
-            case USING_TONGUE, CROAKING -> type == EntityType.FROG;
-            default -> true;
-        };
-    }
-
     protected void preSpawn(T entity) {
         if (entity instanceof Attributable attributable) {
             var scale = attributable.getAttribute(Attribute.SCALE);
@@ -597,6 +578,25 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     private File file() {
         return new File(plugin.savesFolder(), this.name + ".dat");
+    }
+
+    public static boolean canHavePose(EntityType type, Pose pose) {
+        return switch (pose) {
+            case EMERGING, ROARING, DIGGING, SNIFFING -> type == EntityType.WARDEN;
+            case FALL_FLYING, SPIN_ATTACK, SWIMMING -> type == EntityType.PLAYER;
+            case INHALING, SHOOTING, SLIDING -> type == EntityType.BREEZE;
+            case LONG_JUMPING -> switch (type) {
+                case GOAT, FROG, BREEZE -> true;
+                default -> false;
+            };
+            case SITTING -> type == EntityType.CAMEL;
+            case SNEAKING -> switch (type) {
+                case CAT, OCELOT, PLAYER -> true;
+                default -> false;
+            };
+            case USING_TONGUE, CROAKING -> type == EntityType.FROG;
+            default -> true;
+        };
     }
 
     private class PaperTagOptions implements TagOptions {
