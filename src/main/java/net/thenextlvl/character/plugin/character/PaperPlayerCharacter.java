@@ -32,6 +32,7 @@ import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.network.EmptyPacketListener;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -381,8 +382,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     private void updateDisplayNameHologram(TextDisplay display) {
         display.setAlignment(tagOptions.getAlignment());
-        if (tagOptions.getBackgroundColor() != null)
-            display.setBackgroundColor(tagOptions.getBackgroundColor());
+        display.setBackgroundColor(tagOptions.getBackgroundColor() != null
+                ? tagOptions.getBackgroundColor() : Color.fromARGB(1073741824));
         display.setBillboard(tagOptions.getBillboard());
         display.setBrightness(tagOptions.getBrightness());
         display.setDefaultBackground(tagOptions.isDefaultBackground());
