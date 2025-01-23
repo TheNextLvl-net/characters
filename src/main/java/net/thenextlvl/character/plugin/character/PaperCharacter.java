@@ -608,9 +608,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         private boolean defaultBackground = false;
         private boolean seeThrough = false;
         private boolean textShadow = false;
-        private byte textOpacity;
         private float shadowRadius;
         private float shadowStrength;
+        private float textOpacity;
         private int lineWidth = 200;
 
         @Override
@@ -639,6 +639,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
+        public boolean hasTextShadow() {
+            return textShadow;
+        }
+
+        @Override
         public boolean isDefaultBackground() {
             return defaultBackground;
         }
@@ -646,11 +651,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         @Override
         public boolean isSeeThrough() {
             return seeThrough;
-        }
-
-        @Override
-        public boolean hasTextShadow() {
-            return textShadow;
         }
 
         @Override
@@ -734,15 +734,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
-        public boolean setTextShadow(boolean enabled) {
-            if (enabled == textShadow) return false;
-            this.textShadow = enabled;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
-            return true;
-        }
-
-        @Override
-        public boolean setTextOpacity(byte opacity) {
+        public boolean setTextOpacity(float opacity) {
             if (opacity == textOpacity) return false;
             this.textOpacity = opacity;
             getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
@@ -750,8 +742,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
-        public byte getTextOpacity() {
-            return textOpacity;
+        public boolean setTextShadow(boolean enabled) {
+            if (enabled == textShadow) return false;
+            this.textShadow = enabled;
+            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
         }
 
         @Override
@@ -762,6 +757,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         @Override
         public float getShadowStrength() {
             return shadowStrength;
+        }
+
+        @Override
+        public float getTextOpacity() {
+            return textOpacity;
         }
 
         @Override
@@ -798,7 +798,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
             root.optional("shadowRadius").map(Tag::getAsFloat).ifPresent(this::setShadowRadius);
             root.optional("shadowStrength").map(Tag::getAsFloat).ifPresent(this::setShadowStrength);
-            root.optional("textOpacity").map(Tag::getAsByte).ifPresent(this::setTextOpacity);
+            root.optional("textOpacity").map(Tag::getAsFloat).ifPresent(this::setTextOpacity);
             root.optional("textShadow").map(Tag::getAsBoolean).ifPresent(this::setTextShadow);
             setBackgroundColor(root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).orElse(null));
             setBrightness(root.optional("brightness").map(t -> plugin.nbt().fromTag(t, Brightness.class)).orElse(null));

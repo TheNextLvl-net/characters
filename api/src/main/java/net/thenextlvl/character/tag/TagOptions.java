@@ -49,15 +49,15 @@ public interface TagOptions extends TagSerializable {
 
     boolean setShadowStrength(float strength);
 
-    boolean setTextOpacity(byte opacity);
+    boolean setTextOpacity(float opacity);
 
     boolean setTextShadow(boolean enabled);
-
-    byte getTextOpacity();
 
     float getShadowRadius();
 
     float getShadowStrength();
+
+    float getTextOpacity();
 
     int getLineWidth();
 }

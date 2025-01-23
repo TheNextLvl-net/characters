@@ -158,12 +158,11 @@ class CharacterTagCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> setTextOpacity(CharacterPlugin plugin) {
         return Commands.literal("text-opacity").then(Commands.argument(
-                "percentage", FloatArgumentType.floatArg(0, 100)
+                "opacity", FloatArgumentType.floatArg(0, 100)
         ).executes(context -> {
-            var opacity = context.getArgument("percentage", float.class);
-            var alpha = Math.round(25 + ((100 - opacity) * 2.3));
+            var opacity = context.getArgument("opacity", float.class);
             var character = context.getArgument("character", Character.class);
-            var success = character.getTagOptions().setTextOpacity((byte) alpha);
+            var success = character.getTagOptions().setTextOpacity(opacity);
             var message = success ? "character.tag.text-opacity" : "nothing.changed";
             plugin.bundle().sendMessage(context.getSource().getSender(), message,
                     Formatter.number("value", opacity),
