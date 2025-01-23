@@ -48,8 +48,6 @@ class CharacterTagCommand {
                 .then(setLineWidth(plugin))
                 .then(setScale(plugin))
                 .then(setSeeThrough(plugin))
-                .then(setShadowRadius(plugin))
-                .then(setShadowStrength(plugin))
                 .then(setText(plugin))
                 .then(setTextOpacity(plugin))
                 .then(setTextShadow(plugin))

@@ -608,8 +608,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         private boolean defaultBackground = false;
         private boolean seeThrough = false;
         private boolean textShadow = false;
-        private float shadowRadius;
-        private float shadowStrength;
         private float textOpacity;
         private int lineWidth = 200;
 
@@ -718,22 +716,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         }
 
         @Override
-        public boolean setShadowRadius(float radius) {
-            if (radius == shadowRadius) return false;
-            this.shadowRadius = radius;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
-            return true;
-        }
-
-        @Override
-        public boolean setShadowStrength(float strength) {
-            if (strength == shadowStrength) return false;
-            this.shadowStrength = strength;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
-            return true;
-        }
-
-        @Override
         public boolean setTextOpacity(float opacity) {
             if (opacity == textOpacity) return false;
             this.textOpacity = opacity;
@@ -747,16 +729,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             this.textShadow = enabled;
             getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
-        }
-
-        @Override
-        public float getShadowRadius() {
-            return shadowRadius;
-        }
-
-        @Override
-        public float getShadowStrength() {
-            return shadowStrength;
         }
 
         @Override
@@ -780,8 +752,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             tag.add("lineWidth", lineWidth);
             tag.add("scale", plugin.nbt().toTag(scale));
             tag.add("seeThrough", seeThrough);
-            tag.add("shadowRadius", shadowRadius);
-            tag.add("shadowStrength", shadowStrength);
             tag.add("textOpacity", textOpacity);
             tag.add("textShadow", textShadow);
             return tag;
@@ -796,8 +766,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             root.optional("lineWidth").map(Tag::getAsInt).ifPresent(this::setLineWidth);
             root.optional("scale").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setScale);
             root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
-            root.optional("shadowRadius").map(Tag::getAsFloat).ifPresent(this::setShadowRadius);
-            root.optional("shadowStrength").map(Tag::getAsFloat).ifPresent(this::setShadowStrength);
             root.optional("textOpacity").map(Tag::getAsFloat).ifPresent(this::setTextOpacity);
             root.optional("textShadow").map(Tag::getAsBoolean).ifPresent(this::setTextShadow);
             setBackgroundColor(root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).orElse(null));

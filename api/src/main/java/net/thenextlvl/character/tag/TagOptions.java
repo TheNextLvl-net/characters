@@ -45,17 +45,9 @@ public interface TagOptions extends TagSerializable {
 
     boolean setSeeThrough(boolean seeThrough);
 
-    boolean setShadowRadius(float radius);
-
-    boolean setShadowStrength(float strength);
-
     boolean setTextOpacity(float opacity);
 
     boolean setTextShadow(boolean enabled);
-
-    float getShadowRadius();
-
-    float getShadowStrength();
 
     float getTextOpacity();
 

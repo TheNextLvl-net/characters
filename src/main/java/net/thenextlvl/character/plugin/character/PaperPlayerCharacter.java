@@ -390,8 +390,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         display.setGravity(false);
         display.setPersistent(false);
         display.setSeeThrough(tagOptions.isSeeThrough());
-        display.setShadowRadius(tagOptions.getShadowRadius());
-        display.setShadowStrength(tagOptions.getShadowStrength());
         display.setShadowed(tagOptions.hasTextShadow());
         display.setTeleportDuration(3);
         display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
