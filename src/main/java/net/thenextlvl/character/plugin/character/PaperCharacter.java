@@ -600,7 +600,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     private class PaperTagOptions implements TagOptions {
-        private @Nullable Brightness brightness = new Brightness(15, 0);
+        private @Nullable Brightness brightness = null;
         private @Nullable Color backgroundColor = null;
         private Billboard billboard = Billboard.CENTER;
         private TextAlignment alignment = TextAlignment.CENTER;
