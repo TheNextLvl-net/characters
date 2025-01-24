@@ -636,7 +636,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         @Override
         public boolean clear() {
             if (equipment.isEmpty()) return false;
-            equipment.clear();
+            getItems().forEach((slot, item) -> equipment.put(slot, null));
             getEntity(LivingEntity.class).map(LivingEntity::getEquipment)
                     .ifPresent(EntityEquipment::clear);
             getEntity(Player.class).ifPresent(player -> player.getTrackedBy().forEach(all ->
@@ -652,11 +652,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         @Override
         public boolean setItem(EquipmentSlot slot, @Nullable ItemStack item, boolean silent) {
             Preconditions.checkArgument(slots.contains(slot), "Unsupported slot %s", slot.name());
-            if (Objects.equals(item, equipment.put(slot, item))) return false;
+            var itemStack = item != null && !item.isEmpty() ? item : null;
+            if (Objects.equals(itemStack, equipment.put(slot, itemStack))) return false;
             getEntity(LivingEntity.class).map(LivingEntity::getEquipment).
-                    ifPresent(equipment -> equipment.setItem(slot, item, silent));
+                    ifPresent(equipment -> equipment.setItem(slot, itemStack, silent));
             getEntity(Player.class).ifPresent(player -> player.getTrackedBy().forEach(all ->
-                    all.sendEquipmentChange(player, equipment)));
+                    all.sendEquipmentChange(player, slot, itemStack)));
             return true;
         }
 
