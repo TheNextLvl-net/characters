@@ -42,7 +42,6 @@ class CharacterEquipmentCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
         return Commands.literal("set").then(characterArgument(plugin)
-                .executes(context -> openEquipmentGUI(context, plugin))
                 .then(equipmentSlotArgument().then(itemArgument()
                         .executes(context -> setSlot(context, plugin)))));
     }
@@ -75,9 +74,5 @@ class CharacterEquipmentCommand {
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
-    }
-
-    private static int openEquipmentGUI(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        return 0;
     }
 }
