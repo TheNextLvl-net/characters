@@ -59,9 +59,10 @@ class CharacterEquipmentCommand {
         var character = context.getArgument("character", Character.class);
         var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         var success = character.getEquipment().setItem(slot, null, false);
-        var message = success ? "character.equipment.cleared.slot" : "nothing.changed";
+        var message = success ? "character.equipment.slot.cleared" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
-                Placeholder.unparsed("character", character.getName()));
+                Placeholder.unparsed("character", character.getName()),
+                Placeholder.unparsed("slot", slot.name().toLowerCase().replace("_", "-")));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
@@ -70,9 +71,12 @@ class CharacterEquipmentCommand {
         var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         var item = context.getArgument("item", ItemStack.class);
         var success = character.getEquipment().setItem(slot, item, true);
-        var message = success ? "character.equipment.set.slot" : "nothing.changed";
+        var message = !success ? "nothing.changed" : item.isEmpty()
+                ? "character.equipment.slot.cleared" : "character.equipment.slot";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
-                Placeholder.unparsed("character", character.getName()));
+                Placeholder.component("item", item.effectiveName().hoverEvent(item.asHoverEvent())),
+                Placeholder.unparsed("character", character.getName()),
+                Placeholder.unparsed("slot", slot.name().toLowerCase().replace("_", "-")));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 }
