@@ -39,6 +39,7 @@ import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
 import net.thenextlvl.character.plugin.serialization.ClickActionAdapter;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
+import net.thenextlvl.character.plugin.serialization.ItemStackAdapter;
 import net.thenextlvl.character.plugin.serialization.KeyAdapter;
 import net.thenextlvl.character.plugin.serialization.LocationAdapter;
 import net.thenextlvl.character.plugin.serialization.NamedTextColorAdapter;
@@ -55,6 +56,7 @@ import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.Unmodifiable;
@@ -91,6 +93,7 @@ public class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
             .registerTypeHierarchyAdapter(EntityType.class, new EntityTypeAdapter())
             .registerTypeHierarchyAdapter(InetSocketAddress.class, new AddressAdapter())
+            .registerTypeHierarchyAdapter(ItemStack.class, new ItemStackAdapter())
             .registerTypeHierarchyAdapter(Key.class, new KeyAdapter())
             .registerTypeHierarchyAdapter(Location.class, new LocationAdapter())
             .registerTypeHierarchyAdapter(NamedTextColor.class, new NamedTextColorAdapter())

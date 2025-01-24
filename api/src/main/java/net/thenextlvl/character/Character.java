@@ -11,11 +11,14 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +28,8 @@ import java.util.UUID;
 public interface Character<T extends Entity> extends TagSerializable {
     @Nullable
     ClickAction<?> getAction(String name);
+
+    Equipment getEquipment();
 
     @Unmodifiable
     Map<String, ClickAction<?>> getActions();
@@ -152,4 +157,21 @@ public interface Character<T extends Entity> extends TagSerializable {
     void delete();
 
     void remove();
+
+    interface Equipment extends TagSerializable {
+        @Unmodifiable
+        EnumSet<EquipmentSlot> getSlots();
+
+        @Nullable
+        ItemStack getItem(EquipmentSlot slot);
+
+        @Unmodifiable
+        Map<EquipmentSlot, @Nullable ItemStack> getItems();
+
+        boolean clear();
+
+        boolean setItem(EquipmentSlot slot, @Nullable ItemStack item);
+
+        boolean setItem(EquipmentSlot slot, @Nullable ItemStack item, boolean silent);
+    }
 }

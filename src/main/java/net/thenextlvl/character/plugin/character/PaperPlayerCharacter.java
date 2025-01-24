@@ -47,7 +47,6 @@ import org.bukkit.scoreboard.Team;
 import org.bukkit.scoreboard.Team.Option;
 import org.bukkit.scoreboard.Team.OptionStatus;
 import org.bukkit.util.Transformation;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -319,7 +318,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
                 entity.getType(), 0, entity.getDeltaMovement(), entity.getYHeadRot());
     }
 
-    private @NotNull ClientInformation createClientInformation() {
+    private ClientInformation createClientInformation() {
         return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
     }
 
@@ -490,14 +489,24 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         }
 
         @Override
+        public boolean isAlwaysTicking() {
+            return ticking;
+        }
+
+        @Override
+        public boolean isTicking() {
+            return ticking;
+        }
+
+        @Override
         public void tick() {
             refreshDimensions();
-            if (ticking) super.tick();
+            if (isTicking()) super.tick();
         }
 
         @Override
         public void doTick() {
-            if (ticking) super.doTick();
+            if (isTicking()) super.doTick();
         }
 
         private void updateDisplayNameHologramPosition() {

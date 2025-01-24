@@ -28,6 +28,9 @@ import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.TextDisplay.TextAlignment;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Vector3f;
@@ -40,6 +43,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,6 +59,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 @NullMarked
 public class PaperCharacter<T extends Entity> implements Character<T> {
+    protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
@@ -92,6 +98,11 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public ClickAction<?> getAction(String name) {
         return actions.get(name);
+    }
+
+    @Override
+    public Equipment getEquipment() {
+        return equipment;
     }
 
     @Override
@@ -495,25 +506,26 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public CompoundTag serialize() throws ParserException {
         var tag = new CompoundTag();
-        if (getDisplayName() != null) tag.add("displayName", plugin.nbt().toTag(getDisplayName()));
-        if (getSpawnLocation() != null) tag.add("location", plugin.nbt().toTag(getSpawnLocation()));
-        if (getTeamColor() != null) tag.add("teamColor", plugin.nbt().toTag(getTeamColor()));
-        tag.add("ai", hasAI());
-        tag.add("collidable", isCollidable());
-        tag.add("displayNameVisible", isDisplayNameVisible());
-        tag.add("glowing", isGlowing());
-        tag.add("gravity", hasGravity());
-        tag.add("invincible", isInvincible());
-        tag.add("pathfinding", isPathfinding());
-        tag.add("pose", getPose().name());
-        tag.add("scale", getScale());
-        tag.add("tagOptions", getTagOptions().serialize());
-        tag.add("ticking", isTicking());
-        tag.add("type", plugin.nbt().toTag(getType()));
-        tag.add("visibleByDefault", isVisibleByDefault());
-        var actions = new CompoundTag();
-        getActions().forEach((name, clickAction) -> actions.add(name, plugin.nbt().toTag(clickAction)));
-        if (!actions.isEmpty()) tag.add("clickActions", actions);
+        if (displayName != null) tag.add("displayName", plugin.nbt().toTag(displayName));
+        if (spawnLocation != null) tag.add("location", plugin.nbt().toTag(spawnLocation));
+        if (teamColor != null) tag.add("teamColor", plugin.nbt().toTag(teamColor));
+        tag.add("ai", ai);
+        tag.add("collidable", collidable);
+        tag.add("displayNameVisible", displayNameVisible);
+        tag.add("equipment", equipment.serialize());
+        tag.add("glowing", glowing);
+        tag.add("gravity", gravity);
+        tag.add("invincible", invincible);
+        tag.add("pathfinding", pathfinding);
+        tag.add("pose", pose.name());
+        tag.add("scale", scale);
+        tag.add("tagOptions", tagOptions.serialize());
+        tag.add("ticking", ticking);
+        tag.add("type", plugin.nbt().toTag(type));
+        tag.add("visibleByDefault", visibleByDefault);
+        var clickActions = new CompoundTag();
+        actions.forEach((name, clickAction) -> clickActions.add(name, plugin.nbt().toTag(clickAction)));
+        if (!clickActions.isEmpty()) tag.add("clickActions", clickActions);
         return tag;
     }
 
@@ -526,13 +538,14 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         root.optional("collidable").map(Tag::getAsBoolean).ifPresent(this::setCollidable);
         root.optional("displayName").map(t -> plugin.nbt().fromTag(t, Component.class)).ifPresent(this::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
+        root.optional("equipment").ifPresent(equipment::deserialize);
         root.optional("glowing").map(Tag::getAsBoolean).ifPresent(this::setGlowing);
         root.optional("gravity").map(Tag::getAsBoolean).ifPresent(this::setGravity);
         root.optional("invincible").map(Tag::getAsBoolean).ifPresent(this::setInvincible);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
         root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(this::setPose);
         root.optional("scale").map(Tag::getAsDouble).ifPresent(this::setScale);
-        root.optional("tagOptions").ifPresent(getTagOptions()::deserialize);
+        root.optional("tagOptions").ifPresent(tagOptions::deserialize);
         root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("ticking").map(Tag::getAsBoolean).ifPresent(this::setTicking);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
@@ -544,6 +557,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             if (scale != null) scale.setBaseValue(this.scale);
         }
         if (entity instanceof LivingEntity living) {
+            if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
+                    living.getEquipment().setItem(slot, item, true));
             living.setAI(ai);
             living.setCanPickupItems(false);
             living.setCollidable(collidable);
@@ -597,6 +612,70 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
             case USING_TONGUE, CROAKING -> type == EntityType.FROG;
             default -> true;
         };
+    }
+
+    private class PaperEquipment implements Equipment {
+        private final EnumSet<EquipmentSlot> slots = EnumSet.allOf(EquipmentSlot.class);
+        private final Map<EquipmentSlot, @Nullable ItemStack> equipment = new HashMap<>();
+
+        @Override
+        public @Unmodifiable EnumSet<EquipmentSlot> getSlots() {
+            return EnumSet.copyOf(slots);
+        }
+
+        @Override
+        public @Nullable ItemStack getItem(EquipmentSlot slot) {
+            return equipment.get(slot);
+        }
+
+        @Override
+        public @Unmodifiable Map<EquipmentSlot, @Nullable ItemStack> getItems() {
+            return Map.copyOf(equipment);
+        }
+
+        @Override
+        public boolean clear() {
+            if (equipment.isEmpty()) return false;
+            equipment.clear();
+            getEntity(LivingEntity.class).map(LivingEntity::getEquipment)
+                    .ifPresent(EntityEquipment::clear);
+            getEntity(Player.class).ifPresent(player -> player.getTrackedBy().forEach(all ->
+                    all.sendEquipmentChange(player, equipment)));
+            return true;
+        }
+
+        @Override
+        public boolean setItem(EquipmentSlot slot, @Nullable ItemStack item) {
+            return setItem(slot, item, false);
+        }
+
+        @Override
+        public boolean setItem(EquipmentSlot slot, @Nullable ItemStack item, boolean silent) {
+            Preconditions.checkArgument(slots.contains(slot), "Unsupported slot %s", slot.name());
+            if (Objects.equals(item, equipment.put(slot, item))) return false;
+            getEntity(LivingEntity.class).map(LivingEntity::getEquipment).
+                    ifPresent(equipment -> equipment.setItem(slot, item, silent));
+            getEntity(Player.class).ifPresent(player -> player.getTrackedBy().forEach(all ->
+                    all.sendEquipmentChange(player, equipment)));
+            return true;
+        }
+
+        @Override
+        public Tag serialize() throws ParserException {
+            var tag = new CompoundTag();
+            equipment.forEach((slot, item) -> {
+                if (item == null || item.isEmpty()) return;
+                tag.add(slot.name(), plugin.nbt().toTag(item));
+            });
+            return tag;
+        }
+
+        @Override
+        public void deserialize(Tag tag) throws ParserException {
+            slots.forEach(slot -> tag.getAsCompound().optional(slot.name())
+                    .map(t -> plugin.nbt().fromTag(t, ItemStack.class))
+                    .ifPresent(item -> equipment.put(slot, item)));
+        }
     }
 
     private class PaperTagOptions implements TagOptions {

@@ -1,14 +1,83 @@
 package net.thenextlvl.character.plugin.command;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.argument.EnumArgument;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
+
+import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
 class CharacterEquipmentCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("equipment"); // todo implement
+        return Commands.literal("equipment")
+                .then(clear(plugin))
+                .then(set(plugin));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> equipmentSlotArgument() {
+        return Commands.argument("equipment-slot", new EnumArgument<>(EquipmentSlot.class));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> itemArgument() {
+        return Commands.argument("item", ArgumentTypes.itemStack());
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> clear(CharacterPlugin plugin) {
+        return Commands.literal("clear").then(characterArgument(plugin)
+                .executes(context -> clearEquipment(context, plugin))
+                .then(equipmentSlotArgument().executes(context ->
+                        clearSlot(context, plugin))));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
+        return Commands.literal("set").then(characterArgument(plugin)
+                .executes(context -> openEquipmentGUI(context, plugin))
+                .then(equipmentSlotArgument().then(itemArgument()
+                        .executes(context -> setSlot(context, plugin)))));
+    }
+
+    private static int clearEquipment(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var character = context.getArgument("character", Character.class);
+        var success = character.getEquipment().clear();
+        var message = success ? "character.equipment.cleared" : "nothing.changed";
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                Placeholder.unparsed("character", character.getName()));
+        return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int clearSlot(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var character = context.getArgument("character", Character.class);
+        var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
+        var success = character.getEquipment().setItem(slot, null, false);
+        var message = success ? "character.equipment.cleared.slot" : "nothing.changed";
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                Placeholder.unparsed("character", character.getName()));
+        return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int setSlot(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var character = context.getArgument("character", Character.class);
+        var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
+        var item = context.getArgument("item", ItemStack.class);
+        var success = character.getEquipment().setItem(slot, item, true);
+        var message = success ? "character.equipment.set.slot" : "nothing.changed";
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                Placeholder.unparsed("character", character.getName()));
+        return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static int openEquipmentGUI(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        return 0;
     }
 }
