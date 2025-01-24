@@ -222,11 +222,12 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public void setSkinParts(SkinParts parts) {
-        if (this.skinParts == parts) return;
+    public boolean setSkinParts(SkinParts parts) {
+        if (this.skinParts == parts) return false;
         this.skinParts = parts;
-        getEntity().map(player -> ((CraftPlayer) player).getHandle())
+        getEntity(CraftPlayer.class).map(CraftPlayer::getHandle)
                 .ifPresent(this::applySkinPartConfig);
+        return true;
     }
 
     @Override
@@ -248,14 +249,15 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public void setListed(boolean listed) {
-        if (this.listed == listed) return;
+    public boolean setListed(boolean listed) {
+        if (this.listed == listed) return false;
         this.listed = listed;
-        getEntity().ifPresent(entity -> {
-            ((CraftPlayer) entity).getHandle().updateOptionsNoEvents(createClientInformation());
+        getEntity(CraftPlayer.class).ifPresent(entity -> {
+            entity.getHandle().updateOptionsNoEvents(createClientInformation());
             var update = ClientboundPlayerInfoUpdatePacket.updateListed(entity.getUniqueId(), listed);
             entity.getTrackedBy().forEach(player -> sendPacket(player, update));
         });
+        return true;
     }
 
     @Override
@@ -264,8 +266,10 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public void setRealPlayer(boolean real) {
+    public boolean setRealPlayer(boolean real) {
+        if (this.realPlayer == real) return false;
         this.realPlayer = real;
+        return true;
     }
 
     @Override
