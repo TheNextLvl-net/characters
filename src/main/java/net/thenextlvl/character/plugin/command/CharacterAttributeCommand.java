@@ -11,6 +11,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.NamedTextColorArgument;
 import org.jspecify.annotations.NullMarked;
@@ -33,6 +34,7 @@ class CharacterAttributeCommand {
                 .then(resetColliding(plugin))
                 .then(resetGlowing(plugin))
                 .then(resetGravity(plugin))
+                .then(resetListed(plugin))
                 .then(resetPathfinding(plugin))
                 .then(resetScale(plugin))
                 .then(resetTeamColor(plugin))
@@ -45,6 +47,7 @@ class CharacterAttributeCommand {
                 .then(setColliding(plugin))
                 .then(setGlowing(plugin))
                 .then(setGravity(plugin))
+                .then(setListed(plugin))
                 .then(setPathfinding(plugin))
                 .then(setScale(plugin))
                 .then(setTeamColor(plugin))
@@ -95,6 +98,10 @@ class CharacterAttributeCommand {
         return reset("gravity", character -> character.setGravity(false), Character::hasGravity, plugin);
     }
 
+    private static ArgumentBuilder<CommandSourceStack, ?> resetListed(CharacterPlugin plugin) {
+        return reset("listed", c -> c instanceof PlayerCharacter p && p.setListed(false), Character::hasGravity, plugin);
+    }
+
     private static ArgumentBuilder<CommandSourceStack, ?> resetPathfinding(CharacterPlugin plugin) {
         return reset("pathfinding", character -> character.setPathfinding(false), Character::isPathfinding, plugin);
     }
@@ -125,6 +132,10 @@ class CharacterAttributeCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> setGravity(CharacterPlugin plugin) {
         return attribute("gravity", Character::setGravity, plugin);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setListed(CharacterPlugin plugin) {
+        return attribute("listed", (c, b) -> c instanceof PlayerCharacter p && p.setListed(b), plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setPathfinding(CharacterPlugin plugin) {
