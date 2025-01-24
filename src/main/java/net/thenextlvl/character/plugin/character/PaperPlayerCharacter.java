@@ -287,10 +287,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     public void loadCharacter(Player player) {
-        getEntity().ifPresent(entity -> {
-            var handle = ((CraftPlayer) entity).getHandle();
+        getEntity(CraftPlayer.class).ifPresent(entity -> {
             if (isVisibleByDefault()) sendPacket(player, new ClientboundBundlePacket(List.of(
-                    createAddPacket(handle), createInitializationPacket(handle))));
+                    createAddPacket(entity.getHandle()), createInitializationPacket(entity.getHandle()))));
             else if (canSee(player)) player.showEntity(plugin, entity);
             else player.hideEntity(plugin, entity);
             updateTeamOptions(getCharacterSettingsTeam(player));
@@ -302,12 +301,15 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     private void broadcastCharacter() {
-        getEntity().ifPresent(entity -> {
-            var handle = ((CraftPlayer) entity).getHandle();
+        getEntity(CraftPlayer.class).ifPresent(entity -> {
+            var handle = entity.getHandle();
             var packets = new ClientboundBundlePacket(List.of(
-                    createInitializationPacket(handle), createAddPacket(handle)
+                    createInitializationPacket(entity.getHandle()),
+                    createAddPacket(entity.getHandle())
             ));
-            entity.getWorld().getPlayers().forEach(player -> sendPacket(player, packets));
+            entity.getWorld().getPlayersSeeingChunk(entity.getChunk()).stream()
+                    .filter(this::canSee)
+                    .forEach(player -> sendPacket(player, packets));
         });
     }
 
