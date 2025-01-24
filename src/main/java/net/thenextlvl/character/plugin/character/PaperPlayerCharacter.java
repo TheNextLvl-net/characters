@@ -18,6 +18,7 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundBundlePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.server.MinecraftServer;
@@ -98,6 +99,10 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     public boolean setTeamColor(@Nullable NamedTextColor color) {
         if (!super.setTeamColor(color)) return false;
         getEntity().ifPresent(this::updateDisplayName);
+        getEntity(CraftPlayer.class).ifPresent(entity -> {
+            var update = new ClientboundPlayerInfoUpdatePacket(Action.UPDATE_DISPLAY_NAME, entity.getHandle());
+            entity.getTrackedBy().forEach(player -> sendPacket(player, update));
+        });
         return true;
     }
 
@@ -462,6 +467,18 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         @Override
         public String getScoreboardName() {
             return PaperPlayerCharacter.this.getScoreboardName();
+        }
+
+        @Override
+        public int getTeamColor() {
+            return teamColor != null ? teamColor.value() : super.getTeamColor();
+        }
+
+        @Override
+        public net.minecraft.network.chat.Component getTabListDisplayName() {
+            return net.minecraft.network.chat.Component.literal("[NPC] ")
+                    .append(PaperPlayerCharacter.this.getName())
+                    .withColor(getTeamColor());
         }
 
         @Override
