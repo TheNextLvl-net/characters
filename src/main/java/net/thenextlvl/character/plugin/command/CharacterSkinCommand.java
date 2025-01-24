@@ -104,18 +104,12 @@ class CharacterSkinCommand {
                 .toggle(layer, visible)
                 .build();
 
-        if (skinParts.equals(character.getSkinParts())) {
-            plugin.bundle().sendMessage(sender, "nothing.changed");
-            return 0;
-        }
-
-        character.setSkinParts(skinParts);
-
-        var message = visible ? "character.skin_layer.shown" : "character.skin_layer.hidden";
+        var success = character.setSkinParts(skinParts);
+        var message = !success ? "nothing.changed" : visible
+                ? "character.skin_layer.shown" : "character.skin_layer.hidden";
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.component("layer", Component.translatable(layer)),
                 Placeholder.unparsed("character", character.getName()));
-
         return Command.SINGLE_SUCCESS;
     }
 
