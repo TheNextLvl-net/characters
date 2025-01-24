@@ -132,8 +132,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         server.getServer().getConnection().getConnections().add(serverPlayer.connection.connection);
         if (!isRealPlayer()) {
-            serverPlayer.moonrise$setRealPlayer(false);
-
             serverPlayer.spawnReason = CreatureSpawnEvent.SpawnReason.DEFAULT;
             serverPlayer.setServerLevel(level);
             serverPlayer.spawnIn(level);
