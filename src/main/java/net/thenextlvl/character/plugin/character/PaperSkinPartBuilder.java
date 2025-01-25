@@ -75,6 +75,11 @@ public class PaperSkinPartBuilder implements SkinPartBuilder {
     }
 
     @Override
+    public SkinPartBuilder parts(SkinParts parts) {
+        return raw(parts.getRaw());
+    }
+
+    @Override
     public SkinPartBuilder raw(int raw) {
         this.raw = raw;
         return this;
