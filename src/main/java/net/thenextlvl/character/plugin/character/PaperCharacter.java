@@ -11,6 +11,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.attribute.Attribute;
+import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.tag.TagOptions;
@@ -18,7 +20,6 @@ import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
@@ -56,11 +57,13 @@ import java.util.UUID;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
+import static org.bukkit.attribute.Attribute.SCALE;
 
 @NullMarked
 public class PaperCharacter<T extends Entity> implements Character<T> {
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
+    protected final Set<Attribute<?>> attributes = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
     protected final TagOptions tagOptions = new PaperTagOptions();
@@ -168,6 +171,19 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public @Unmodifiable Set<UUID> getViewers() {
         return Set.copyOf(viewers);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <V> Optional<Attribute<V>> getAttribute(AttributeType<V> type) {
+        return attributes.stream()
+                .filter(attribute -> attribute.getType().equals(type))
+                .map(attribute -> (Attribute<V>) attribute)
+                .findAny().or(() -> {
+                    var attribute = plugin.attributeProvider().createAttribute(type, this);
+                    attribute.ifPresent(attributes::add);
+                    return attribute;
+                });
     }
 
     @Override
@@ -424,7 +440,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     @Override
     public boolean setScale(double scale) {
         if (scale == this.scale) return false;
-        getEntity(Attributable.class).map(instance -> instance.getAttribute(Attribute.SCALE))
+        getEntity(Attributable.class).map(instance -> instance.getAttribute(SCALE))
                 .ifPresent(attribute -> attribute.setBaseValue(scale));
         this.scale = scale;
         return true;
@@ -523,9 +539,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         tag.add("ticking", ticking);
         tag.add("type", plugin.nbt().toTag(type));
         tag.add("visibleByDefault", visibleByDefault);
-        var clickActions = new CompoundTag();
-        actions.forEach((name, clickAction) -> clickActions.add(name, plugin.nbt().toTag(clickAction)));
-        if (!clickActions.isEmpty()) tag.add("clickActions", clickActions);
+        var actions = new CompoundTag();
+        var attributes = new CompoundTag();
+        this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().toTag(clickAction)));
+        this.attributes.forEach(attribute -> attributes.add(attribute.getType().getName(), attribute.serialize()));
+        if (!actions.isEmpty()) tag.add("clickActions", actions);
+        if (!attributes.isEmpty()) tag.add("attributes", attributes);
         return tag;
     }
 
@@ -533,6 +552,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public void deserialize(Tag tag) throws ParserException {
         var root = tag.getAsCompound();
         root.optional("ai").map(Tag::getAsBoolean).ifPresent(this::setAI);
+        // todo: implement attribute loading
+        // root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, attribute) ->
+        //         this.attributes.add(plugin.nbt().fromTag(attribute, Attribute.class))));
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().fromTag(action, ClickAction.class))));
         root.optional("collidable").map(Tag::getAsBoolean).ifPresent(this::setCollidable);
@@ -553,7 +575,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
 
     protected void preSpawn(T entity) {
         if (entity instanceof Attributable attributable) {
-            var scale = attributable.getAttribute(Attribute.SCALE);
+            var scale = attributable.getAttribute(SCALE);
             if (scale != null) scale.setBaseValue(this.scale);
         }
         if (entity instanceof LivingEntity living) {

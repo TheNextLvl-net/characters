@@ -4,6 +4,8 @@ import core.nbt.serialization.TagSerializable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.attribute.Attribute;
+import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -62,6 +64,8 @@ public interface Character<T extends Entity> extends TagSerializable {
 
     @Unmodifiable
     Set<UUID> getViewers();
+
+    <V> Optional<Attribute<V>> getAttribute(AttributeType<V> type);
 
     @Nullable
     World getWorld();
