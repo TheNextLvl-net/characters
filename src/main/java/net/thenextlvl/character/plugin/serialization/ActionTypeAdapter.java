@@ -20,7 +20,7 @@ public class ActionTypeAdapter implements TagAdapter<ActionType<?>> {
 
     @Override
     public ActionType<?> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        return plugin.characterProvider().getActionRegistry().getByName(tag.getAsString()).orElseThrow();
+        return plugin.actionTypeProvider().getByName(tag.getAsString()).orElseThrow();
     }
 
     @Override

@@ -99,10 +99,9 @@ class CharacterSkinCommand {
         var character = context.getArgument("character", PlayerCharacter.class);
 
         var layer = context.getArgument("layer", SkinLayer.class);
-        var skinParts = plugin.characterProvider()
-                .skinPartBuilder(character.getSkinParts())
-                .toggle(layer, visible)
-                .build();
+        var skinParts = plugin.skinFactory().skinPartBuilder()
+                .parts(character.getSkinParts())
+                .toggle(layer, visible).build();
 
         var success = character.setSkinParts(skinParts);
         var message = !success ? "nothing.changed" : visible
@@ -121,7 +120,7 @@ class CharacterSkinCommand {
             return 0;
         }
         plugin.bundle().sendMessage(sender, "character.skin.generating");
-        plugin.characterProvider().skinFactory().fromFile(file, slim)
+        plugin.skinFactory().skinFromFile(file, slim)
                 .thenAccept(textures -> setSkin(context, textures, plugin))
                 .exceptionally(throwable -> {
                     plugin.bundle().sendMessage(sender, "character.skin.image");
@@ -166,7 +165,7 @@ class CharacterSkinCommand {
             var path = context.getArgument("url", String.class);
             var url = new URI(!path.startsWith("http") ? "https://" + path : path).toURL();
             plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.generating");
-            plugin.characterProvider().skinFactory().fromURL(url, slim)
+            plugin.skinFactory().skinFromURL(url, slim)
                     .thenAccept(textures -> setSkin(context, textures, plugin))
                     .exceptionally(throwable -> {
                         plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.image");

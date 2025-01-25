@@ -7,15 +7,15 @@ import java.util.Optional;
 import java.util.Set;
 
 @NullMarked
-public interface ActionTypeRegistry {
-    <T> ActionType<T> register(ActionType<T> actionType);
+public interface ActionTypeProvider {
+    <T> ActionType<T> register(ActionType<T> type);
 
     Optional<ActionType<?>> getByName(String name);
 
     @Unmodifiable
     Set<ActionType<?>> getActionTypes();
 
-    boolean isRegistered(ActionType<?> actionType);
+    boolean isRegistered(ActionType<?> type);
 
-    boolean unregister(ActionType<?> actionType);
+    boolean unregister(ActionType<?> type);
 }

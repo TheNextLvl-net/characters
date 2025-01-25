@@ -2,7 +2,7 @@ package net.thenextlvl.character.plugin.character.action;
 
 import com.google.common.base.Preconditions;
 import net.thenextlvl.character.action.ActionType;
-import net.thenextlvl.character.action.ActionTypeRegistry;
+import net.thenextlvl.character.action.ActionTypeProvider;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
@@ -11,13 +11,13 @@ import java.util.Optional;
 import java.util.Set;
 
 @NullMarked
-public class PaperActionTypeRegistry implements ActionTypeRegistry {
+public class PaperActionTypeProvider implements ActionTypeProvider {
     private final Set<ActionType<?>> actionTypes = new HashSet<>();
 
     @Override
-    public <T> ActionType<T> register(ActionType<T> actionType) {
-        Preconditions.checkState(actionTypes.add(actionType), "Action type already registered");
-        return actionType;
+    public <T> ActionType<T> register(ActionType<T> type) {
+        Preconditions.checkState(actionTypes.add(type), "Action type already registered");
+        return type;
     }
 
     @Override
@@ -31,12 +31,12 @@ public class PaperActionTypeRegistry implements ActionTypeRegistry {
     }
 
     @Override
-    public boolean isRegistered(ActionType<?> actionType) {
-        return actionTypes.contains(actionType);
+    public boolean isRegistered(ActionType<?> type) {
+        return actionTypes.contains(type);
     }
 
     @Override
-    public boolean unregister(ActionType<?> actionType) {
-        return actionTypes.remove(actionType);
+    public boolean unregister(ActionType<?> type) {
+        return actionTypes.remove(type);
     }
 }

@@ -1,20 +1,17 @@
 package net.thenextlvl.character;
 
-import com.destroystokyo.paper.SkinParts;
-import net.thenextlvl.character.action.ActionTypeRegistry;
+import net.thenextlvl.character.action.ActionTypeProvider;
+import net.thenextlvl.character.attribute.AttributeProvider;
 import net.thenextlvl.character.skin.SkinFactory;
-import net.thenextlvl.character.skin.SkinPartBuilder;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public interface CharacterProvider {
-    ActionTypeRegistry getActionRegistry();
+    ActionTypeProvider actionTypeProvider();
+
+    AttributeProvider attributeProvider();
+
+    CharacterController characterController();
 
     SkinFactory skinFactory();
-
-    SkinPartBuilder skinPartBuilder();
-
-    SkinPartBuilder skinPartBuilder(SkinParts parts);
-
-    SkinPartBuilder skinPartBuilder(int raw);
 }

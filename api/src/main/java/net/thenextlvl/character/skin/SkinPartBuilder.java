@@ -27,6 +27,8 @@ public interface SkinPartBuilder {
 
     SkinPartBuilder show(SkinLayer layer);
 
+    SkinPartBuilder parts(SkinParts parts);
+
     SkinPartBuilder raw(int raw);
 
     SkinParts build();

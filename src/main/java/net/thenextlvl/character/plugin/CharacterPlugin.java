@@ -19,14 +19,15 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.title.Title;
 import net.thenextlvl.character.Character;
-import net.thenextlvl.character.CharacterController;
 import net.thenextlvl.character.CharacterProvider;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.character.PaperCharacterController;
-import net.thenextlvl.character.plugin.character.PaperCharacterProvider;
+import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.action.PaperActionType;
+import net.thenextlvl.character.plugin.character.action.PaperActionTypeProvider;
+import net.thenextlvl.character.plugin.character.attribute.PaperAttributeProvider;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
@@ -79,7 +80,7 @@ import java.util.stream.Collectors;
 import static java.nio.file.StandardOpenOption.READ;
 
 @NullMarked
-public class CharacterPlugin extends JavaPlugin {
+public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new";
     private final Metrics metrics = new Metrics(this, 24223);
     private final File savesFolder = new File(getDataFolder(), "saves");
@@ -105,8 +106,10 @@ public class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
 
+    private final PaperActionTypeProvider actionTypeProvider = new PaperActionTypeProvider();
+    private final PaperAttributeProvider attributeProvider = new PaperAttributeProvider(this);
     private final PaperCharacterController characterController = new PaperCharacterController(this);
-    private final PaperCharacterProvider characterProvider = new PaperCharacterProvider(this);
+    private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
     private final PluginMessenger messenger = new PluginMessenger(this);
 
     public final ActionType<Component> sendActionbar = register(new PaperActionType<>("send_actionbar", Component.class, Audience::sendActionBar));
@@ -132,8 +135,7 @@ public class CharacterPlugin extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        getServer().getServicesManager().register(CharacterController.class, characterController, this, ServicePriority.Highest);
-        getServer().getServicesManager().register(CharacterProvider.class, characterProvider, this, ServicePriority.Highest);
+        getServer().getServicesManager().register(CharacterProvider.class, this, this, ServicePriority.Highest);
     }
 
     @Override
@@ -190,12 +192,24 @@ public class CharacterPlugin extends JavaPlugin {
         return nbt;
     }
 
+    @Override
+    public PaperActionTypeProvider actionTypeProvider() {
+        return actionTypeProvider;
+    }
+
+    @Override
+    public PaperAttributeProvider attributeProvider() {
+        return attributeProvider;
+    }
+
+    @Override
     public PaperCharacterController characterController() {
         return characterController;
     }
 
-    public PaperCharacterProvider characterProvider() {
-        return characterProvider;
+    @Override
+    public PaperSkinFactory skinFactory() {
+        return skinFactory;
     }
 
     private void registerCommands() {
@@ -255,6 +269,6 @@ public class CharacterPlugin extends JavaPlugin {
     }
 
     private <T> ActionType<T> register(ActionType<T> actionType) {
-        return characterProvider().getActionRegistry().register(actionType);
+        return actionTypeProvider().register(actionType);
     }
 }
