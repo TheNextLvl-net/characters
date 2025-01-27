@@ -8,6 +8,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.attribute.AttributeTypes;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
@@ -52,9 +53,9 @@ class CharacterPoseCommand {
 
     private static int set(CommandContext<CommandSourceStack> context, Pose pose, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
+        var character = (Character<?>) context.getArgument("character", Character.class);
 
-        var success = character.setPose(pose);
+        var success = character.setAttributeValue(AttributeTypes.ENTITY.POSE, pose);
         var message = success ? "character.pose" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("character", character.getName()),
