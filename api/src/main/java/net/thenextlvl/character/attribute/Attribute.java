@@ -1,11 +1,12 @@
 package net.thenextlvl.character.attribute;
 
 import core.nbt.serialization.TagSerializable;
+import org.bukkit.entity.Entity;
 import org.jspecify.annotations.NonNull;
 
-public interface Attribute<T> extends TagSerializable {
+public interface Attribute<E extends Entity, T> extends TagSerializable {
     @NonNull
-    AttributeType<T> getType();
+    AttributeType<@NonNull E, T> getType();
 
     T getValue();
 
