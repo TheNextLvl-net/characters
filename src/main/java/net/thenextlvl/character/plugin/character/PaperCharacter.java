@@ -7,6 +7,7 @@ import core.nbt.serialization.ParserException;
 import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
 import core.util.StringUtil;
+import io.papermc.paper.util.Tick;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
@@ -14,12 +15,14 @@ import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.character.attribute.PaperAttribute;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
+import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
@@ -35,6 +38,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Vector3f;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -43,6 +47,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -60,10 +65,10 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static org.bukkit.attribute.Attribute.SCALE;
 
 @NullMarked
-public class PaperCharacter<T extends Entity> implements Character<T> {
+public class PaperCharacter<E extends Entity> implements Character<E> {
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
-    protected final Set<Attribute<?>> attributes = new HashSet<>();
+    protected final Set<Attribute<?, ?>> attributes = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
     protected final TagOptions tagOptions = new PaperTagOptions();
@@ -75,16 +80,12 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     protected @Nullable Component displayName = null;
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
-    protected @Nullable T entity;
+    protected @Nullable E entity;
 
     protected Pose pose = Pose.STANDING;
 
     protected boolean ai = false;
-    protected boolean collidable = false;
     protected boolean displayNameVisible = true;
-    protected boolean glowing = false;
-    protected boolean gravity = false;
-    protected boolean invincible = true;
     protected boolean pathfinding = false;
     protected boolean persistent = true;
     protected boolean ticking = false;
@@ -124,7 +125,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public Optional<T> getEntity() {
+    public Optional<E> getEntity() {
         return Optional.ofNullable(entity).filter(Entity::isValid);
     }
 
@@ -149,11 +150,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public Pose getPose() {
-        return pose;
-    }
-
-    @Override
     public @Nullable Location getSpawnLocation() {
         return spawnLocation;
     }
@@ -174,15 +170,28 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
+    public <T> Optional<T> getAttributeValue(AttributeType<?, T> type) {
+        return getAttribute(type).map(Attribute::getValue);
+    }
+
+    @Override
+    public <T> boolean setAttributeValue(AttributeType<?, T> type, T value) {
+        return getAttribute(type).map(attribute -> attribute.setValue(value)).orElse(false);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
-    public <V> Optional<Attribute<V>> getAttribute(AttributeType<V> type) {
+    public <V extends Entity, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type) {
         return attributes.stream()
                 .filter(attribute -> attribute.getType().equals(type))
-                .map(attribute -> (Attribute<V>) attribute)
+                .map(attribute -> (Attribute<V, T>) attribute)
                 .findAny().or(() -> {
-                    var attribute = plugin.attributeProvider().createAttribute(type, this);
-                    attribute.ifPresent(attributes::add);
-                    return attribute;
+                    var entityClass = this.type.getEntityClass();
+                    if (entityClass == null || !type.entityType().isAssignableFrom(entityClass))
+                        return Optional.empty();
+                    var attribute = new PaperAttribute<>(type, (Character<@NonNull V>) this, plugin);
+                    attributes.add(attribute);
+                    return Optional.of(attribute);
                 });
     }
 
@@ -241,28 +250,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public boolean hasGravity() {
-        return gravity;
-    }
-
-    @Override
-    public boolean isCollidable() {
-        return collidable;
-    }
-
-    @Override
     public boolean isDisplayNameVisible() {
         return displayNameVisible;
-    }
-
-    @Override
-    public boolean isGlowing() {
-        return glowing;
-    }
-
-    @Override
-    public boolean isInvincible() {
-        return invincible;
     }
 
     @Override
@@ -367,14 +356,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public boolean setCollidable(boolean collidable) {
-        if (collidable == this.collidable) return false;
-        getEntity(LivingEntity.class).ifPresent(entity -> entity.setCollidable(collidable));
-        this.collidable = collidable;
-        return true;
-    }
-
-    @Override
     public boolean setDisplayName(@Nullable Component displayName) {
         if (Objects.equals(displayName, this.displayName)) return false;
         this.displayName = displayName;
@@ -391,30 +372,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     }
 
     @Override
-    public boolean setGlowing(boolean glowing) {
-        if (glowing == this.glowing) return false;
-        getEntity().ifPresent(entity -> entity.setGlowing(glowing));
-        this.glowing = glowing;
-        return true;
-    }
-
-    @Override
-    public boolean setGravity(boolean gravity) {
-        if (gravity == this.gravity) return false;
-        getEntity().ifPresent(entity -> entity.setGravity(gravity));
-        this.gravity = gravity;
-        return true;
-    }
-
-    @Override
-    public boolean setInvincible(boolean invincible) {
-        if (invincible == this.invincible) return false;
-        getEntity().ifPresent(entity -> entity.setInvulnerable(invincible));
-        this.invincible = invincible;
-        return true;
-    }
-
-    @Override
     public boolean setPathfinding(boolean pathfinding) {
         if (pathfinding == this.pathfinding) return false;
         this.pathfinding = pathfinding;
@@ -426,14 +383,6 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
     public boolean setPersistent(boolean persistent) {
         if (persistent == this.persistent) return false;
         this.persistent = persistent;
-        return true;
-    }
-
-    @Override
-    public boolean setPose(Pose pose) {
-        if (pose == this.pose || !canHavePose(type, pose)) return false;
-        getEntity().ifPresent(entity -> entity.setPose(pose, true));
-        this.pose = pose;
         return true;
     }
 
@@ -496,7 +445,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (isSpawned()) return false;
         this.spawnLocation = location;
         Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type %s", type);
-        this.entity = location.getWorld().spawn(location, (Class<T>) type.getEntityClass(), this::preSpawn);
+        this.entity = location.getWorld().spawn(location, (Class<E>) type.getEntityClass(), this::preSpawn);
         return true;
     }
 
@@ -526,14 +475,9 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         if (spawnLocation != null) tag.add("location", plugin.nbt().toTag(spawnLocation));
         if (teamColor != null) tag.add("teamColor", plugin.nbt().toTag(teamColor));
         tag.add("ai", ai);
-        tag.add("collidable", collidable);
         tag.add("displayNameVisible", displayNameVisible);
         tag.add("equipment", equipment.serialize());
-        tag.add("glowing", glowing);
-        tag.add("gravity", gravity);
-        tag.add("invincible", invincible);
         tag.add("pathfinding", pathfinding);
-        tag.add("pose", pose.name());
         tag.add("scale", scale);
         tag.add("tagOptions", tagOptions.serialize());
         tag.add("ticking", ticking);
@@ -542,7 +486,8 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         var actions = new CompoundTag();
         var attributes = new CompoundTag();
         this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().toTag(clickAction)));
-        this.attributes.forEach(attribute -> attributes.add(attribute.getType().getName(), attribute.serialize()));
+        // todo: properly serialize attributes
+        this.attributes.forEach(attribute -> attributes.add(attribute.getType().key().asString(), attribute.serialize()));
         if (!actions.isEmpty()) tag.add("clickActions", actions);
         if (!attributes.isEmpty()) tag.add("attributes", attributes);
         return tag;
@@ -557,15 +502,10 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         //         this.attributes.add(plugin.nbt().fromTag(attribute, Attribute.class))));
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().fromTag(action, ClickAction.class))));
-        root.optional("collidable").map(Tag::getAsBoolean).ifPresent(this::setCollidable);
         root.optional("displayName").map(t -> plugin.nbt().fromTag(t, Component.class)).ifPresent(this::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
         root.optional("equipment").ifPresent(equipment::deserialize);
-        root.optional("glowing").map(Tag::getAsBoolean).ifPresent(this::setGlowing);
-        root.optional("gravity").map(Tag::getAsBoolean).ifPresent(this::setGravity);
-        root.optional("invincible").map(Tag::getAsBoolean).ifPresent(this::setInvincible);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
-        root.optional("pose").map(Tag::getAsString).map(Pose::valueOf).ifPresent(this::setPose);
         root.optional("scale").map(Tag::getAsDouble).ifPresent(this::setScale);
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
         root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
@@ -573,7 +513,10 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
     }
 
-    protected void preSpawn(T entity) {
+    protected void preSpawn(E entity) {
+        if (entity instanceof AreaEffectCloud cloud) {
+            cloud.setDuration(Tick.tick().fromDuration(Duration.ofDays(999)));
+        }
         if (entity instanceof Attributable attributable) {
             var scale = attributable.getAttribute(SCALE);
             if (scale != null) scale.setBaseValue(this.scale);
@@ -583,24 +526,24 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
                     living.getEquipment().setItem(slot, item, true));
             living.setAI(ai);
             living.setCanPickupItems(false);
-            living.setCollidable(collidable);
         }
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
             updatePathfinderGoals(mob);
         }
-        entity.setGlowing(glowing);
-        entity.setGravity(gravity);
-        entity.setInvulnerable(invincible);
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setPersistent(false);
-        entity.setPose(pose, true);
         entity.setSilent(true);
+        entity.setInvulnerable(true);
         entity.setVisibleByDefault(visibleByDefault);
+        attributes.forEach(attribute -> {
+            @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
+            casted.getType().set(entity, attribute.getValue());
+        });
         updateDisplayName(entity);
     }
 
-    protected void updateDisplayName(T entity) {
+    protected void updateDisplayName(E entity) {
         entity.customName(displayNameVisible ? displayName : null);
         entity.setCustomNameVisible(displayNameVisible && displayName != null);
     }
@@ -617,6 +560,7 @@ public class PaperCharacter<T extends Entity> implements Character<T> {
         return new File(plugin.savesFolder(), this.name + ".dat");
     }
 
+    // todo: check this again
     public static boolean canHavePose(EntityType type, Pose pose) {
         return switch (pose) {
             case EMERGING, ROARING, DIGGING, SNIFFING -> type == EntityType.WARDEN;
