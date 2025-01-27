@@ -12,7 +12,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Pose;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Unmodifiable;
@@ -27,7 +26,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
-public interface Character<T extends Entity> extends TagSerializable {
+public interface Character<E extends Entity> extends TagSerializable {
     @Nullable
     ClickAction<?> getAction(String name);
 
@@ -39,9 +38,9 @@ public interface Character<T extends Entity> extends TagSerializable {
     @Nullable
     Component getDisplayName();
 
-    <V> Optional<V> getEntity(Class<V> type);
+    <T> Optional<T> getEntity(Class<T> type);
 
-    Optional<T> getEntity();
+    Optional<E> getEntity();
 
     @Nullable
     NamedTextColor getTeamColor();
@@ -53,8 +52,6 @@ public interface Character<T extends Entity> extends TagSerializable {
 
     String getScoreboardName();
 
-    Pose getPose();
-
     @Nullable
     Location getSpawnLocation();
 
@@ -65,7 +62,11 @@ public interface Character<T extends Entity> extends TagSerializable {
     @Unmodifiable
     Set<UUID> getViewers();
 
-    <V> Optional<Attribute<V>> getAttribute(AttributeType<V> type);
+    <T> Optional<T> getAttributeValue(AttributeType<?, T> type);
+
+    <T> boolean setAttributeValue(AttributeType<?, T> type, T value);
+
+    <V extends Entity, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type);
 
     @Nullable
     World getWorld();
@@ -86,15 +87,7 @@ public interface Character<T extends Entity> extends TagSerializable {
 
     boolean hasAction(String name);
 
-    boolean hasGravity();
-
-    boolean isCollidable();
-
     boolean isDisplayNameVisible();
-
-    boolean isGlowing();
-
-    boolean isInvincible();
 
     boolean isPathfinding();
 
@@ -124,23 +117,13 @@ public interface Character<T extends Entity> extends TagSerializable {
 
     boolean setAI(boolean ai);
 
-    boolean setCollidable(boolean collidable);
-
     boolean setDisplayName(@Nullable Component displayName);
 
     boolean setDisplayNameVisible(boolean visible);
 
-    boolean setGlowing(boolean glowing);
-
-    boolean setGravity(boolean gravity);
-
-    boolean setInvincible(boolean invincible);
-
     boolean setPathfinding(boolean pathfinding);
 
     boolean setPersistent(boolean persistent);
-
-    boolean setPose(Pose pose);
 
     boolean setScale(double scale);
 
