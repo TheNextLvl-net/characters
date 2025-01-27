@@ -53,22 +53,6 @@ public class AttributeTypes {
         return Set.copyOf(attributeTypes);
     }
 
-    public static <E extends Entity, T> AttributeType<E, @Nullable T> registerNullable(
-            @KeyPattern String key, Class<E> entityType, Class<T> dataType,
-            Function<E, @Nullable T> getter, BiConsumer<E, @Nullable T> setter
-    ) {
-        return register(key, entityType, dataType, getter, setter);
-    }
-
-    public static <E extends Entity, T> AttributeType<E, T> register(
-            @KeyPattern String key, Class<E> entityType, Class<T> dataType,
-            Function<E, T> getter, BiConsumer<E, T> setter
-    ) {
-        var attributeType = new AttributeType<>(key, entityType, dataType, getter, setter);
-        if (attributeTypes.add(attributeType)) return attributeType;
-        throw new IllegalStateException("Cannot register attribute types twice: " + key);
-    }
-
     public static class AgeableAttributes {
         public final AttributeType<Ageable, Boolean> BABY = register(
                 "ageable:baby", Ageable.class, boolean.class,
@@ -312,5 +296,21 @@ public class AttributeTypes {
         public final AttributeType<Tameable, Boolean> TAMED = register(
                 "tameable:tamed", Tameable.class, boolean.class, Tameable::isTamed, Tameable::setTamed
         );
+    }
+
+    public static <E extends Entity, T> AttributeType<E, @Nullable T> registerNullable(
+            @KeyPattern String key, Class<E> entityType, Class<T> dataType,
+            Function<E, @Nullable T> getter, BiConsumer<E, @Nullable T> setter
+    ) {
+        return register(key, entityType, dataType, getter, setter);
+    }
+
+    public static <E extends Entity, T> AttributeType<E, T> register(
+            @KeyPattern String key, Class<E> entityType, Class<T> dataType,
+            Function<E, T> getter, BiConsumer<E, T> setter
+    ) {
+        var attributeType = new AttributeType<>(key, entityType, dataType, getter, setter);
+        if (attributeTypes.add(attributeType)) return attributeType;
+        throw new IllegalStateException("Cannot register attribute types twice: " + key);
     }
 }
