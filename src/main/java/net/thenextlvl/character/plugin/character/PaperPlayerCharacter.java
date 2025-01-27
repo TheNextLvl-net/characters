@@ -31,6 +31,7 @@ import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
+import net.thenextlvl.character.attribute.AttributeTypes;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.network.EmptyPacketListener;
 import org.bukkit.Color;
@@ -40,6 +41,7 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
@@ -85,13 +87,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     @Override
     public String getScoreboardName() {
         return Objects.requireNonNull(profile.getName());
-    }
-
-    @Override
-    public boolean setCollidable(boolean collidable) {
-        if (!super.setCollidable(collidable)) return false;
-        updateTeamOptions();
-        return true;
     }
 
     @Override
@@ -336,7 +331,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     private Location getDisplayNameHologramPosition(Player player) {
         var location = player.getLocation().clone();
-        var incrementor = switch (getPose()) {
+        var incrementor = switch (getAttributeValue(AttributeTypes.ENTITY.POSE).orElse(Pose.STANDING)) {
             case SNEAKING -> 0.15;
             default -> 0.27;
         };
@@ -429,6 +424,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
     private void updateTeamOptions(Team team) {
         team.color(teamColor);
+        var collidable = getAttributeValue(AttributeTypes.LIVING_ENTITY.COLLIDABLE).orElse(true);
         team.setOption(Option.COLLISION_RULE, collidable ? OptionStatus.ALWAYS : OptionStatus.NEVER);
         team.setOption(Option.NAME_TAG_VISIBILITY, OptionStatus.NEVER);
     }
@@ -436,6 +432,23 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     private class CraftCharacter extends CraftPlayer {
         public CraftCharacter(CraftServer server, ServerPlayer handle) {
             super(server, handle);
+        }
+
+        @Override
+        public void setCollidable(boolean collidable) {
+            if (isCollidable() == collidable) return;
+            super.setCollidable(collidable);
+            updateTeamOptions();
+        }
+
+        @Override
+        public void setVisualFire(boolean fire) {
+            if (isVisualFire() == fire) return;
+            super.setVisualFire(fire);
+            if (isTicking()) return;
+            getHandle().setSharedFlagOnFire(fire);
+            var update = new ClientboundSetEntityDataPacket(getEntityId(), getHandle().getEntityData().packAll());
+            getTrackedBy().forEach(player -> sendPacket(player, update));
         }
 
         @Override
