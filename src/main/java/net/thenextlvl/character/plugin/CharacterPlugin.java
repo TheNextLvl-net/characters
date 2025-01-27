@@ -27,7 +27,6 @@ import net.thenextlvl.character.plugin.character.PaperCharacterController;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.action.PaperActionType;
 import net.thenextlvl.character.plugin.character.action.PaperActionTypeProvider;
-import net.thenextlvl.character.plugin.character.attribute.PaperAttributeProvider;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
@@ -35,11 +34,17 @@ import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.listener.test;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.AddressAdapter;
+import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
 import net.thenextlvl.character.plugin.serialization.BrightnessAdapter;
+import net.thenextlvl.character.plugin.serialization.CatVariantAdapter;
 import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
 import net.thenextlvl.character.plugin.serialization.ClickActionAdapter;
+import net.thenextlvl.character.plugin.serialization.ColorAdapter;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
+import net.thenextlvl.character.plugin.serialization.DurationAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
+import net.thenextlvl.character.plugin.serialization.EnumAdapter;
+import net.thenextlvl.character.plugin.serialization.FrogVariantAdapter;
 import net.thenextlvl.character.plugin.serialization.ItemStackAdapter;
 import net.thenextlvl.character.plugin.serialization.KeyAdapter;
 import net.thenextlvl.character.plugin.serialization.LocationAdapter;
@@ -51,15 +56,24 @@ import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
 import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.Color;
+import org.bukkit.DyeColor;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Cat;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Fox;
+import org.bukkit.entity.Frog;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
@@ -70,6 +84,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -88,16 +103,26 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
 
     private final NBT nbt = NBT.builder()
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter(this))
+            .registerTypeHierarchyAdapter(BlockData.class, new BlockDataAdapter(getServer()))
             .registerTypeHierarchyAdapter(Brightness.class, new BrightnessAdapter())
+            .registerTypeHierarchyAdapter(Cat.Type.class, new CatVariantAdapter())
             .registerTypeHierarchyAdapter(Character.class, new CharacterSerializer())
             .registerTypeHierarchyAdapter(ClickAction.class, new ClickActionAdapter())
+            .registerTypeHierarchyAdapter(Color.class, new ColorAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
+            .registerTypeHierarchyAdapter(Duration.class, new DurationAdapter())
+            .registerTypeHierarchyAdapter(DyeColor.class, new EnumAdapter<>(DyeColor.class))
             .registerTypeHierarchyAdapter(EntityType.class, new EntityTypeAdapter())
+            .registerTypeHierarchyAdapter(Fox.Type.class, new EnumAdapter<>(Fox.Type.class))
+            .registerTypeHierarchyAdapter(Frog.Variant.class, new FrogVariantAdapter())
             .registerTypeHierarchyAdapter(InetSocketAddress.class, new AddressAdapter())
             .registerTypeHierarchyAdapter(ItemStack.class, new ItemStackAdapter())
             .registerTypeHierarchyAdapter(Key.class, new KeyAdapter())
             .registerTypeHierarchyAdapter(Location.class, new LocationAdapter())
             .registerTypeHierarchyAdapter(NamedTextColor.class, new NamedTextColorAdapter())
+            .registerTypeHierarchyAdapter(Particle.class, new EnumAdapter<>(Particle.class))
+            .registerTypeHierarchyAdapter(Pose.class, new EnumAdapter<>(Pose.class))
+            .registerTypeHierarchyAdapter(PotionType.class, new EnumAdapter<>(PotionType.class))
             .registerTypeHierarchyAdapter(ProfileProperty.class, new ProfilePropertyAdapter())
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
             .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
@@ -107,7 +132,6 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .build();
 
     private final PaperActionTypeProvider actionTypeProvider = new PaperActionTypeProvider();
-    private final PaperAttributeProvider attributeProvider = new PaperAttributeProvider(this);
     private final PaperCharacterController characterController = new PaperCharacterController(this);
     private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
     private final PluginMessenger messenger = new PluginMessenger(this);
@@ -195,11 +219,6 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     @Override
     public PaperActionTypeProvider actionTypeProvider() {
         return actionTypeProvider;
-    }
-
-    @Override
-    public PaperAttributeProvider attributeProvider() {
-        return attributeProvider;
     }
 
     @Override
