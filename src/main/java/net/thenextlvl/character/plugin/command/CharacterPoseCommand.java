@@ -10,14 +10,15 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.attribute.AttributeTypes;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Pose;
 import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
+// todo: replace command with attribute
 class CharacterPoseCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("pose")
@@ -28,7 +29,7 @@ class CharacterPoseCommand {
     private static ArgumentBuilder<CommandSourceStack, ?> poseArgument(CharacterPlugin plugin) {
         return Commands.argument("pose", new EnumArgument<>(Pose.class, (context, pose) -> {
             var character = context.getLastChild().getArgument("character", Character.class);
-            return PaperCharacter.canHavePose(character.getType(), pose);
+            return canHavePose(character.getType(), pose);
         }));
     }
 
@@ -61,5 +62,24 @@ class CharacterPoseCommand {
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("pose", pose.name().toLowerCase()));
         return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static boolean canHavePose(EntityType type, Pose pose) {
+        return switch (pose) {
+            case EMERGING, ROARING, DIGGING, SNIFFING -> type == EntityType.WARDEN;
+            case FALL_FLYING, SPIN_ATTACK, SWIMMING -> type == EntityType.PLAYER;
+            case INHALING, SHOOTING, SLIDING -> type == EntityType.BREEZE;
+            case LONG_JUMPING -> switch (type) {
+                case GOAT, FROG, BREEZE -> true;
+                default -> false;
+            };
+            case SITTING -> type == EntityType.CAMEL;
+            case SNEAKING -> switch (type) {
+                case CAT, OCELOT, PLAYER -> true;
+                default -> false;
+            };
+            case USING_TONGUE, CROAKING -> type == EntityType.FROG;
+            default -> true;
+        };
     }
 }
