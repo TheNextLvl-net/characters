@@ -5,13 +5,11 @@ import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import com.google.common.base.Preconditions;
 import core.nbt.serialization.ParserException;
 import core.nbt.tag.CompoundTag;
 import core.nbt.tag.ListTag;
 import core.nbt.tag.Tag;
 import core.util.StringUtil;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
@@ -31,24 +29,16 @@ import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
-import net.thenextlvl.character.attribute.AttributeTypes;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.network.EmptyPacketListener;
-import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Pose;
-import org.bukkit.entity.TextDisplay;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerRespawnEvent.RespawnReason;
-import org.bukkit.scoreboard.Team;
-import org.bukkit.scoreboard.Team.Option;
-import org.bukkit.scoreboard.Team.OptionStatus;
-import org.bukkit.util.Transformation;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -67,21 +57,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     private boolean listed = false;
     private boolean realPlayer = false;
 
-    private @Nullable TextDisplay displayNameHologram;
-
     public PaperPlayerCharacter(CharacterPlugin plugin, String name, UUID uuid) {
         super(plugin, name, EntityType.PLAYER);
         this.profile = new CraftPlayerProfile(uuid, "NPC_" + StringUtil.random(12));
-    }
-
-    @Override
-    public boolean despawn() {
-        if (entity == null || !entity.isValid()) return false;
-        var packet = new ClientboundRemoveEntitiesPacket(entity.getEntityId());
-        plugin.getServer().getOnlinePlayers().forEach(player -> sendPacket(player, packet));
-        ((CraftPlayer) entity).getHandle().discard();
-        removeDisplayNameHologram();
-        return true;
     }
 
     @Override
@@ -92,7 +70,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     @Override
     public boolean setTeamColor(@Nullable NamedTextColor color) {
         if (!super.setTeamColor(color)) return false;
-        getEntity().ifPresent(this::updateDisplayName);
         getEntity(CraftPlayer.class).ifPresent(entity -> {
             var update = new ClientboundPlayerInfoUpdatePacket(Action.UPDATE_DISPLAY_NAME, entity.getHandle());
             entity.getTrackedBy().forEach(player -> sendPacket(player, update));
@@ -193,12 +170,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(this::setRealPlayer);
         root.optional("skinParts").map(Tag::getAsByte).map(PaperSkinParts::new).ifPresent(this::setSkinParts);
         super.deserialize(tag);
-    }
-
-    @Override
-    protected void updateDisplayName(Player player) {
-        updateDisplayNameHologram(player);
-        updateTeamOptions();
     }
 
     @Override
@@ -321,38 +292,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(entity, isListed());
     }
 
-    private Team getCharacterSettingsTeam(Player player) {
-        var characterSettings = player.getScoreboard().getTeam(getScoreboardName());
-        if (characterSettings != null) return characterSettings;
-        characterSettings = player.getScoreboard().registerNewTeam(getScoreboardName());
-        characterSettings.addEntry(getScoreboardName());
-        return characterSettings;
-    }
-
-    private Location getDisplayNameHologramPosition(Player player) {
-        var location = player.getLocation().clone();
-        var incrementor = switch (getAttributeValue(AttributeTypes.ENTITY.POSE).orElse(Pose.STANDING)) {
-            case SNEAKING -> 0.15;
-            default -> 0.27;
-        };
-        location.setY(player.getBoundingBox().getMaxY() + incrementor);
-        return location;
-    }
-
-    private void removeDisplayNameHologram() {
-        if (displayNameHologram == null) return;
-        displayNameHologram.remove();
-        displayNameHologram = null;
-    }
-
     private void sendPacket(Player player, Packet<?> packet) {
         ((CraftPlayer) player).getHandle().connection.send(packet);
-    }
-
-    private void spawnDisplayNameHologram(Player player) {
-        Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
-        var location = getDisplayNameHologramPosition(player);
-        displayNameHologram = player.getWorld().spawn(location, TextDisplay.class, this::updateDisplayNameHologram);
     }
 
     @Override
@@ -383,50 +324,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return true;
     }
 
-    private void updateDisplayNameHologram(TextDisplay display) {
-        display.setAlignment(tagOptions.getAlignment());
-        display.setBackgroundColor(tagOptions.getBackgroundColor() != null
-                ? tagOptions.getBackgroundColor() : Color.fromARGB(1073741824));
-        display.setBillboard(tagOptions.getBillboard());
-        display.setBrightness(tagOptions.getBrightness());
-        display.setDefaultBackground(tagOptions.isDefaultBackground());
-        display.setLineWidth(tagOptions.getLineWidth());
-        display.setGravity(false);
-        display.setPersistent(false);
-        display.setSeeThrough(tagOptions.isSeeThrough());
-        display.setShadowed(tagOptions.hasTextShadow());
-        display.setTeleportDuration(3);
-        display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
-        display.setTransformation(new Transformation(
-                display.getTransformation().getTranslation(),
-                display.getTransformation().getLeftRotation(),
-                tagOptions.getScale(),
-                display.getTransformation().getRightRotation()
-        ));
-        var component = displayName == null ? Component.text(getName()) : displayName;
-        display.text(component.colorIfAbsent(teamColor));
-    }
-
-    private void updateDisplayNameHologram(Player player) {
-        if (!displayNameVisible) {
-            removeDisplayNameHologram();
-        } else if (displayNameHologram == null) {
-            spawnDisplayNameHologram(player);
-        } else {
-            updateDisplayNameHologram(displayNameHologram);
-        }
-    }
-
-    private void updateTeamOptions() {
-        plugin.getServer().getOnlinePlayers().forEach(player ->
-                updateTeamOptions(getCharacterSettingsTeam(player)));
-    }
-
-    private void updateTeamOptions(Team team) {
-        team.color(teamColor);
-        var collidable = getAttributeValue(AttributeTypes.LIVING_ENTITY.COLLIDABLE).orElse(true);
-        team.setOption(Option.COLLISION_RULE, collidable ? OptionStatus.ALWAYS : OptionStatus.NEVER);
-        team.setOption(Option.NAME_TAG_VISIBILITY, OptionStatus.NEVER);
+    @Override
+    protected boolean showDisplayNameHologram() {
+        return displayNameVisible;
     }
 
     private class CraftCharacter extends CraftPlayer {
@@ -453,7 +353,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         @Override
         public void remove() {
-            PaperPlayerCharacter.this.remove();
+            getHandle().discard();
         }
     }
 

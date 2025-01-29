@@ -14,6 +14,7 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeType;
+import net.thenextlvl.character.attribute.AttributeTypes;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.attribute.PaperAttribute;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
@@ -31,11 +32,14 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.TextDisplay.TextAlignment;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.scoreboard.Team;
+import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NonNull;
@@ -82,6 +86,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable String viewPermission = null;
+    protected @Nullable TextDisplay displayNameHologram;
 
     protected Pose pose = Pose.STANDING;
 
@@ -235,7 +240,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     @Override
     public boolean despawn() {
-        if (entity == null) return false;
+        if (entity == null || !entity.isValid()) return false;
+        removeDisplayNameHologram();
         entity.remove();
         entity = null;
         return true;
@@ -413,6 +419,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public boolean setTeamColor(@Nullable NamedTextColor color) {
         if (color == this.teamColor) return false;
         this.teamColor = color;
+        getEntity().ifPresent(this::updateDisplayName);
         return true;
     }
 
@@ -421,6 +428,17 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         if (ticking == this.ticking) return false;
         this.ticking = ticking;
         // todo: use custom entity impl to make this possible
+        return true;
+    }
+
+    @Override
+    public boolean setViewPermission(@Nullable String permission) {
+        if (Objects.equals(permission, viewPermission)) return false;
+        this.viewPermission = permission;
+        getEntity().ifPresent(entity -> plugin.getServer().getOnlinePlayers().forEach(player -> {
+            if (canSee(player)) player.showEntity(plugin, entity);
+            else player.hideEntity(plugin, entity);
+        }));
         return true;
     }
 
@@ -481,6 +499,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         if (displayName != null) tag.add("displayName", plugin.nbt().toTag(displayName));
         if (spawnLocation != null) tag.add("location", plugin.nbt().toTag(spawnLocation));
         if (teamColor != null) tag.add("teamColor", plugin.nbt().toTag(teamColor));
+        if (viewPermission != null) tag.add("viewPermission", viewPermission);
         tag.add("ai", ai);
         tag.add("displayNameVisible", displayNameVisible);
         tag.add("equipment", equipment.serialize());
@@ -517,6 +536,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
         root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("ticking").map(Tag::getAsBoolean).ifPresent(this::setTicking);
+        root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
     }
 
@@ -547,16 +567,101 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
             casted.getType().set(entity, attribute.getValue());
         });
+        if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers().forEach(player -> {
+            if (canSee(player)) player.showEntity(plugin, entity);
+            else player.hideEntity(plugin, entity);
+        });
         updateDisplayName(entity);
     }
 
     protected void updateDisplayName(E entity) {
-        entity.customName(displayNameVisible ? displayName : null);
-        entity.setCustomNameVisible(displayNameVisible && displayName != null);
+        updateDisplayNameHologram(entity);
+        updateTeamOptions();
     }
 
     protected void updatePathfinderGoals(Mob mob) {
         if (!pathfinding) plugin.getServer().getMobGoals().removeAllGoals(mob);
+    }
+
+    protected Team getCharacterSettingsTeam(Player player) {
+        var characterSettings = player.getScoreboard().getTeam(getScoreboardName());
+        if (characterSettings != null) return characterSettings;
+        characterSettings = player.getScoreboard().registerNewTeam(getScoreboardName());
+        characterSettings.addEntry(getScoreboardName());
+        return characterSettings;
+    }
+
+    protected Location getDisplayNameHologramPosition(E entity) {
+        var location = entity.getLocation().clone();
+        var incrementor = switch (getAttributeValue(AttributeTypes.ENTITY.POSE).orElse(Pose.STANDING)) {
+            case SNEAKING -> 0.15;
+            default -> 0.27;
+        };
+        location.setY(entity.getBoundingBox().getMaxY() + incrementor);
+        return location;
+    }
+
+    protected void removeDisplayNameHologram() {
+        if (displayNameHologram == null) return;
+        displayNameHologram.remove();
+        displayNameHologram = null;
+    }
+
+    protected void spawnDisplayNameHologram(E entity) {
+        Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
+        var location = getDisplayNameHologramPosition(entity);
+        displayNameHologram = entity.getWorld().spawn(location, TextDisplay.class, this::updateDisplayNameHologram);
+    }
+
+    protected void updateDisplayNameHologram(TextDisplay display) {
+        display.setAlignment(tagOptions.getAlignment());
+        display.setBackgroundColor(tagOptions.getBackgroundColor() != null
+                ? tagOptions.getBackgroundColor() : Color.fromARGB(1073741824));
+        display.setBillboard(tagOptions.getBillboard());
+        display.setBrightness(tagOptions.getBrightness());
+        display.setDefaultBackground(tagOptions.isDefaultBackground());
+        display.setLineWidth(tagOptions.getLineWidth());
+        display.setGravity(false);
+        display.setPersistent(false);
+        display.setSeeThrough(tagOptions.isSeeThrough());
+        display.setShadowed(tagOptions.hasTextShadow());
+        display.setTeleportDuration(3);
+        display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
+        display.setTransformation(new Transformation(
+                display.getTransformation().getTranslation(),
+                display.getTransformation().getLeftRotation(),
+                tagOptions.getScale(),
+                display.getTransformation().getRightRotation()
+        ));
+        display.setVisibleByDefault(visibleByDefault);
+        var component = displayName == null ? Component.text(getName()) : displayName;
+        display.text(component.colorIfAbsent(teamColor));
+    }
+
+    protected void updateDisplayNameHologram(E entity) {
+        if (displayNameHologram == null && showDisplayNameHologram()) {
+            spawnDisplayNameHologram(entity);
+        } else if (displayNameHologram != null && !showDisplayNameHologram()) {
+            removeDisplayNameHologram();
+        } else if (displayNameHologram != null) {
+            updateDisplayNameHologram(displayNameHologram);
+        }
+    }
+
+    protected boolean showDisplayNameHologram() {
+        return displayName != null && displayNameVisible;
+    }
+
+    protected void updateTeamOptions() {
+        if (entity != null) entity.getTrackedBy().forEach(player ->
+                updateTeamOptions(getCharacterSettingsTeam(player)));
+    }
+
+    protected void updateTeamOptions(Team team) {
+        team.color(teamColor);
+        var collidable = getAttributeValue(AttributeTypes.LIVING_ENTITY.COLLIDABLE).orElse(true);
+        team.setOption(Team.Option.COLLISION_RULE, collidable ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
+        team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }
 
     private File backupFile() {
@@ -565,26 +670,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     private File file() {
         return new File(plugin.savesFolder(), this.name + ".dat");
-    }
-
-    // todo: check this again
-    public static boolean canHavePose(EntityType type, Pose pose) {
-        return switch (pose) {
-            case EMERGING, ROARING, DIGGING, SNIFFING -> type == EntityType.WARDEN;
-            case FALL_FLYING, SPIN_ATTACK, SWIMMING -> type == EntityType.PLAYER;
-            case INHALING, SHOOTING, SLIDING -> type == EntityType.BREEZE;
-            case LONG_JUMPING -> switch (type) {
-                case GOAT, FROG, BREEZE -> true;
-                default -> false;
-            };
-            case SITTING -> type == EntityType.CAMEL;
-            case SNEAKING -> switch (type) {
-                case CAT, OCELOT, PLAYER -> true;
-                default -> false;
-            };
-            case USING_TONGUE, CROAKING -> type == EntityType.FROG;
-            default -> true;
-        };
     }
 
     private class PaperEquipment implements Equipment {
