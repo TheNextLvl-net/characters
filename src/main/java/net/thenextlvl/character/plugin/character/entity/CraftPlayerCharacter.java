@@ -8,10 +8,10 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftCharacter extends CraftPlayer {
+public class CraftPlayerCharacter extends CraftPlayer {
     private final PaperPlayerCharacter character;
 
-    public CraftCharacter(PaperPlayerCharacter character, CraftServer server, ServerPlayer handle) {
+    public CraftPlayerCharacter(PaperPlayerCharacter character, CraftServer server, ServerPlayer handle) {
         super(server, handle);
         this.character = character;
     }
