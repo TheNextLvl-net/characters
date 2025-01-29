@@ -77,10 +77,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected final EntityType type;
     protected final String name;
 
+    protected @Nullable E entity = null;
     protected @Nullable Component displayName = null;
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
-    protected @Nullable E entity;
+    protected @Nullable String viewPermission = null;
 
     protected Pose pose = Pose.STANDING;
 
@@ -147,6 +148,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public String getScoreboardName() {
         return scoreboardName;
+    }
+
+    @Override
+    public @Nullable String getViewPermission() {
+        return viewPermission;
     }
 
     @Override
@@ -223,6 +229,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public boolean canSee(Player player) {
         if (entity == null || !isSpawned()) return false;
         if (!player.getWorld().equals(entity.getWorld())) return false;
+        if (viewPermission != null && !player.hasPermission(viewPermission)) return false;
         return isVisibleByDefault() || isViewer(player.getUniqueId());
     }
 

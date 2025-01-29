@@ -53,6 +53,9 @@ public interface Character<E extends Entity> extends TagSerializable {
     String getScoreboardName();
 
     @Nullable
+    String getViewPermission();
+
+    @Nullable
     Location getSpawnLocation();
 
     TagOptions getTagOptions();
@@ -132,6 +135,8 @@ public interface Character<E extends Entity> extends TagSerializable {
     boolean setTeamColor(@Nullable NamedTextColor color);
 
     boolean setTicking(boolean ticking);
+
+    boolean setViewPermission(@Nullable String permission);
 
     boolean setVisibleByDefault(boolean visible);
 
