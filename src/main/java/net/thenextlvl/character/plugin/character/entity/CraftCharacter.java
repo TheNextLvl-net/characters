@@ -1,8 +1,8 @@
 package net.thenextlvl.character.plugin.character.entity;
 
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
-import net.thenextlvl.character.plugin.character.entity.handle.ServerCharacter;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.jspecify.annotations.NullMarked;
@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 public class CraftCharacter extends CraftPlayer {
     private final PaperPlayerCharacter character;
 
-    public CraftCharacter(PaperPlayerCharacter character, CraftServer server, ServerCharacter handle) {
+    public CraftCharacter(PaperPlayerCharacter character, CraftServer server, ServerPlayer handle) {
         super(server, handle);
         this.character = character;
     }

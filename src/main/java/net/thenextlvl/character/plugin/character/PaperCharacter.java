@@ -579,7 +579,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         updateTeamOptions();
     }
 
-    public void updateDisplayNameHologramPosition() {
+    protected void updateDisplayNameHologramPosition() {
         if (displayNameHologram == null || entity == null) return;
         displayNameHologram.teleport(getDisplayNameHologramPosition(entity));
     }

@@ -19,8 +19,10 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ParticleStatus;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity.RemovalReason;
@@ -29,7 +31,7 @@ import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.entity.CraftCharacter;
-import net.thenextlvl.character.plugin.character.entity.handle.ServerCharacter;
+import net.thenextlvl.character.plugin.network.EmptyPacketListener;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -49,7 +51,7 @@ import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMIS
 
 @NullMarked
 public class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
-    public final CraftPlayerProfile profile;
+    private final CraftPlayerProfile profile;
 
     private SkinParts skinParts = new PaperSkinPartBuilder().build();
 
@@ -100,7 +102,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         var information = createClientInformation();
         var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false);
-        var serverPlayer = new ServerCharacter(this, server.getServer(), level, information, cookie);
+        var serverPlayer = new ServerCharacter(server.getServer(), level, information, cookie);
 
         serverPlayer.setClientLoaded(true);
         this.entity = new CraftCharacter(this, server, serverPlayer);
@@ -328,4 +330,69 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return displayNameVisible;
     }
 
+    public class ServerCharacter extends ServerPlayer {
+        public ServerCharacter(MinecraftServer server, ServerLevel level, ClientInformation information, CommonListenerCookie cookie) {
+            super(server, level, profile.getGameProfile(), information);
+            this.connection = new EmptyPacketListener(PaperPlayerCharacter.this, server, this, cookie);
+        }
+
+        @Override
+        public boolean isPushable() {
+            return false;
+        }
+
+        @Override
+        public boolean isCollidable(boolean ignoreClimbing) {
+            return false;
+        }
+
+        @Override
+        public boolean isPushedByFluid() {
+            return true;
+        }
+
+        @Override
+        public String getScoreboardName() {
+            return PaperPlayerCharacter.this.getScoreboardName();
+        }
+
+        @Override
+        public int getTeamColor() {
+            return teamColor != null ? teamColor.value() : super.getTeamColor();
+        }
+
+        @Override
+        public net.minecraft.network.chat.Component getTabListDisplayName() {
+            return net.minecraft.network.chat.Component.literal("[NPC] ")
+                    .append(PaperPlayerCharacter.this.getName())
+                    .withColor(getTeamColor());
+        }
+
+        @Override
+        public void setPos(double x, double y, double z) {
+            super.setPos(x, y, z);
+            updateDisplayNameHologramPosition();
+        }
+
+        @Override
+        public boolean isAlwaysTicking() {
+            return ticking;
+        }
+
+        @Override
+        public boolean isTicking() {
+            return ticking;
+        }
+
+        @Override
+        public void tick() {
+            refreshDimensions();
+            if (isTicking()) super.tick();
+        }
+
+        @Override
+        public void doTick() {
+            if (isTicking()) super.doTick();
+        }
+    }
 }
