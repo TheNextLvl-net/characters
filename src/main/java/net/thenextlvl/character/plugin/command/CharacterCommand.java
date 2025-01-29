@@ -26,6 +26,7 @@ public class CharacterCommand {
                 .then(CharacterSkinCommand.create(plugin))
                 .then(CharacterTagCommand.create(plugin))
                 .then(CharacterTeleportCommand.create(plugin))
+                .then(CharacterViewPermissionCommand.create(plugin))
                 .build();
     }
 
