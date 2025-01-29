@@ -39,7 +39,14 @@ public class ConnectionListener implements Listener {
     }
 
     private void loadCharacters(World world, Player player) {
-        plugin.characterController().getCharacters(world).stream()
+        var characters = plugin.characterController().getCharacters(world);
+        characters.stream()
+                .filter(character -> !character.getType().equals(EntityType.PLAYER))
+                .forEach(character -> character.getEntity().ifPresent(entity -> {
+                    if (character.canSee(player)) player.showEntity(plugin, entity);
+                    else player.hideEntity(plugin, entity);
+                }));
+        characters.stream()
                 .filter(character -> character.getType().equals(EntityType.PLAYER))
                 .filter(character -> character.canSee(player))
                 .map(character -> (PaperPlayerCharacter) character)
