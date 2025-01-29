@@ -579,6 +579,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         updateTeamOptions();
     }
 
+    public void updateDisplayNameHologramPosition() {
+        if (displayNameHologram == null || entity == null) return;
+        displayNameHologram.teleport(getDisplayNameHologramPosition(entity));
+    }
+
     protected void updatePathfinderGoals(Mob mob) {
         if (!pathfinding) plugin.getServer().getMobGoals().removeAllGoals(mob);
     }
@@ -652,7 +657,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         return displayName != null && displayNameVisible;
     }
 
-    protected void updateTeamOptions() {
+    public void updateTeamOptions() {
         if (entity != null) entity.getTrackedBy().forEach(player ->
                 updateTeamOptions(getCharacterSettingsTeam(player)));
     }
