@@ -566,6 +566,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         entity.setSilent(true);
         entity.setInvulnerable(true);
         entity.setVisibleByDefault(visibleByDefault);
+        entity.lockFreezeTicks(true);
         attributes.forEach(attribute -> {
             @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
             casted.getType().set(entity, attribute.getValue());
