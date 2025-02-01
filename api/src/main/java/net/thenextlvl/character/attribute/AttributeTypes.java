@@ -270,7 +270,7 @@ public class AttributeTypes {
         );
 
         public final AttributeType<LivingEntity, Integer> BEE_STINGERS_IN_BODY = register(
-                "living_entity:bee_singers_in_body", LivingEntity.class, int.class,
+                "living_entity:bee_stingers_in_body", LivingEntity.class, int.class,
                 LivingEntity::getBeeStingersInBody, LivingEntity::setBeeStingersInBody
         );
 
