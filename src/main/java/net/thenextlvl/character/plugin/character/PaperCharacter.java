@@ -8,6 +8,7 @@ import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
 import core.util.StringUtil;
 import io.papermc.paper.util.Tick;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
@@ -512,8 +513,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         var actions = new CompoundTag();
         var attributes = new CompoundTag();
         this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().toTag(clickAction)));
-        // todo: properly serialize attributes
-        this.attributes.forEach(attribute -> attributes.add(attribute.getType().key().asString(), attribute.serialize()));
+        this.attributes.stream().filter(attribute -> attribute.getValue() != null).forEach(attribute ->
+                attributes.add(attribute.getType().key().asString(), attribute.serialize()));
         if (!actions.isEmpty()) tag.add("clickActions", actions);
         if (!attributes.isEmpty()) tag.add("attributes", attributes);
         return tag;
@@ -523,9 +524,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public void deserialize(Tag tag) throws ParserException {
         var root = tag.getAsCompound();
         root.optional("ai").map(Tag::getAsBoolean).ifPresent(this::setAI);
-        // todo: implement attribute loading
-        // root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, attribute) ->
-        //         this.attributes.add(plugin.nbt().fromTag(attribute, Attribute.class))));
+        root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, t) -> {
+            @SuppressWarnings("PatternValidation") var key = Key.key(name);
+            AttributeTypes.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
+        }));
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().fromTag(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().fromTag(t, Component.class)).ifPresent(this::setDisplayName);
