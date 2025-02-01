@@ -23,6 +23,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.Sittable;
+import org.bukkit.entity.Steerable;
 import org.bukkit.entity.Tameable;
 import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
@@ -51,6 +52,7 @@ public class AttributeTypes {
     public static final LivingEntityAttributes LIVING_ENTITY = new LivingEntityAttributes();
     public static final MobAttributes MOB = new MobAttributes();
     public static final SittableAttributes SITTABLE = new SittableAttributes();
+    public static final SteerableAttributes STEERABLE = new SteerableAttributes();
     public static final TameableAttributes TAMEABLE = new TameableAttributes();
 
     public static Set<AttributeType<?, ?>> types() {
@@ -296,6 +298,13 @@ public class AttributeTypes {
         public final AttributeType<Sittable, Boolean> SITTING = register(
                 "sitting", Sittable.class, boolean.class,
                 Sittable::isSitting, Sittable::setSitting
+        );
+    }
+
+    public static class SteerableAttributes {
+        public final AttributeType<Steerable, Boolean> SADDLE = register(
+                "steerable:saddled", Steerable.class, boolean.class,
+                Steerable::hasSaddle, Steerable::setSaddle
         );
     }
 
