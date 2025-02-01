@@ -33,6 +33,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.TextDisplay.TextAlignment;
 import org.bukkit.inventory.EntityEquipment;
@@ -545,6 +546,9 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected void preSpawn(E entity) {
         if (entity instanceof AreaEffectCloud cloud) {
             cloud.setDuration(Tick.tick().fromDuration(Duration.ofDays(999)));
+        }
+        if (entity instanceof TNTPrimed primed) {
+            primed.setFuseTicks(Integer.MAX_VALUE);
         }
         if (entity instanceof Attributable attributable) {
             var scale = attributable.getAttribute(SCALE);
