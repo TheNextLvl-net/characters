@@ -561,12 +561,12 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             mob.setLootTable(EmptyLootTable.INSTANCE);
             updatePathfinderGoals(mob);
         }
+        entity.lockFreezeTicks(true);
+        entity.setInvulnerable(true);
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setPersistent(false);
         entity.setSilent(true);
-        entity.setInvulnerable(true);
         entity.setVisibleByDefault(visibleByDefault);
-        entity.lockFreezeTicks(true);
         attributes.forEach(attribute -> {
             @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
             casted.getType().set(entity, attribute.getValue());
