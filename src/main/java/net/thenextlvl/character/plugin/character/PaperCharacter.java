@@ -133,7 +133,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     @Override
     public Optional<E> getEntity() {
-        return Optional.ofNullable(entity).filter(Entity::isValid);
+        return Optional.ofNullable(entity);
     }
 
     @Override
@@ -239,7 +239,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     @Override
     public boolean despawn() {
-        if (entity == null || !entity.isValid()) return false;
+        if (entity == null) return false;
         removeDisplayNameHologram();
         entity.remove();
         entity = null;
