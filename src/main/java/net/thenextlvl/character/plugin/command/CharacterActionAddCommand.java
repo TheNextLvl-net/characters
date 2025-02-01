@@ -25,6 +25,7 @@ import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.action.ClickTypes;
 import net.thenextlvl.character.plugin.command.argument.EnumArgument;
+import org.bukkit.EntityEffect;
 import org.bukkit.Registry;
 import org.bukkit.World;
 import org.jspecify.annotations.NullMarked;
@@ -48,6 +49,7 @@ class CharacterActionAddCommand {
                     .then(runConsoleCommand(clickTypes, plugin))
                     .then(runPlayerCommand(clickTypes, plugin))
                     .then(sendActionBar(clickTypes, plugin))
+                    .then(sendEntityEffect(clickTypes, plugin))
                     .then(sendMessage(clickTypes, plugin))
                     .then(teleport(clickTypes, plugin))
                     .then(title(clickTypes, plugin))
@@ -109,6 +111,13 @@ class CharacterActionAddCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendActionBar(ClickTypes clickTypes, CharacterPlugin plugin) {
         return Commands.literal("send-actionbar").then(messageArgument(plugin.sendActionbar, clickTypes, plugin));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> sendEntityEffect(ClickTypes clickTypes, CharacterPlugin plugin) {
+        return Commands.literal("send-entity-effect").then(entityEffectArgument(plugin).executes(context -> {
+            var entityEffect = context.getArgument("entity-effect", EntityEffect.class);
+            return addAction(context, plugin.sendEntityEffect, entityEffect, clickTypes, plugin);
+        }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendMessage(ClickTypes clickTypes, CharacterPlugin plugin) {
@@ -204,6 +213,11 @@ class CharacterActionAddCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> clickTypesArgument(CharacterPlugin plugin) {
         return Commands.argument("click-types", new EnumArgument<>(ClickTypes.class));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> entityEffectArgument(CharacterPlugin plugin) {
+        return Commands.argument("entity-effect", new EnumArgument<>(EntityEffect.class, (context, entityEffect) ->
+                !entityEffect.getClass().isAnnotationPresent(Deprecated.class)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> positionArgument(CharacterPlugin plugin) {

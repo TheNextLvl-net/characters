@@ -24,7 +24,7 @@ public class EntityListener implements Listener {
         if (!event.getHand().equals(EquipmentSlot.HAND)) return;
         plugin.characterController().getCharacter(event.getRightClicked()).ifPresent(character -> {
             var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_RIGHT : ClickType.RIGHT;
-            var characterEvent = new PlayerClickCharacterEvent(character, event.getPlayer(), type);
+            var characterEvent = new PlayerClickCharacterEvent(character, event.getRightClicked(), event.getPlayer(), type);
             characterEvent.callEvent();
             event.setCancelled(true);
         });
@@ -34,7 +34,7 @@ public class EntityListener implements Listener {
     public void onPrePlayerAttackEntityLowest(PrePlayerAttackEntityEvent event) {
         plugin.characterController().getCharacter(event.getAttacked()).ifPresent(character -> {
             var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
-            var characterEvent = new PlayerClickCharacterEvent(character, event.getPlayer(), type);
+            var characterEvent = new PlayerClickCharacterEvent(character, event.getAttacked(), event.getPlayer(), type);
             event.setCancelled(!characterEvent.callEvent());
         });
     }

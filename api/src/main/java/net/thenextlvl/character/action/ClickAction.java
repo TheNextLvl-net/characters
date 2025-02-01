@@ -1,5 +1,6 @@
 package net.thenextlvl.character.action;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -55,10 +56,10 @@ public class ClickAction<T> {
         return permission;
     }
 
-    public boolean invoke(Player player) {
+    public boolean invoke(Player player, Entity character) {
         if (!canInvoke(player)) return false;
         if (cooldown.isPositive()) cooldowns.put(player, System.currentTimeMillis());
-        actionType.invoke(player, input);
+        actionType.action().invoke(player, character, input);
         return true;
     }
 

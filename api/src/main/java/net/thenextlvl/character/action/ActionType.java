@@ -1,5 +1,6 @@
 package net.thenextlvl.character.action;
 
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
@@ -9,5 +10,9 @@ public interface ActionType<T> {
 
     String name();
 
-    void invoke(Player player, T input);
+    Action<T> action();
+
+    interface Action<T> {
+        void invoke(Player player, Entity character, T input);
+    }
 }

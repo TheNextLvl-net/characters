@@ -10,6 +10,6 @@ public class CharacterListener implements Listener {
     public void onPlayerCharacterClick(PlayerClickCharacterEvent event) {
         event.getCharacter().getActions().values().stream()
                 .filter(action -> action.isSupportedClickType(event.getType()))
-                .forEach(action -> action.invoke(event.getPlayer()));
+                .forEach(action -> action.invoke(event.getPlayer(), event.getClickedEntity()));
     }
 }

@@ -10,7 +10,6 @@ import core.nbt.serialization.adapter.EnumAdapter;
 import core.nbt.tag.CompoundTag;
 import core.paper.messenger.PluginMessenger;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -56,13 +55,13 @@ import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
+import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Display.Brightness;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Frog;
@@ -108,6 +107,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .registerTypeHierarchyAdapter(Color.class, new ColorAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
             .registerTypeHierarchyAdapter(DyeColor.class, new EnumAdapter<>(DyeColor.class))
+            .registerTypeHierarchyAdapter(EntityEffect.class, new EnumAdapter<>(EntityEffect.class))
             .registerTypeHierarchyAdapter(EntityType.class, new EntityTypeAdapter())
             .registerTypeHierarchyAdapter(Fox.Type.class, new EnumAdapter<>(Fox.Type.class))
             .registerTypeHierarchyAdapter(Frog.Variant.class, new FrogVariantAdapter())
@@ -131,17 +131,26 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
     private final PluginMessenger messenger = new PluginMessenger(this);
 
-    public final ActionType<Component> sendActionbar = register(new PaperActionType<>("send_actionbar", Component.class, Audience::sendActionBar));
-    public final ActionType<Component> sendMessage = register(new PaperActionType<>("send_message", Component.class, Audience::sendMessage));
+    public final ActionType<Component> sendActionbar = register(new PaperActionType<>("send_actionbar", Component.class,
+            (player, character, message) -> player.sendActionBar(message)));
+    public final ActionType<Component> sendMessage = register(new PaperActionType<>("send_message", Component.class,
+            (player, character, message) -> player.sendMessage(message)));
+    public final ActionType<EntityEffect> sendEntityEffect = register(new PaperActionType<>("send_message", EntityEffect.class,
+            (player, character, entityEffect) -> player.sendEntityEffect(entityEffect, character)));
     public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
-            (player, address) -> player.transfer(address.getHostName(), address.getPort())));
-    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Location.class, Entity::teleportAsync)));
-    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Sound.class, Audience::playSound));
+            (player, character, address) -> player.transfer(address.getHostName(), address.getPort())));
+    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Location.class,
+            (player, character, location) -> player.teleportAsync(location))));
+    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Sound.class,
+            (player, character, sound) -> player.playSound(sound)));
     public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", String.class,
-            (player, command) -> player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
-    public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", String.class, Player::performCommand));
-    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Title.class, Audience::showTitle));
-    public final ActionType<String> connect = register(new PaperActionType<>("connect", String.class, messenger::connect));
+            (player, character, command) -> player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
+    public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", String.class,
+            (player, character, command) -> player.performCommand(command)));
+    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Title.class,
+            (player, character, title) -> player.showTitle(title)));
+    public final ActionType<String> connect = register(new PaperActionType<>("connect", String.class,
+            (player, character, server) -> messenger.connect(player, server)));
 
     private final ComponentBundle bundle = new ComponentBundle(translations,
             audience -> audience instanceof Player player ? player.locale() : Locale.US)

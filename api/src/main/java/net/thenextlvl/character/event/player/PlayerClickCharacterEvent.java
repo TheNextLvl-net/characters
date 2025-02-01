@@ -2,6 +2,7 @@ package net.thenextlvl.character.event.player;
 
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickType;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.jspecify.annotations.NullMarked;
@@ -9,10 +10,12 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class PlayerClickCharacterEvent extends PlayerCharacterEvent implements Cancellable {
     private final ClickType type;
+    private final Entity clickedEntity;
     private boolean cancelled;
 
-    public PlayerClickCharacterEvent(Character<?> character, Player player, ClickType type) {
+    public PlayerClickCharacterEvent(Character<?> character, Entity clickedEntity, Player player, ClickType type) {
         super(character, player);
+        this.clickedEntity = clickedEntity;
         this.type = type;
     }
 
@@ -23,6 +26,15 @@ public class PlayerClickCharacterEvent extends PlayerCharacterEvent implements C
      */
     public ClickType getType() {
         return type;
+    }
+
+    /**
+     * Retrieves the entity clicked during the event.
+     *
+     * @return the {@code Entity} that was interacted with
+     */
+    public Entity getClickedEntity() {
+        return clickedEntity;
     }
 
     @Override
