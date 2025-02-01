@@ -6,6 +6,7 @@ import core.io.IO;
 import core.nbt.NBTInputStream;
 import core.nbt.serialization.NBT;
 import core.nbt.serialization.ParserException;
+import core.nbt.serialization.adapter.EnumAdapter;
 import core.nbt.tag.CompoundTag;
 import core.paper.messenger.PluginMessenger;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -33,7 +34,6 @@ import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.listener.test;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
-import net.thenextlvl.character.plugin.serialization.AddressAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
 import net.thenextlvl.character.plugin.serialization.BrightnessAdapter;
 import net.thenextlvl.character.plugin.serialization.CatVariantAdapter;
@@ -41,9 +41,7 @@ import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
 import net.thenextlvl.character.plugin.serialization.ClickActionAdapter;
 import net.thenextlvl.character.plugin.serialization.ColorAdapter;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
-import net.thenextlvl.character.plugin.serialization.DurationAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
-import net.thenextlvl.character.plugin.serialization.EnumAdapter;
 import net.thenextlvl.character.plugin.serialization.FrogVariantAdapter;
 import net.thenextlvl.character.plugin.serialization.ItemStackAdapter;
 import net.thenextlvl.character.plugin.serialization.KeyAdapter;
@@ -84,7 +82,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -110,12 +107,10 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .registerTypeHierarchyAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(Color.class, new ColorAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
-            .registerTypeHierarchyAdapter(Duration.class, new DurationAdapter())
             .registerTypeHierarchyAdapter(DyeColor.class, new EnumAdapter<>(DyeColor.class))
             .registerTypeHierarchyAdapter(EntityType.class, new EntityTypeAdapter())
             .registerTypeHierarchyAdapter(Fox.Type.class, new EnumAdapter<>(Fox.Type.class))
             .registerTypeHierarchyAdapter(Frog.Variant.class, new FrogVariantAdapter())
-            .registerTypeHierarchyAdapter(InetSocketAddress.class, new AddressAdapter())
             .registerTypeHierarchyAdapter(ItemStack.class, new ItemStackAdapter())
             .registerTypeHierarchyAdapter(Key.class, new KeyAdapter())
             .registerTypeHierarchyAdapter(Location.class, new LocationAdapter())
