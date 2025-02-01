@@ -69,7 +69,7 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     <T> boolean setAttributeValue(AttributeType<?, T> type, T value);
 
-    <V extends Entity, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type);
+    <V, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type);
 
     @Nullable
     World getWorld();

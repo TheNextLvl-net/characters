@@ -44,7 +44,6 @@ import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Vector3f;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -194,15 +193,13 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends Entity, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type) {
+    public <V, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type) {
         return attributes.stream()
                 .filter(attribute -> attribute.getType().equals(type))
                 .map(attribute -> (Attribute<V, T>) attribute)
                 .findAny().or(() -> {
-                    var entityClass = this.type.getEntityClass();
-                    if (entityClass == null || !type.entityType().isAssignableFrom(entityClass))
-                        return Optional.empty();
-                    var attribute = new PaperAttribute<>(type, (Character<@NonNull V>) this, plugin);
+                    if (!type.isApplicable(this)) return Optional.empty();
+                    var attribute = new PaperAttribute<>(type, this, plugin);
                     attributes.add(attribute);
                     return Optional.of(attribute);
                 });

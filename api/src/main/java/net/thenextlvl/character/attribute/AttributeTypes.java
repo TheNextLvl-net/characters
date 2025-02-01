@@ -22,6 +22,7 @@ import org.bukkit.entity.Frog;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Tameable;
 import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
@@ -44,6 +45,7 @@ public class AttributeTypes {
     public static final CatAttributes CAT = new CatAttributes();
     public static final CollarColorableAttributes COLLAR_COLORABLE = new CollarColorableAttributes();
     public static final CreeperAttributes CREEPER = new CreeperAttributes();
+    public static final EndermanAttributes ENDERMAN = new EndermanAttributes();
     public static final EntityAttributes ENTITY = new EntityAttributes();
     public static final FrogAttributes FROG = new FrogAttributes();
     public static final LivingEntityAttributes LIVING_ENTITY = new LivingEntityAttributes();
@@ -291,11 +293,10 @@ public class AttributeTypes {
     }
 
     public static class SittableAttributes {
-        // todo: sittable doesn't extend any entity class at the moment, waiting for pr being merge
-        // public final AttributeType<Sittable, Boolean> SITTING = register(
-        //      "sitting", Sittable.class, boolean.class,
-        //      Sittable::isSitting, Sittable::setSitting
-        // );
+        public final AttributeType<Sittable, Boolean> SITTING = register(
+                "sitting", Sittable.class, boolean.class,
+                Sittable::isSitting, Sittable::setSitting
+        );
     }
 
     public static class TameableAttributes {
@@ -304,14 +305,14 @@ public class AttributeTypes {
         );
     }
 
-    public static <E extends Entity, T> AttributeType<E, @Nullable T> registerNullable(
+    public static <E, T> AttributeType<E, @Nullable T> registerNullable(
             @KeyPattern String key, Class<E> entityType, Class<T> dataType,
             Function<E, @Nullable T> getter, BiConsumer<E, @Nullable T> setter
     ) {
         return register(key, entityType, dataType, getter, setter);
     }
 
-    public static <E extends Entity, T> AttributeType<E, T> register(
+    public static <E, T> AttributeType<E, T> register(
             @KeyPattern String key, Class<E> entityType, Class<T> dataType,
             Function<E, T> getter, BiConsumer<E, T> setter
     ) {

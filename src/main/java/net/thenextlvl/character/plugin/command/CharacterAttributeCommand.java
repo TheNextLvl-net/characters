@@ -105,12 +105,12 @@ class CharacterAttributeCommand {
         throw new IllegalArgumentException("Unexpected attribute type: " + type.getName());
     }
 
-    private static <T> ArgumentBuilder<CommandSourceStack, ?> resetAttribute(AttributeType<?, T> attribute, CharacterPlugin plugin) {
+    private static <E, T> ArgumentBuilder<CommandSourceStack, ?> resetAttribute(AttributeType<E, T> attribute, CharacterPlugin plugin) {
         // todo: reset attribute to default value
         return Commands.literal(attribute.key().asString());
     }
 
-    private static <T> ArgumentBuilder<CommandSourceStack, ?> setAttribute(AttributeType<?, T> attribute, CharacterPlugin plugin) {
+    private static <E, T> ArgumentBuilder<CommandSourceStack, ?> setAttribute(AttributeType<E, T> attribute, CharacterPlugin plugin) {
         var argument = Commands.argument("value", getArgumentType(attribute.dataType()));
         return Commands.literal(attribute.key().asString()).then(argument.executes(context -> {
             var value = context.getArgument("value", attribute.dataType());

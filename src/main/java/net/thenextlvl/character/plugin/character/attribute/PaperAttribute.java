@@ -7,23 +7,22 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import org.bukkit.entity.Entity;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
-public class PaperAttribute<E extends Entity, T> implements Attribute<@NonNull E, T> {
+public class PaperAttribute<E, T> implements Attribute<@NonNull E, T> {
     private final @NonNull AttributeType<@NonNull E, T> type;
-    private final @NonNull Character<@NonNull E> character;
+    private final @NonNull Character<?> character;
     private final @NonNull CharacterPlugin plugin;
     private T value;
 
     public PaperAttribute(
-            @NonNull AttributeType<@NonNull E, T> type,
-            @NonNull Character<@NonNull E> character,
+            @NonNull AttributeType<E, T> type,
+            @NonNull Character<?> character,
             @NonNull CharacterPlugin plugin
     ) {
-        character.getEntity().ifPresent(entity -> this.value = type.get(entity));
+        character.getEntity(type.entityType()).ifPresent(entity -> this.value = type.get(entity));
         this.character = character;
         this.plugin = plugin;
         this.type = type;
@@ -42,8 +41,8 @@ public class PaperAttribute<E extends Entity, T> implements Attribute<@NonNull E
     @Override
     public boolean setValue(T value) {
         if (Objects.equals(this.getValue(), value)) return false;
+        character.getEntity(type.entityType()).ifPresent(entity -> type.set(entity, value));
         this.value = value;
-        character.getEntity().ifPresent(entity -> type.set(entity, value));
         return true;
     }
 

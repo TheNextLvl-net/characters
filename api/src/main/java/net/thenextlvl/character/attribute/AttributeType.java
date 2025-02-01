@@ -3,27 +3,29 @@ package net.thenextlvl.character.attribute;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
-import org.bukkit.entity.Entity;
+import net.thenextlvl.character.Character;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-public class AttributeType<E extends Entity, T> implements Keyed {
+public class AttributeType<E, T> implements Keyed {
     private final @NonNull BiConsumer<@NonNull E, T> setter;
-    private final @NonNull Class<@NonNull E> entityType;
+    private final @NonNull Class<E> entityType;
     private final @NonNull Class<T> dataType;
     private final @NonNull Function<@NonNull E, T> getter;
     private final @NonNull Key key;
 
-    public AttributeType(@KeyPattern String key, @NonNull Class<@NonNull E> entityType, @NonNull Class<T> dataType,
-                         @NonNull Function<@NonNull E, T> getter, @NonNull BiConsumer<@NonNull E, T> setter) {
+    public AttributeType(@KeyPattern String key, @NonNull Class<E> entityType, @NonNull Class<T> dataType,
+                         @NonNull Function<@NonNull E, T> getter,
+                         @NonNull BiConsumer<@NonNull E, T> setter) {
         this(Key.key(key), entityType, dataType, getter, setter);
     }
 
-    public AttributeType(@NonNull Key key, @NonNull Class<@NonNull E> entityType, @NonNull Class<T> dataType,
-                         @NonNull Function<@NonNull E, T> getter, @NonNull BiConsumer<@NonNull E, T> setter) {
+    public AttributeType(@NonNull Key key, @NonNull Class<E> entityType, @NonNull Class<T> dataType,
+                         @NonNull Function<@NonNull E, T> getter,
+                         @NonNull BiConsumer<@NonNull E, T> setter) {
         this.dataType = dataType;
         this.entityType = entityType;
         this.getter = getter;
@@ -31,7 +33,7 @@ public class AttributeType<E extends Entity, T> implements Keyed {
         this.setter = setter;
     }
 
-    public void set(E entity, T value) {
+    public void set(@NonNull E entity, T value) {
         setter.accept(entity, value);
     }
 
@@ -39,17 +41,22 @@ public class AttributeType<E extends Entity, T> implements Keyed {
         return getter.apply(entity);
     }
 
-    public @NonNull Class<E> entityType() {
-        return entityType;
-    }
-
     public @NonNull Class<T> dataType() {
         return dataType;
+    }
+
+    public @NonNull Class<E> entityType() {
+        return entityType;
     }
 
     @Override
     public @NonNull Key key() {
         return key;
+    }
+
+    public boolean isApplicable(@NonNull Character<?> character) {
+        var entityClass = character.getType().getEntityClass();
+        return entityClass != null && entityType.isAssignableFrom(entityClass);
     }
 
     @Override
@@ -65,7 +72,7 @@ public class AttributeType<E extends Entity, T> implements Keyed {
     }
 
     @Override
-    public @NonNull String toString() {
+    public String toString() {
         return "AttributeType{" +
                "entityType=" + entityType +
                ", dataType=" + dataType +
