@@ -2,6 +2,7 @@ package net.thenextlvl.character.attribute;
 
 import io.papermc.paper.entity.CollarColorable;
 import io.papermc.paper.util.Tick;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -28,6 +29,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -51,6 +53,10 @@ public class AttributeTypes {
 
     public static Set<AttributeType<?, ?>> types() {
         return Set.copyOf(attributeTypes);
+    }
+
+    public static Optional<AttributeType<?, ?>> getByKey(Key key) {
+        return attributeTypes.stream().filter(type -> type.key().equals(key)).findAny();
     }
 
     public static class AgeableAttributes {
