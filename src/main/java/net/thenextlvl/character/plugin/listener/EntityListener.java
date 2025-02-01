@@ -5,10 +5,13 @@ import net.thenextlvl.character.action.ClickType;
 import net.thenextlvl.character.attribute.AttributeTypes;
 import net.thenextlvl.character.event.player.PlayerClickCharacterEvent;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import org.bukkit.GameRule;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
@@ -51,5 +54,20 @@ public class EntityListener implements Listener {
         plugin.characterController().getCharacter(event.getEntity())
                 .flatMap(character -> character.getAttributeValue(AttributeTypes.ENTITY.INVULNERABLE))
                 .ifPresent(event::setCancelled);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onEntityDeath(EntityDeathEvent event) {
+        plugin.characterController().getCharacter(event.getEntity()).ifPresent(character -> {
+            if (!Boolean.TRUE.equals(event.getEntity().getWorld().getGameRuleValue(GameRule.DO_IMMEDIATE_RESPAWN))) {
+                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.spawn(), 75);
+                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.despawn(), 20);
+            } else character.respawn();
+        });
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        plugin.characterController().getCharacter(event.getEntity()).ifPresent(character -> event.deathMessage(null));
     }
 }
