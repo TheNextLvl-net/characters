@@ -208,6 +208,11 @@ public class AttributeTypes {
                 Entity::isInvulnerable, Entity::setInvulnerable
         );
 
+        public final AttributeType<Entity, Boolean> PHYSICS = register(
+                "entity:physics", Entity.class, boolean.class,
+                entity -> !entity.hasNoPhysics(), (entity, physics) ->  entity.setNoPhysics(!physics)
+        );
+
         public final AttributeType<Entity, Pose> POSE = register(
                 "entity:pose", Entity.class, Pose.class,
                 Entity::getPose, (entity, pose) -> entity.setPose(pose, true)
