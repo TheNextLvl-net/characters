@@ -296,7 +296,7 @@ public class AttributeTypes {
 
     public static class SittableAttributes {
         public final AttributeType<Sittable, Boolean> SITTING = register(
-                "sitting", Sittable.class, boolean.class,
+                "sittable:sitting", Sittable.class, boolean.class,
                 Sittable::isSitting, Sittable::setSitting
         );
     }
