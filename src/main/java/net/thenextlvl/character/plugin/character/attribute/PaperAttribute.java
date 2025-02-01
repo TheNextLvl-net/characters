@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.character.attribute;
 
+import com.google.common.base.Preconditions;
 import core.nbt.serialization.ParserException;
 import core.nbt.tag.Tag;
 import net.thenextlvl.character.Character;
@@ -48,6 +49,7 @@ public class PaperAttribute<E extends Entity, T> implements Attribute<@NonNull E
 
     @Override
     public @NonNull Tag serialize() throws ParserException {
+        Preconditions.checkNotNull(value, "Cannot serialize attribute with null value");
         return plugin.nbt().toTag(value);
     }
 
