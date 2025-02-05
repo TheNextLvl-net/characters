@@ -31,7 +31,6 @@ import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
-import net.thenextlvl.character.plugin.listener.test;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
 import net.thenextlvl.character.plugin.serialization.BrightnessAdapter;
@@ -244,8 +243,6 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         getServer().getPluginManager().registerEvents(new CharacterListener(), this);
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
-
-        getServer().getPluginManager().registerEvents(new test(this), this);
     }
 
     private @Nullable Character<?> readSafe(File file) {
