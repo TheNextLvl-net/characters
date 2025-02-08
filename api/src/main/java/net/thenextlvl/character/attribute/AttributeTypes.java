@@ -282,6 +282,11 @@ public class AttributeTypes {
     }
 
     public static class LivingEntityAttributes {
+        public final AttributeType<LivingEntity, Boolean> AI = register(
+                "living_entity:ai", LivingEntity.class, boolean.class,
+                LivingEntity::hasAI, LivingEntity::setAI
+        );
+
         public final AttributeType<LivingEntity, Integer> ARROWS_IN_BODY = register(
                 "living_entity:arrows_in_body", LivingEntity.class, int.class,
                 LivingEntity::getArrowsInBody, LivingEntity::setArrowsInBody
