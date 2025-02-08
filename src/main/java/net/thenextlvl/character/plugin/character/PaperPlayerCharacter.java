@@ -133,7 +133,10 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         preSpawn(this.entity);
         applySkinPartConfig(serverPlayer);
-        startTicking(serverPlayer);
+        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
+            if (entity == null) scheduledTask.cancel();
+            else if (serverPlayer.valid) serverPlayer.doTick();
+        }, 1, 1);
         return true;
     }
 
@@ -297,21 +300,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         ((CraftPlayer) player).getHandle().connection.send(packet);
     }
 
-    @Override
-    public boolean setTicking(boolean ticking) {
-        if (!super.setTicking(ticking)) return false;
-        getEntity(CraftPlayer.class).map(CraftPlayer::getHandle)
-                .ifPresent(this::startTicking);
-        return true;
-    }
-
-    private void startTicking(ServerPlayer serverPlayer) {
-        if (ticking) plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
-            if (!ticking || entity == null) scheduledTask.cancel();
-            else if (serverPlayer.valid) serverPlayer.doTick();
-        }, 1, 1);
-    }
-
     private boolean update() {
         if (entity == null) return false;
         var handle = ((CraftPlayer) entity).getHandle();
@@ -333,7 +321,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     public class ServerCharacter extends ServerPlayer {
         public ServerCharacter(MinecraftServer server, ServerLevel level, ClientInformation information, CommonListenerCookie cookie) {
             super(server, level, profile.getGameProfile(), information);
-            this.connection = new EmptyPacketListener(PaperPlayerCharacter.this, server, this, cookie);
+            this.connection = new EmptyPacketListener(server, this, cookie);
         }
 
         @Override
@@ -366,33 +354,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             return net.minecraft.network.chat.Component.literal("[NPC] ")
                     .append(PaperPlayerCharacter.this.getName())
                     .withColor(getTeamColor());
-        }
-
-        @Override
-        public void setPos(double x, double y, double z) {
-            super.setPos(x, y, z);
-            updateDisplayNameHologramPosition();
-        }
-
-        @Override
-        public boolean isAlwaysTicking() {
-            return ticking;
-        }
-
-        @Override
-        public boolean isTicking() {
-            return ticking;
-        }
-
-        @Override
-        public void tick() {
-            refreshDimensions();
-            if (isTicking()) super.tick();
-        }
-
-        @Override
-        public void doTick() {
-            if (isTicking()) super.doTick();
         }
     }
 }

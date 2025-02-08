@@ -5,7 +5,6 @@ import net.minecraft.network.PacketListener;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
-import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -13,11 +12,8 @@ import java.net.SocketAddress;
 
 @NullMarked
 class EmptyConnection extends Connection {
-    private final PaperPlayerCharacter character;
-
-    public EmptyConnection(PaperPlayerCharacter character) {
+    public EmptyConnection() {
         super(PacketFlow.CLIENTBOUND);
-        this.character = character;
         this.channel = new EmptyChannel();
         this.address = new SocketAddress() {
         };
@@ -53,10 +49,5 @@ class EmptyConnection extends Connection {
     @Override
     public boolean isConnecting() {
         return false;
-    }
-
-    @Override
-    public void tick() {
-        if (character.isTicking()) super.tick();
     }
 }

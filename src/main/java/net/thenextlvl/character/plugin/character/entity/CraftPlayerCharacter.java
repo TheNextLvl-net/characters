@@ -1,6 +1,5 @@
 package net.thenextlvl.character.plugin.character.entity;
 
-import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import org.bukkit.craftbukkit.CraftServer;
@@ -21,16 +20,6 @@ public class CraftPlayerCharacter extends CraftPlayer {
         if (isCollidable() == collidable) return;
         super.setCollidable(collidable);
         character.updateTeamOptions();
-    }
-
-    @Override
-    public void setVisualFire(boolean fire) {
-        if (isVisualFire() == fire) return;
-        super.setVisualFire(fire);
-        if (isTicking()) return;
-        getHandle().setSharedFlagOnFire(fire);
-        var update = new ClientboundSetEntityDataPacket(getEntityId(), getHandle().getEntityData().packAll());
-        getTrackedBy().forEach(player -> character.sendPacket(player, update));
     }
 
     @Override

@@ -95,7 +95,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected boolean displayNameVisible = true;
     protected boolean pathfinding = false;
     protected boolean persistent = true;
-    protected boolean ticking = false;
     protected boolean visibleByDefault = true;
 
     protected double scale = 1;
@@ -282,11 +281,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public boolean isTicking() {
-        return ticking;
-    }
-
-    @Override
     public boolean isTrackedBy(Player player) {
         return getEntity().map(entity -> entity.getTrackedBy().contains(player)).orElse(false);
     }
@@ -423,14 +417,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public boolean setTicking(boolean ticking) {
-        if (ticking == this.ticking) return false;
-        this.ticking = ticking;
-        // todo: use custom entity impl to make this possible
-        return true;
-    }
-
-    @Override
     public boolean setViewPermission(@Nullable String permission) {
         if (Objects.equals(permission, viewPermission)) return false;
         this.viewPermission = permission;
@@ -505,7 +491,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         tag.add("pathfinding", pathfinding);
         tag.add("scale", scale);
         tag.add("tagOptions", tagOptions.serialize());
-        tag.add("ticking", ticking);
         tag.add("type", plugin.nbt().toTag(type));
         tag.add("visibleByDefault", visibleByDefault);
         var actions = new CompoundTag();
@@ -535,7 +520,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         root.optional("scale").map(Tag::getAsDouble).ifPresent(this::setScale);
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
         root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
-        root.optional("ticking").map(Tag::getAsBoolean).ifPresent(this::setTicking);
         root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
     }

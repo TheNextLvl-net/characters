@@ -61,8 +61,7 @@ class CharacterAttributeCommand {
                 .then(resetListed(plugin))
                 .then(resetPathfinding(plugin))
                 .then(resetScale(plugin))
-                .then(resetTeamColor(plugin))
-                .then(resetTicking(plugin)));
+                .then(resetTeamColor(plugin)));
                  */
     }
 
@@ -78,8 +77,7 @@ class CharacterAttributeCommand {
                 .then(setListed(plugin))
                 .then(setPathfinding(plugin))
                 .then(setScale(plugin))
-                .then(setTeamColor(plugin))
-                .then(setTicking(plugin)));
+                .then(setTeamColor(plugin)));
                  */
     }
 
@@ -175,10 +173,6 @@ class CharacterAttributeCommand {
         return reset("team-color", character -> character.setTeamColor(null), Character::getTeamColor, plugin);
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> resetTicking(CharacterPlugin plugin) {
-        return reset("ticking", character -> character.setTicking(false), Character::isTicking, plugin);
-    }
-
     private static ArgumentBuilder<CommandSourceStack, ?> setAI(CharacterPlugin plugin) {
         return attribute("ai", Character::setAI, plugin);
     }
@@ -211,9 +205,5 @@ class CharacterAttributeCommand {
                             character -> color, plugin);
                     return success ? Command.SINGLE_SUCCESS : 0;
                 }));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> setTicking(CharacterPlugin plugin) {
-        return attribute("ticking", Character::setTicking, plugin);
     }
 }

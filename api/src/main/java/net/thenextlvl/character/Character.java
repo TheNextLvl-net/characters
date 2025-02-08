@@ -98,8 +98,6 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     boolean isSpawned();
 
-    boolean isTicking();
-
     boolean isTrackedBy(Player player);
 
     boolean isViewer(UUID player);
@@ -133,8 +131,6 @@ public interface Character<E extends Entity> extends TagSerializable {
     boolean setSpawnLocation(@Nullable Location location);
 
     boolean setTeamColor(@Nullable NamedTextColor color);
-
-    boolean setTicking(boolean ticking);
 
     boolean setViewPermission(@Nullable String permission);
 
