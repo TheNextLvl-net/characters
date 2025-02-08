@@ -403,7 +403,7 @@ public class AttributeTypes {
 
         public final AttributeType<Entity, Boolean> GRAVITY = register(
                 "entity:gravity", Entity.class, boolean.class,
-                entity -> false, Entity::setGravity
+                Entity::hasGravity, Entity::setGravity
         );
 
         public final AttributeType<Entity, Boolean> INVISIBLE = register(
@@ -413,7 +413,7 @@ public class AttributeTypes {
 
         public final AttributeType<Entity, Boolean> INVULNERABLE = register(
                 "entity:invulnerable", Entity.class, boolean.class,
-                entity -> true, Entity::setInvulnerable
+                Entity::isInvulnerable, Entity::setInvulnerable
         );
 
         public final AttributeType<Entity, Boolean> PHYSICS = register(
@@ -433,7 +433,7 @@ public class AttributeTypes {
 
         public final AttributeType<Entity, Boolean> SILENT = register(
                 "entity:silent", Entity.class, boolean.class,
-                entity -> true, Entity::setSilent
+                Entity::isSilent, Entity::setSilent
         );
 
         public final AttributeType<Entity, Boolean> SNEAKING = register(
@@ -474,7 +474,7 @@ public class AttributeTypes {
     public static class LivingEntityAttributes {
         public final AttributeType<LivingEntity, Boolean> AI = register(
                 "living_entity:ai", LivingEntity.class, boolean.class,
-                livingEntity -> false, LivingEntity::setAI
+                LivingEntity::hasAI, LivingEntity::setAI
         );
 
         public final AttributeType<LivingEntity, Integer> ARROWS_IN_BODY = register(
