@@ -43,6 +43,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Unmodifiable;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -67,6 +68,7 @@ import java.util.UUID;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
+import static org.bukkit.attribute.Attribute.MAX_HEALTH;
 import static org.bukkit.attribute.Attribute.SCALE;
 
 @NullMarked
@@ -87,7 +89,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable String viewPermission = null;
-    protected @Nullable TextDisplay displayNameHologram;
+    protected @Nullable TextDisplay textDisplayName;
 
     protected Pose pose = Pose.STANDING;
 
@@ -238,7 +240,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public boolean despawn() {
         if (entity == null) return false;
-        removeDisplayNameHologram();
+        removeTextDisplayName();
         entity.remove();
         entity = null;
         return true;
@@ -351,7 +353,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public boolean setDisplayName(@Nullable Component displayName) {
         if (Objects.equals(displayName, this.displayName)) return false;
         this.displayName = displayName;
-        getEntity().ifPresent(this::updateDisplayName);
+        textDisplayName().ifPresent(this::updateTextDisplayNameText);
         return true;
     }
 
@@ -359,7 +361,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public boolean setDisplayNameVisible(boolean visible) {
         if (visible == displayNameVisible) return false;
         this.displayNameVisible = visible;
-        getEntity().ifPresent(this::updateDisplayName);
+        getEntity().ifPresent(this::updateTextDisplayName);
         return true;
     }
 
@@ -398,7 +400,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public boolean setTeamColor(@Nullable NamedTextColor color) {
         if (color == this.teamColor) return false;
         this.teamColor = color;
-        getEntity().ifPresent(this::updateDisplayName);
+        textDisplayName().ifPresent(this::updateTextDisplayNameText);
+        getEntity().ifPresent(this::updateTeamOptions);
         return true;
     }
 
@@ -508,7 +511,23 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
     }
 
+    private Optional<TextDisplay> textDisplayName() {
+        return Optional.ofNullable(textDisplayName);
+    }
+
     protected void preSpawn(E entity) {
+        entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
+        entity.setVisibleByDefault(visibleByDefault);
+        entity.lockFreezeTicks(true);
+        entity.setInvulnerable(true);
+        entity.setPersistent(false);
+        entity.setSilent(true);
+
+        attributes.forEach(attribute -> {
+            @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
+            casted.getType().set(entity, attribute.getValue());
+        });
+
         if (entity instanceof AreaEffectCloud cloud) {
             cloud.setDuration(Tick.tick().fromDuration(Duration.ofDays(999)));
         }
@@ -523,36 +542,19 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
                     living.getEquipment().setItem(slot, item, true));
             living.setCanPickupItems(false);
+            var instance = living.getAttribute(MAX_HEALTH);
+            if (instance != null) living.setHealth(instance.getValue());
         }
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
             updatePathfinderGoals(mob);
         }
-        entity.lockFreezeTicks(true);
-        entity.setInvulnerable(true);
-        entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
-        entity.setPersistent(false);
-        entity.setSilent(true);
-        entity.setVisibleByDefault(visibleByDefault);
-        attributes.forEach(attribute -> {
-            @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
-            casted.getType().set(entity, attribute.getValue());
-        });
         if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers().forEach(player -> {
             if (canSee(player)) player.showEntity(plugin, entity);
             else player.hideEntity(plugin, entity);
         });
-        updateDisplayName(entity);
-    }
-
-    protected void updateDisplayName(E entity) {
-        updateDisplayNameHologram(entity);
-        updateTeamOptions();
-    }
-
-    protected void updateDisplayNameHologramPosition() {
-        if (displayNameHologram == null || entity == null) return;
-        displayNameHologram.teleport(getDisplayNameHologramPosition(entity));
+        updateTextDisplayName(entity);
+        updateTeamOptions(entity);
     }
 
     protected void updatePathfinderGoals(Mob mob) {
@@ -567,29 +569,13 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         return characterSettings;
     }
 
-    protected Location getDisplayNameHologramPosition(E entity) {
-        var location = entity.getLocation().clone();
-        var incrementor = switch (getAttributeValue(AttributeTypes.ENTITY.POSE).orElse(Pose.STANDING)) {
-            case SNEAKING -> 0.15;
-            default -> 0.27;
-        };
-        location.setY(entity.getBoundingBox().getMaxY() + incrementor);
-        return location;
+    protected void removeTextDisplayName() {
+        if (textDisplayName == null) return;
+        textDisplayName.remove();
+        textDisplayName = null;
     }
 
-    protected void removeDisplayNameHologram() {
-        if (displayNameHologram == null) return;
-        displayNameHologram.remove();
-        displayNameHologram = null;
-    }
-
-    protected void spawnDisplayNameHologram(E entity) {
-        Preconditions.checkState(displayNameHologram == null, "DisplayNameHologram already spawned");
-        var location = getDisplayNameHologramPosition(entity);
-        displayNameHologram = entity.getWorld().spawn(location, TextDisplay.class, this::updateDisplayNameHologram);
-    }
-
-    protected void updateDisplayNameHologram(TextDisplay display) {
+    private void updateTextDisplayName(TextDisplay display) {
         display.setAlignment(tagOptions.getAlignment());
         display.setBackgroundColor(tagOptions.getBackgroundColor());
         display.setBillboard(tagOptions.getBillboard());
@@ -600,41 +586,51 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         display.setPersistent(false);
         display.setSeeThrough(tagOptions.isSeeThrough());
         display.setShadowed(tagOptions.hasTextShadow());
-        display.setTeleportDuration(3);
-        display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
         display.setTransformation(new Transformation(
-                display.getTransformation().getTranslation(),
-                display.getTransformation().getLeftRotation(),
+                tagOptions.getOffset(),
+                tagOptions.getLeftRotation(),
                 tagOptions.getScale(),
-                display.getTransformation().getRightRotation()
+                tagOptions.getRightRotation()
         ));
         display.setVisibleByDefault(visibleByDefault);
+        updateTextDisplayNameOpacity(display);
+        updateTextDisplayNameText(display);
+    }
+
+    private void updateTextDisplayNameText(TextDisplay display) {
         var component = displayName == null ? Component.text(getName()) : displayName;
         display.text(component.colorIfAbsent(teamColor));
     }
 
-    protected void updateDisplayNameHologram(E entity) {
-        if (displayNameHologram == null && showDisplayNameHologram()) {
-            spawnDisplayNameHologram(entity);
-        } else if (displayNameHologram != null && !showDisplayNameHologram()) {
-            removeDisplayNameHologram();
-        } else if (displayNameHologram != null) {
-            updateDisplayNameHologram(displayNameHologram);
+    private void updateTextDisplayNameOpacity(TextDisplay display) {
+        display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
+    }
+
+    protected void updateTextDisplayName(E entity) {
+        if (textDisplayName == null && showDisplayName()) {
+            textDisplayName = entity.getWorld().spawn(entity.getLocation(), TextDisplay.class, display -> {
+                entity.addPassenger(display);
+                updateTextDisplayName(display);
+            });
+        } else if (textDisplayName != null && !showDisplayName()) {
+            removeTextDisplayName();
+        } else if (textDisplayName != null) {
+            updateTextDisplayName(textDisplayName);
         }
     }
 
-    protected boolean showDisplayNameHologram() {
+    protected boolean showDisplayName() {
         return displayName != null && displayNameVisible;
     }
 
-    public void updateTeamOptions() {
-        if (entity != null) entity.getTrackedBy().forEach(player ->
-                updateTeamOptions(getCharacterSettingsTeam(player)));
+    public void updateTeamOptions(E entity) {
+        entity.getTrackedBy().forEach(player -> updateTeamOptions(getCharacterSettingsTeam(player)));
     }
 
     protected void updateTeamOptions(Team team) {
         team.color(teamColor);
-        var collidable = getAttributeValue(AttributeTypes.LIVING_ENTITY.COLLIDABLE).orElse(true);
+        var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable)
+                .orElse(getAttributeValue(AttributeTypes.LIVING_ENTITY.COLLIDABLE).orElse(false));
         team.setOption(Team.Option.COLLISION_RULE, collidable ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }
@@ -716,7 +712,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         private @Nullable Brightness brightness = null;
         private @Nullable Color backgroundColor = null;
         private Billboard billboard = Billboard.CENTER;
+        private Quaternionf leftRotation = new Quaternionf();
+        private Quaternionf rightRotation = new Quaternionf();
         private TextAlignment alignment = TextAlignment.CENTER;
+        private Vector3f offset = new Vector3f(0, 0.27f, 0);
         private Vector3f scale = new Vector3f(1);
         private boolean defaultBackground = false;
         private boolean seeThrough = false;
@@ -740,8 +739,23 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         }
 
         @Override
+        public Quaternionf getLeftRotation() {
+            return leftRotation;
+        }
+
+        @Override
+        public Quaternionf getRightRotation() {
+            return rightRotation;
+        }
+
+        @Override
         public TextAlignment getAlignment() {
             return alignment;
+        }
+
+        @Override
+        public Vector3f getOffset() {
+            return offset;
         }
 
         @Override
@@ -767,64 +781,112 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         @Override
         public boolean setAlignment(TextAlignment alignment) {
             if (Objects.equals(alignment, this.alignment)) return false;
+            textDisplayName().ifPresent(display -> display.setAlignment(alignment));
             this.alignment = alignment;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
 
         @Override
         public boolean setBackgroundColor(@Nullable Color color) {
             if (Objects.equals(color, this.backgroundColor)) return false;
+            textDisplayName().ifPresent(display -> display.setBackgroundColor(backgroundColor));
             this.backgroundColor = color;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
 
         @Override
         public boolean setBillboard(Billboard billboard) {
             if (Objects.equals(billboard, this.billboard)) return false;
+            textDisplayName().ifPresent(display -> display.setBillboard(billboard));
             this.billboard = billboard;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
 
         @Override
         public boolean setBrightness(@Nullable Brightness brightness) {
             if (Objects.equals(brightness, this.brightness)) return false;
+            textDisplayName().ifPresent(display -> display.setBrightness(brightness));
             this.brightness = brightness;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
 
         @Override
         public boolean setDefaultBackground(boolean enabled) {
             if (enabled == defaultBackground) return false;
+            textDisplayName().ifPresent(display -> display.setDefaultBackground(enabled));
             this.defaultBackground = enabled;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            return true;
+        }
+
+        @Override
+        public boolean setLeftRotation(Quaternionf rotation) {
+            if (Objects.equals(rotation, this.leftRotation)) return false;
+            this.leftRotation = rotation;
+            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
         @Override
         public boolean setLineWidth(int width) {
             if (width == lineWidth) return false;
+            textDisplayName().ifPresent(display -> display.setLineWidth(width));
             this.lineWidth = width;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
 
         @Override
-        public boolean setScale(Vector3f vector3f) {
-            if (Objects.equals(vector3f, this.scale)) return false;
-            this.scale = vector3f;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+        public boolean setOffset(Vector3f offset) {
+            if (Objects.equals(offset, this.offset)) return false;
+            this.offset = offset;
+            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
             return true;
+        }
+
+        @Override
+        public boolean setOffsetX(float offset) {
+            return setOffset(new Vector3f(offset, this.offset.y, this.offset.z));
+        }
+
+        @Override
+        public boolean setOffsetY(float offset) {
+            return setOffset(new Vector3f(this.offset.x, offset, this.offset.z));
+        }
+
+        @Override
+        public boolean setOffsetZ(float offset) {
+            return setOffset(new Vector3f(this.offset.x, this.offset.y, offset));
+        }
+
+        @Override
+        public boolean setRightRotation(Quaternionf rotation) {
+            if (Objects.equals(rotation, this.rightRotation)) return false;
+            this.rightRotation = rotation;
+            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
+            return true;
+        }
+
+        @Override
+        public boolean setScale(Vector3f scale) {
+            if (Objects.equals(scale, this.scale)) return false;
+            this.scale = scale;
+            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
+            return true;
+        }
+
+        private Transformation getTransformation() {
+            return new Transformation(offset, leftRotation, scale, rightRotation);
+        }
+
+        @Override
+        public boolean setScale(float scale) {
+            return setScale(new Vector3f(scale));
         }
 
         @Override
         public boolean setSeeThrough(boolean seeThrough) {
             if (seeThrough == this.seeThrough) return false;
+            textDisplayName().ifPresent(display -> display.setSeeThrough(seeThrough));
             this.seeThrough = seeThrough;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
 
@@ -832,15 +894,15 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         public boolean setTextOpacity(float opacity) {
             if (opacity == textOpacity) return false;
             this.textOpacity = opacity;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
+            textDisplayName().ifPresent(PaperCharacter.this::updateTextDisplayNameOpacity);
             return true;
         }
 
         @Override
         public boolean setTextShadow(boolean enabled) {
             if (enabled == textShadow) return false;
+            textDisplayName().ifPresent(display -> display.setShadowed(enabled));
             this.textShadow = enabled;
-            getEntity().ifPresent(PaperCharacter.this::updateDisplayName);
             return true;
         }
 
@@ -862,7 +924,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             tag.add("alignment", alignment.name());
             tag.add("billboard", billboard.name());
             tag.add("defaultBackground", defaultBackground);
+            tag.add("leftRotation", plugin.nbt().toTag(leftRotation));
             tag.add("lineWidth", lineWidth);
+            tag.add("offset", plugin.nbt().toTag(offset));
+            tag.add("rightRotation", plugin.nbt().toTag(rightRotation));
             tag.add("scale", plugin.nbt().toTag(scale));
             tag.add("seeThrough", seeThrough);
             tag.add("textOpacity", textOpacity);
@@ -876,7 +941,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             root.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
             root.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
             root.optional("defaultBackground").map(Tag::getAsBoolean).ifPresent(this::setDefaultBackground);
+            root.optional("leftRotation").map(t -> plugin.nbt().fromTag(t, Quaternionf.class)).ifPresent(this::setLeftRotation);
             root.optional("lineWidth").map(Tag::getAsInt).ifPresent(this::setLineWidth);
+            root.optional("offset").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setOffset);
+            root.optional("rightRotation").map(t -> plugin.nbt().fromTag(t, Quaternionf.class)).ifPresent(this::setRightRotation);
             root.optional("scale").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setScale);
             root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
             root.optional("textOpacity").map(Tag::getAsFloat).ifPresent(this::setTextOpacity);

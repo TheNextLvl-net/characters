@@ -31,6 +31,7 @@ import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
+import net.thenextlvl.character.plugin.listener.test;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
 import net.thenextlvl.character.plugin.serialization.BrightnessAdapter;
@@ -46,6 +47,7 @@ import net.thenextlvl.character.plugin.serialization.KeyAdapter;
 import net.thenextlvl.character.plugin.serialization.LocationAdapter;
 import net.thenextlvl.character.plugin.serialization.NamedTextColorAdapter;
 import net.thenextlvl.character.plugin.serialization.ProfilePropertyAdapter;
+import net.thenextlvl.character.plugin.serialization.QuaternionfAdapter;
 import net.thenextlvl.character.plugin.serialization.SoundAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
@@ -71,6 +73,7 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.Unmodifiable;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -118,6 +121,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .registerTypeHierarchyAdapter(Pose.class, new EnumAdapter<>(Pose.class))
             .registerTypeHierarchyAdapter(PotionType.class, new EnumAdapter<>(PotionType.class))
             .registerTypeHierarchyAdapter(ProfileProperty.class, new ProfilePropertyAdapter())
+            .registerTypeHierarchyAdapter(Quaternionf.class, new QuaternionfAdapter())
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
             .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
             .registerTypeHierarchyAdapter(Title.class, new TitleAdapter())

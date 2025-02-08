@@ -314,7 +314,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    protected boolean showDisplayNameHologram() {
+    protected boolean showDisplayName() {
         return displayNameVisible;
     }
 

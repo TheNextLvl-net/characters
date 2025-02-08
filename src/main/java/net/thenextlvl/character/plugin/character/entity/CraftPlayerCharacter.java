@@ -19,7 +19,7 @@ public class CraftPlayerCharacter extends CraftPlayer {
     public void setCollidable(boolean collidable) {
         if (isCollidable() == collidable) return;
         super.setCollidable(collidable);
-        character.updateTeamOptions();
+        character.getEntity().ifPresent(character::updateTeamOptions);
     }
 
     @Override

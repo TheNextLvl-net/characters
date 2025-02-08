@@ -22,7 +22,6 @@ import org.bukkit.Color;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.TextDisplay.TextAlignment;
-import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -300,7 +299,7 @@ class CharacterTagCommand {
 
     private static int setScale(CommandContext<CommandSourceStack> context, float scale, CharacterPlugin plugin) {
         var character = context.getArgument("character", Character.class);
-        var success = character.getTagOptions().setScale(new Vector3f(scale));
+        var success = character.getTagOptions().setScale(scale);
         var message = success ? "character.tag.scale" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Formatter.number("value", scale),
