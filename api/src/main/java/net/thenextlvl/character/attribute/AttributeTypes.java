@@ -223,7 +223,7 @@ public class AttributeTypes {
 
         public final AttributeType<Entity, Boolean> PHYSICS = register(
                 "entity:physics", Entity.class, boolean.class,
-                entity -> !entity.hasNoPhysics(), (entity, physics) ->  entity.setNoPhysics(!physics)
+                entity -> !entity.hasNoPhysics(), (entity, physics) -> entity.setNoPhysics(!physics)
         );
 
         public final AttributeType<Entity, Pose> POSE = register(
