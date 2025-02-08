@@ -519,9 +519,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setVisibleByDefault(visibleByDefault);
         entity.lockFreezeTicks(true);
-        entity.setInvulnerable(true);
         entity.setPersistent(false);
-        entity.setSilent(true);
 
         attributes.forEach(attribute -> {
             @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
