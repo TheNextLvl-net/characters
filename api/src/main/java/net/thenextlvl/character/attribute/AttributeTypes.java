@@ -7,6 +7,8 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Particle;
+import org.bukkit.attribute.Attributable;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Allay;
@@ -46,6 +48,7 @@ public class AttributeTypes {
     public static final CatAttributes CAT = new CatAttributes();
     public static final CollarColorableAttributes COLLAR_COLORABLE = new CollarColorableAttributes();
     public static final CreeperAttributes CREEPER = new CreeperAttributes();
+    public static final DamageableAttributes DAMAGEABLE = new DamageableAttributes();
     public static final EndermanAttributes ENDERMAN = new EndermanAttributes();
     public static final EntityAttributes ENTITY = new EntityAttributes();
     public static final FrogAttributes FROG = new FrogAttributes();
@@ -158,6 +161,16 @@ public class AttributeTypes {
                 "damageable:absorption_amount", Damageable.class, double.class,
                 Damageable::getAbsorptionAmount, Damageable::setAbsorptionAmount
         );
+
+        public final AttributeType<Attributable, Double> MAX_HEALTH = register(
+                "damageable:max_health", Attributable.class, double.class, attributable -> {
+                    var attribute = attributable.getAttribute(Attribute.MAX_HEALTH);
+                    if (attribute != null) return attribute.getDefaultValue();
+                    return 20d;
+                }, (attributable, maxHealth) -> {
+                    var attribute = attributable.getAttribute(Attribute.MAX_HEALTH);
+                    if (attribute != null) attribute.setBaseValue(maxHealth);
+                });
 
         public final AttributeType<Damageable, Double> HEALTH = register(
                 "damageable:health", Damageable.class, double.class,
