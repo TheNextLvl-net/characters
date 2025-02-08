@@ -9,7 +9,6 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public class EmptyPacketListener extends ServerGamePacketListenerImpl {
-
     public EmptyPacketListener(MinecraftServer server, ServerPlayer player, CommonListenerCookie cookie) {
         super(server, new EmptyConnection(), player, cookie);
     }
