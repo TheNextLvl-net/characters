@@ -89,7 +89,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS;
 import static java.nio.file.StandardOpenOption.READ;
+import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 
 @NullMarked
 public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
@@ -142,7 +144,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
             (player, character, address) -> player.transfer(address.getHostName(), address.getPort())));
     public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Location.class,
-            (player, character, location) -> player.teleportAsync(location))));
+            (player, character, location) -> player.teleportAsync(location, PLUGIN, RETAIN_PASSENGERS))));
     public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Sound.class,
             (player, character, sound) -> player.playSound(sound)));
     public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", String.class,

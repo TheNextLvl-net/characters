@@ -10,7 +10,6 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
-import io.papermc.paper.entity.TeleportFlag.EntityState;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
@@ -18,10 +17,11 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.jspecify.annotations.NullMarked;
 
+import static io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
+import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND;
 
 @NullMarked
 class CharacterTeleportCommand {
@@ -43,7 +43,7 @@ class CharacterTeleportCommand {
         var character = (Character<?>) context.getArgument("character", Character.class);
 
         var location = character.getEntity().map(Entity::getLocation).orElse(character.getSpawnLocation());
-        if (location != null) player.teleportAsync(location, TeleportCause.COMMAND, EntityState.RETAIN_PASSENGERS);
+        if (location != null) player.teleportAsync(location, COMMAND, RETAIN_PASSENGERS);
 
         plugin.bundle().sendMessage(sender, "character.teleported.self",
                 Placeholder.unparsed("character", character.getName()));
@@ -74,7 +74,7 @@ class CharacterTeleportCommand {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
 
-        character.getEntity().ifPresent(entity -> entity.teleportAsync(location));
+        character.getEntity().ifPresent(entity -> entity.teleportAsync(location, COMMAND, RETAIN_PASSENGERS));
         var success = character.setSpawnLocation(location);
         var message = success ? "character.teleported" : "nothing.changed";
 
