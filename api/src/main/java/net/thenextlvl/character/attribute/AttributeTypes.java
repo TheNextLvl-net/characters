@@ -201,6 +201,11 @@ public class AttributeTypes {
                 Entity::isVisualFire, Entity::setVisualFire
         );
 
+        public final AttributeType<Entity, Integer> FIRE_TICKS = register(
+                "entity:fire_ticks", Entity.class, int.class,
+                Entity::getFireTicks, Entity::setFireTicks
+        );
+
         public final AttributeType<Entity, Boolean> GLOWING = register(
                 "entity:glowing", Entity.class, boolean.class,
                 Entity::isGlowing, Entity::setGlowing
