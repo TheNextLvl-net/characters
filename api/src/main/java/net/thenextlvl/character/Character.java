@@ -122,8 +122,6 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     boolean setPersistent(boolean persistent);
 
-    boolean setScale(double scale);
-
     boolean setSpawnLocation(@Nullable Location location);
 
     boolean setTeamColor(@Nullable NamedTextColor color);
@@ -135,8 +133,6 @@ public interface Character<E extends Entity> extends TagSerializable {
     boolean spawn();
 
     boolean spawn(Location location);
-
-    double getScale();
 
     void delete();
 

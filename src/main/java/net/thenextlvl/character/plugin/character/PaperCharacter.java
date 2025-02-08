@@ -23,7 +23,6 @@ import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.attribute.Attributable;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
@@ -69,7 +68,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static org.bukkit.attribute.Attribute.MAX_HEALTH;
-import static org.bukkit.attribute.Attribute.SCALE;
 
 @NullMarked
 public class PaperCharacter<E extends Entity> implements Character<E> {
@@ -97,8 +95,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected boolean pathfinding = false;
     protected boolean persistent = true;
     protected boolean visibleByDefault = true;
-
-    protected double scale = 1;
 
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
         this.name = name;
@@ -381,15 +377,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public boolean setScale(double scale) {
-        if (scale == this.scale) return false;
-        getEntity(Attributable.class).map(instance -> instance.getAttribute(SCALE))
-                .ifPresent(attribute -> attribute.setBaseValue(scale));
-        this.scale = scale;
-        return true;
-    }
-
-    @Override
     public boolean setSpawnLocation(@Nullable Location location) {
         if (Objects.equals(location, spawnLocation)) return false;
         this.spawnLocation = location;
@@ -449,11 +436,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public double getScale() {
-        return scale;
-    }
-
-    @Override
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void delete() {
         remove();
@@ -477,7 +459,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         tag.add("displayNameVisible", displayNameVisible);
         tag.add("equipment", equipment.serialize());
         tag.add("pathfinding", pathfinding);
-        tag.add("scale", scale);
         tag.add("tagOptions", tagOptions.serialize());
         tag.add("type", plugin.nbt().toTag(type));
         tag.add("visibleByDefault", visibleByDefault);
@@ -504,7 +485,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
         root.optional("equipment").ifPresent(equipment::deserialize);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
-        root.optional("scale").map(Tag::getAsDouble).ifPresent(this::setScale);
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
         root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
@@ -531,10 +511,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         }
         if (entity instanceof TNTPrimed primed) {
             primed.setFuseTicks(Integer.MAX_VALUE);
-        }
-        if (entity instanceof Attributable attributable) {
-            var scale = attributable.getAttribute(SCALE);
-            if (scale != null) scale.setBaseValue(this.scale);
         }
         if (entity instanceof LivingEntity living) {
             if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
