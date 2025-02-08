@@ -196,8 +196,8 @@ public class AttributeTypes {
     }
 
     public static class EntityAttributes {
-        public final AttributeType<Entity, Boolean> BURNING = register(
-                "entity:burning", Entity.class, boolean.class,
+        public final AttributeType<Entity, Boolean> VISUAL_FIRE = register(
+                "entity:visual_fire", Entity.class, boolean.class,
                 Entity::isVisualFire, Entity::setVisualFire
         );
 
