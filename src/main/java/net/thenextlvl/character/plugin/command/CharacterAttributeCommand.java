@@ -152,10 +152,6 @@ class CharacterAttributeCommand {
         return success;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> resetAI(CharacterPlugin plugin) {
-        return reset("ai", character -> character.setAI(false), Character::hasAI, plugin);
-    }
-
     private static ArgumentBuilder<CommandSourceStack, ?> resetListed(CharacterPlugin plugin) {
         return reset("listed", character -> character instanceof PlayerCharacter p && p.setListed(false),
                 character -> character instanceof PlayerCharacter p && p.isListed(), plugin);
@@ -171,10 +167,6 @@ class CharacterAttributeCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetTeamColor(CharacterPlugin plugin) {
         return reset("team-color", character -> character.setTeamColor(null), Character::getTeamColor, plugin);
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> setAI(CharacterPlugin plugin) {
-        return attribute("ai", Character::setAI, plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setListed(CharacterPlugin plugin) {

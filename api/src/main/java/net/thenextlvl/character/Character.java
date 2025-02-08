@@ -84,8 +84,6 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     boolean despawn();
 
-    boolean hasAI();
-
     boolean hasAction(ClickAction<?> action);
 
     boolean hasAction(String name);
@@ -115,8 +113,6 @@ public interface Character<E extends Entity> extends TagSerializable {
     boolean respawn();
 
     boolean respawn(Location location);
-
-    boolean setAI(boolean ai);
 
     boolean setDisplayName(@Nullable Component displayName);
 

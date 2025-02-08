@@ -91,7 +91,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     protected Pose pose = Pose.STANDING;
 
-    protected boolean ai = false;
     protected boolean displayNameVisible = true;
     protected boolean pathfinding = false;
     protected boolean persistent = true;
@@ -246,11 +245,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public boolean hasAI() {
-        return ai;
-    }
-
-    @Override
     public boolean hasAction(ClickAction<?> action) {
         return actions.containsValue(action);
     }
@@ -351,14 +345,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public boolean respawn(Location location) {
         return despawn() && spawn(location);
-    }
-
-    @Override
-    public boolean setAI(boolean ai) {
-        if (ai == this.ai) return false;
-        getEntity(LivingEntity.class).ifPresent(entity -> entity.setAI(ai));
-        this.ai = ai;
-        return true;
     }
 
     @Override
@@ -485,7 +471,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         if (spawnLocation != null) tag.add("location", plugin.nbt().toTag(spawnLocation));
         if (teamColor != null) tag.add("teamColor", plugin.nbt().toTag(teamColor));
         if (viewPermission != null) tag.add("viewPermission", viewPermission);
-        tag.add("ai", ai);
         tag.add("displayNameVisible", displayNameVisible);
         tag.add("equipment", equipment.serialize());
         tag.add("pathfinding", pathfinding);
@@ -506,7 +491,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public void deserialize(Tag tag) throws ParserException {
         var root = tag.getAsCompound();
-        root.optional("ai").map(Tag::getAsBoolean).ifPresent(this::setAI);
         root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, t) -> {
             @SuppressWarnings("PatternValidation") var key = Key.key(name);
             AttributeTypes.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
@@ -538,7 +522,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         if (entity instanceof LivingEntity living) {
             if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
                     living.getEquipment().setItem(slot, item, true));
-            living.setAI(ai);
             living.setCanPickupItems(false);
         }
         if (entity instanceof Mob mob) {
