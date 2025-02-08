@@ -231,8 +231,8 @@ public class AttributeTypes {
                 Entity::getPose, (entity, pose) -> entity.setPose(pose, true)
         );
 
-        public final AttributeType<Entity, Boolean> SHAKING = register(
-                "entity:shaking", Entity.class, boolean.class,
+        public final AttributeType<Entity, Boolean> FREEZING = register(
+                "entity:freezing", Entity.class, boolean.class,
                 Entity::isFrozen, (entity, shaking) -> entity.setFreezeTicks(shaking ? entity.getMaxFreezeTicks() : 0)
         );
 
