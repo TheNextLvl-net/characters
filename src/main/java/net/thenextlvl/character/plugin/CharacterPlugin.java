@@ -139,7 +139,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             (player, character, message) -> player.sendActionBar(message)));
     public final ActionType<Component> sendMessage = register(new PaperActionType<>("send_message", Component.class,
             (player, character, message) -> player.sendMessage(message)));
-    public final ActionType<EntityEffect> sendEntityEffect = register(new PaperActionType<>("send_message", EntityEffect.class,
+    public final ActionType<EntityEffect> sendEntityEffect = register(new PaperActionType<>("send_entity_effect", EntityEffect.class,
             (player, character, entityEffect) -> player.sendEntityEffect(entityEffect, character)));
     public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
             (player, character, address) -> player.transfer(address.getHostName(), address.getPort())));
