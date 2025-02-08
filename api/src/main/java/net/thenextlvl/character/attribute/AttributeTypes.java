@@ -32,7 +32,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -40,7 +40,7 @@ import java.util.function.Function;
 
 @NullMarked
 public class AttributeTypes {
-    private static final Set<AttributeType<?, ?>> attributeTypes = new LinkedHashSet<>();
+    private static final Set<AttributeType<?, ?>> attributeTypes = new HashSet<>();
 
     public static final AgeableAttributes AGEABLE = new AgeableAttributes();
     public static final AreaEffectCloudAttributes AREA_EFFECT_CLOUD = new AreaEffectCloudAttributes();
