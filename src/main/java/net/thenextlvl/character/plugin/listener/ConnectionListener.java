@@ -1,6 +1,7 @@
 package net.thenextlvl.character.plugin.listener;
 
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
@@ -42,10 +43,9 @@ public class ConnectionListener implements Listener {
         var characters = plugin.characterController().getCharacters(world);
         characters.stream()
                 .filter(character -> !character.getType().equals(EntityType.PLAYER))
-                .forEach(character -> character.getEntity().ifPresent(entity -> {
-                    if (character.canSee(player)) player.showEntity(plugin, entity);
-                    else player.hideEntity(plugin, entity);
-                }));
+                .map(character -> (PaperCharacter<?>) character)
+                .forEach(character -> character.getEntity().ifPresent(entity ->
+                        character.updateVisibility(entity, player)));
         characters.stream()
                 .filter(character -> character.getType().equals(EntityType.PLAYER))
                 .filter(character -> character.canSee(player))

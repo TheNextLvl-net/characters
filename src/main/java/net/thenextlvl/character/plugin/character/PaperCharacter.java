@@ -396,10 +396,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public boolean setViewPermission(@Nullable String permission) {
         if (Objects.equals(permission, viewPermission)) return false;
         this.viewPermission = permission;
-        getEntity().ifPresent(entity -> plugin.getServer().getOnlinePlayers().forEach(player -> {
-            if (canSee(player)) player.showEntity(plugin, entity);
-            else player.hideEntity(plugin, entity);
-        }));
+        getEntity().ifPresent(entity -> plugin.getServer().getOnlinePlayers()
+                .forEach(player -> updateVisibility(entity, player)));
         return true;
     }
 
@@ -409,13 +407,17 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         this.visibleByDefault = visible;
         getEntity().ifPresent(entity -> {
             entity.setVisibleByDefault(visible);
+            if (textDisplayName != null) textDisplayName.setVisibleByDefault(visible);
             if (visible) entity.getTrackedBy().forEach(player -> {
                 if (isViewer(player.getUniqueId())) return;
+                if (textDisplayName != null) player.hideEntity(plugin, textDisplayName);
                 player.hideEntity(plugin, entity);
             });
             else getViewers().stream().map(plugin.getServer()::getPlayer)
-                    .filter(Objects::nonNull)
-                    .forEach(player -> player.showEntity(plugin, entity));
+                    .filter(Objects::nonNull).forEach(player -> {
+                        if (textDisplayName != null) player.showEntity(plugin, textDisplayName);
+                        player.showEntity(plugin, entity);
+                    });
         });
         return true;
     }
@@ -491,6 +493,16 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
     }
 
+    public void updateVisibility(E entity, Player player) {
+        if (canSee(player)) {
+            if (textDisplayName != null) player.showEntity(plugin, textDisplayName);
+            player.showEntity(plugin, entity);
+        } else {
+            if (textDisplayName != null) player.hideEntity(plugin, textDisplayName);
+            player.hideEntity(plugin, entity);
+        }
+    }
+
     private Optional<TextDisplay> textDisplayName() {
         return Optional.ofNullable(textDisplayName);
     }
@@ -525,10 +537,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             updatePathfinderGoals(mob);
         }
 
-        if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers().forEach(player -> {
-            if (canSee(player)) player.showEntity(plugin, entity);
-            else player.hideEntity(plugin, entity);
-        });
+        if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers()
+                .forEach(player -> updateVisibility(entity, player));
 
         updateTextDisplayName(entity);
         updateTeamOptions(entity);
