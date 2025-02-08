@@ -499,19 +499,19 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setVisibleByDefault(visibleByDefault);
         entity.lockFreezeTicks(true);
+        entity.setInvulnerable(true);
         entity.setPersistent(false);
+        entity.setSilent(true);
+
+        if (entity instanceof LivingEntity living) living.setAI(false);
+        if (entity instanceof AreaEffectCloud cloud) cloud.setDuration(Tick.tick().fromDuration(Duration.ofDays(999)));
+        if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
         attributes.forEach(attribute -> {
             @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
             casted.getType().set(entity, attribute.getValue());
         });
 
-        if (entity instanceof AreaEffectCloud cloud) {
-            cloud.setDuration(Tick.tick().fromDuration(Duration.ofDays(999)));
-        }
-        if (entity instanceof TNTPrimed primed) {
-            primed.setFuseTicks(Integer.MAX_VALUE);
-        }
         if (entity instanceof LivingEntity living) {
             if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
                     living.getEquipment().setItem(slot, item, true));
@@ -519,14 +519,17 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             var instance = living.getAttribute(MAX_HEALTH);
             if (instance != null) living.setHealth(instance.getValue());
         }
+
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
             updatePathfinderGoals(mob);
         }
+
         if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers().forEach(player -> {
             if (canSee(player)) player.showEntity(plugin, entity);
             else player.hideEntity(plugin, entity);
         });
+
         updateTextDisplayName(entity);
         updateTeamOptions(entity);
     }
