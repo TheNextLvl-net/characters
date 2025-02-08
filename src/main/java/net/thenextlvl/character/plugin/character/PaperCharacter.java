@@ -624,8 +624,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     protected void updateDisplayNameHologram(TextDisplay display) {
         display.setAlignment(tagOptions.getAlignment());
-        display.setBackgroundColor(tagOptions.getBackgroundColor() != null
-                ? tagOptions.getBackgroundColor() : Color.fromARGB(1073741824));
+        display.setBackgroundColor(tagOptions.getBackgroundColor());
         display.setBillboard(tagOptions.getBillboard());
         display.setBrightness(tagOptions.getBrightness());
         display.setDefaultBackground(tagOptions.isDefaultBackground());
