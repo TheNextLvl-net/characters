@@ -45,6 +45,7 @@ public class AttributeTypes {
     public static final AgeableAttributes AGEABLE = new AgeableAttributes();
     public static final AreaEffectCloudAttributes AREA_EFFECT_CLOUD = new AreaEffectCloudAttributes();
     public static final ArrowAttributes ARROW = new ArrowAttributes();
+    public static final AttributableAttributes ATTRIBUTABLE = new AttributableAttributes();
     public static final CatAttributes CAT = new CatAttributes();
     public static final CollarColorableAttributes COLLAR_COLORABLE = new CollarColorableAttributes();
     public static final CreeperAttributes CREEPER = new CreeperAttributes();
@@ -119,6 +120,210 @@ public class AttributeTypes {
         );
     }
 
+    public static class AttributableAttributes {
+        public final AttributeType<Attributable, Double> ARMOR = register(
+                "attributable:armor", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.ARMOR, 0),
+                (attributable, value) -> set(attributable, Attribute.ARMOR, value)
+        );
+
+        public final AttributeType<Attributable, Double> ARMOR_TOUGHNESS = register(
+                "attributable:armor_toughness", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.ARMOR_TOUGHNESS, 0),
+                (attributable, value) -> set(attributable, Attribute.ARMOR_TOUGHNESS, value)
+        );
+
+        public final AttributeType<Attributable, Double> ATTACK_DAMAGE = register(
+                "attributable:attack_damage", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.ATTACK_DAMAGE, 0),
+                (attributable, value) -> set(attributable, Attribute.ATTACK_DAMAGE, value)
+        );
+
+        public final AttributeType<Attributable, Double> ATTACK_KNOCKBACK = register(
+                "attributable:attack_knockback", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.ATTACK_KNOCKBACK, 0),
+                (attributable, value) -> set(attributable, Attribute.ATTACK_KNOCKBACK, value)
+        );
+
+        public final AttributeType<Attributable, Double> ATTACK_SPEED = register(
+                "attributable:attack_speed", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.ATTACK_SPEED, 0),
+                (attributable, value) -> set(attributable, Attribute.ATTACK_SPEED, value)
+        );
+
+        public final AttributeType<Attributable, Double> BLOCK_BREAK_SPEED = register(
+                "attributable:block_break_speed", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.BLOCK_BREAK_SPEED, 0),
+                (attributable, value) -> set(attributable, Attribute.BLOCK_BREAK_SPEED, value)
+        );
+
+        public final AttributeType<Attributable, Double> BLOCK_INTERACTION_RANGE = register(
+                "attributable:block_interaction_range", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.BLOCK_INTERACTION_RANGE, 0),
+                (attributable, value) -> set(attributable, Attribute.BLOCK_INTERACTION_RANGE, value)
+        );
+
+        public final AttributeType<Attributable, Double> BURNING_TIME = register(
+                "attributable:burning_time", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.BURNING_TIME, 0),
+                (attributable, value) -> set(attributable, Attribute.BURNING_TIME, value)
+        );
+
+        public final AttributeType<Attributable, Double> ENTITY_INTERACTION_RANGE = register(
+                "attributable:entity_interaction_range", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.ENTITY_INTERACTION_RANGE, 0),
+                (attributable, value) -> set(attributable, Attribute.ENTITY_INTERACTION_RANGE, value)
+        );
+
+        public final AttributeType<Attributable, Double> EXPLOSION_KNOCKBACK_RESISTANCE = register(
+                "attributable:explosion_knockback_resistance", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.EXPLOSION_KNOCKBACK_RESISTANCE, 0),
+                (attributable, value) -> set(attributable, Attribute.EXPLOSION_KNOCKBACK_RESISTANCE, value)
+        );
+
+        public final AttributeType<Attributable, Double> FALL_DAMAGE_MULTIPLIER = register(
+                "attributable:fall_damage_multiplier", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.FALL_DAMAGE_MULTIPLIER, 0),
+                (attributable, value) -> set(attributable, Attribute.FALL_DAMAGE_MULTIPLIER, value)
+        );
+
+        public final AttributeType<Attributable, Double> FLYING_SPEED = register(
+                "attributable:flying_speed", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.FLYING_SPEED, 0),
+                (attributable, value) -> set(attributable, Attribute.FLYING_SPEED, value)
+        );
+
+        public final AttributeType<Attributable, Double> FOLLOW_RANGE = register(
+                "attributable:follow_range", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.FOLLOW_RANGE, 0),
+                (attributable, value) -> set(attributable, Attribute.FOLLOW_RANGE, value)
+        );
+
+        public final AttributeType<Attributable, Double> GRAVITY = register(
+                "attributable:gravity", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.GRAVITY, 0),
+                (attributable, value) -> set(attributable, Attribute.GRAVITY, value)
+        );
+
+        public final AttributeType<Attributable, Double> JUMP_STRENGTH = register(
+                "attributable:jump_strength", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.JUMP_STRENGTH, 0),
+                (attributable, value) -> set(attributable, Attribute.JUMP_STRENGTH, value)
+        );
+
+        public final AttributeType<Attributable, Double> KNOCKBACK_RESISTANCE = register(
+                "attributable:knockback_resistance", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.KNOCKBACK_RESISTANCE, 0),
+                (attributable, value) -> set(attributable, Attribute.KNOCKBACK_RESISTANCE, value)
+        );
+
+        public final AttributeType<Attributable, Double> LUCK = register(
+                "attributable:luck", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.LUCK, 0),
+                (attributable, value) -> set(attributable, Attribute.LUCK, value)
+        );
+
+        public final AttributeType<Attributable, Double> MAX_ABSORPTION = register(
+                "attributable:max_absorption", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.MAX_ABSORPTION, 0),
+                (attributable, value) -> set(attributable, Attribute.MAX_ABSORPTION, value)
+        );
+
+        public final AttributeType<Attributable, Double> MAX_HEALTH = register(
+                "attributable:max_health", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.MAX_HEALTH, 20),
+                (attributable, value) -> set(attributable, Attribute.MAX_HEALTH, value)
+        );
+
+        public final AttributeType<Attributable, Double> MINING_EFFICIENCY = register(
+                "attributable:mining_efficiency", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.MINING_EFFICIENCY, 0),
+                (attributable, value) -> set(attributable, Attribute.MINING_EFFICIENCY, value)
+        );
+
+        public final AttributeType<Attributable, Double> MOVEMENT_EFFICIENCY = register(
+                "attributable:movement_efficiency", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.MOVEMENT_EFFICIENCY, 0),
+                (attributable, value) -> set(attributable, Attribute.MOVEMENT_EFFICIENCY, value)
+        );
+
+        public final AttributeType<Attributable, Double> MOVEMENT_SPEED = register(
+                "attributable:movement_speed", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.MOVEMENT_SPEED, 0),
+                (attributable, value) -> set(attributable, Attribute.MOVEMENT_SPEED, value)
+        );
+
+        public final AttributeType<Attributable, Double> OXYGEN_BONUS = register(
+                "attributable:oxygen_bonus", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.OXYGEN_BONUS, 0),
+                (attributable, value) -> set(attributable, Attribute.OXYGEN_BONUS, value)
+        );
+
+        public final AttributeType<Attributable, Double> SAFE_FALL_DISTANCE = register(
+                "attributable:safe_fall_distance", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.SAFE_FALL_DISTANCE, 0),
+                (attributable, value) -> set(attributable, Attribute.SAFE_FALL_DISTANCE, value)
+        );
+
+        public final AttributeType<Attributable, Double> SCALE = register(
+                "attributable:scale", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.SCALE, 0),
+                (attributable, value) -> set(attributable, Attribute.SCALE, value)
+        );
+
+        public final AttributeType<Attributable, Double> SNEAKING_SPEED = register(
+                "attributable:sneaking_speed", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.SNEAKING_SPEED, 0),
+                (attributable, value) -> set(attributable, Attribute.SNEAKING_SPEED, value)
+        );
+
+        public final AttributeType<Attributable, Double> SPAWN_REINFORCEMENTS = register(
+                "attributable:spawn_reinforcements", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.SPAWN_REINFORCEMENTS, 0),
+                (attributable, value) -> set(attributable, Attribute.SPAWN_REINFORCEMENTS, value)
+        );
+
+        public final AttributeType<Attributable, Double> STEP_HEIGHT = register(
+                "attributable:step_height", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.STEP_HEIGHT, 0),
+                (attributable, value) -> set(attributable, Attribute.STEP_HEIGHT, value)
+        );
+
+        public final AttributeType<Attributable, Double> SUBMERGED_MINING_SPEED = register(
+                "attributable:submerged_mining_speed", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.SUBMERGED_MINING_SPEED, 0),
+                (attributable, value) -> set(attributable, Attribute.SUBMERGED_MINING_SPEED, value)
+        );
+
+        public final AttributeType<Attributable, Double> SWEEPING_DAMAGE_RATIO = register(
+                "attributable:sweeping_damage_ratio", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.SWEEPING_DAMAGE_RATIO, 0),
+                (attributable, value) -> set(attributable, Attribute.SWEEPING_DAMAGE_RATIO, value)
+        );
+
+        public final AttributeType<Attributable, Double> TEMPT_RANGE = register(
+                "attributable:tempt_range", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.TEMPT_RANGE, 0),
+                (attributable, value) -> set(attributable, Attribute.TEMPT_RANGE, value)
+        );
+
+        public final AttributeType<Attributable, Double> WATER_MOVEMENT_EFFICIENCY = register(
+                "attributable:water_movement_efficiency", Attributable.class, double.class,
+                attributable -> get(attributable, Attribute.WATER_MOVEMENT_EFFICIENCY, 0),
+                (attributable, value) -> set(attributable, Attribute.WATER_MOVEMENT_EFFICIENCY, value)
+        );
+
+        private double get(Attributable attributable, Attribute attribute, double defaultValue) {
+            var instance = attributable.getAttribute(attribute);
+            return instance != null ? instance.getDefaultValue() : defaultValue;
+        }
+
+        private void set(Attributable attributable, Attribute attribute, double value) {
+            var instance = attributable.getAttribute(attribute);
+            if (instance != null) instance.setBaseValue(value);
+        }
+    }
+
     public static class CatAttributes {
         public final AttributeType<Cat, Boolean> HEAD_UP = register(
                 "cat:head_up", Cat.class, boolean.class, Cat::isHeadUp, Cat::setHeadUp
@@ -160,21 +365,6 @@ public class AttributeTypes {
         public final AttributeType<Damageable, Double> ABSORPTION_AMOUNT = register(
                 "damageable:absorption_amount", Damageable.class, double.class,
                 Damageable::getAbsorptionAmount, Damageable::setAbsorptionAmount
-        );
-
-        public final AttributeType<Attributable, Double> MAX_HEALTH = register(
-                "damageable:max_health", Attributable.class, double.class, attributable -> {
-                    var attribute = attributable.getAttribute(Attribute.MAX_HEALTH);
-                    if (attribute != null) return attribute.getDefaultValue();
-                    return 20d;
-                }, (attributable, maxHealth) -> {
-                    var attribute = attributable.getAttribute(Attribute.MAX_HEALTH);
-                    if (attribute != null) attribute.setBaseValue(maxHealth);
-                });
-
-        public final AttributeType<Damageable, Double> HEALTH = register(
-                "damageable:health", Damageable.class, double.class,
-                Damageable::getHealth, Damageable::setHealth
         );
     }
 
