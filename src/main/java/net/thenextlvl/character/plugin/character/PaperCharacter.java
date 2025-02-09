@@ -831,17 +831,17 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
         @Override
         public boolean setOffsetX(float offset) {
-            return setOffset(new Vector3f(offset, this.offset.y, this.offset.z));
+            return setOffset(new Vector3f(offset, this.offset.y(), this.offset.z()));
         }
 
         @Override
         public boolean setOffsetY(float offset) {
-            return setOffset(new Vector3f(this.offset.x, offset, this.offset.z));
+            return setOffset(new Vector3f(this.offset.x(), offset, this.offset.z()));
         }
 
         @Override
         public boolean setOffsetZ(float offset) {
-            return setOffset(new Vector3f(this.offset.x, this.offset.y, offset));
+            return setOffset(new Vector3f(this.offset.x(), this.offset.y(), offset));
         }
 
         @Override

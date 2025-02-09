@@ -23,9 +23,9 @@ public class Vector3fAdapter implements TagAdapter<Vector3f> {
     @Override
     public Tag serialize(Vector3f vector, TagSerializationContext context) throws ParserException {
         var tag = new CompoundTag();
-        tag.add("x", vector.x);
-        tag.add("y", vector.y);
-        tag.add("z", vector.z);
+        tag.add("x", vector.x());
+        tag.add("y", vector.y());
+        tag.add("z", vector.z());
         return tag;
     }
 }
