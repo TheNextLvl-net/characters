@@ -22,6 +22,8 @@ import org.bukkit.Color;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.TextDisplay.TextAlignment;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -42,7 +44,10 @@ class CharacterTagCommand {
                 .then(resetBillboard(plugin))
                 .then(resetBrightness(plugin))
                 .then(resetDefaultBackground(plugin))
+                .then(resetLeftRotation(plugin))
                 .then(resetLineWidth(plugin))
+                .then(resetOffset(plugin))
+                .then(resetRightRotation(plugin))
                 .then(resetScale(plugin))
                 .then(resetSeeThrough(plugin))
                 .then(resetText(plugin))
@@ -76,9 +81,24 @@ class CharacterTagCommand {
                 setDefaultBackground(context, false, plugin));
     }
 
+    private static ArgumentBuilder<CommandSourceStack, ?> resetLeftRotation(CharacterPlugin plugin) {
+        return Commands.literal("left-rotation").executes(context ->
+                setRotation(context, new Quaternionf(), true, plugin));
+    }
+
     private static ArgumentBuilder<CommandSourceStack, ?> resetLineWidth(CharacterPlugin plugin) {
         return Commands.literal("line-width").executes(context ->
                 setLineWidth(context, 200, plugin));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> resetOffset(CharacterPlugin plugin) {
+        return Commands.literal("offset").executes(context ->
+                setOffset(context, new Vector3f(0, 0.27f, 0), plugin));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> resetRightRotation(CharacterPlugin plugin) {
+        return Commands.literal("right-rotation").executes(context ->
+                setRotation(context, new Quaternionf(), false, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetScale(CharacterPlugin plugin) {
@@ -119,6 +139,9 @@ class CharacterTagCommand {
                 .then(setBrightness(plugin))
                 .then(setDefaultBackground(plugin))
                 .then(setLineWidth(plugin))
+                .then(setOffset(plugin))
+                .then(setRotation(plugin, false))
+                .then(setRotation(plugin, true))
                 .then(setScale(plugin))
                 .then(setSeeThrough(plugin))
                 .then(setText(plugin))
@@ -243,6 +266,66 @@ class CharacterTagCommand {
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("value", String.valueOf(width)));
+        return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setOffset(CharacterPlugin plugin) {
+        return Commands.literal("offset").then(Commands.argument(
+                "x", FloatArgumentType.floatArg()
+        ).then(Commands.argument(
+                "y", FloatArgumentType.floatArg()
+        ).then(Commands.argument(
+                "z", FloatArgumentType.floatArg()
+        ).executes(context -> {
+            var x = context.getArgument("x", float.class);
+            var y = context.getArgument("y", float.class);
+            var z = context.getArgument("z", float.class);
+            return setOffset(context, new Vector3f(x, y, z), plugin);
+        }))));
+    }
+
+    private static int setOffset(CommandContext<CommandSourceStack> context, Vector3f offset, CharacterPlugin plugin) {
+        var character = context.getArgument("character", Character.class);
+        var success = character.getTagOptions().setOffset(offset);
+        var message = success ? "character.tag.offset" : "nothing.changed";
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                Formatter.number("x", offset.x()),
+                Formatter.number("y", offset.y()),
+                Formatter.number("z", offset.z()),
+                Placeholder.unparsed("character", character.getName()));
+        return success ? Command.SINGLE_SUCCESS : 0;
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> setRotation(CharacterPlugin plugin, boolean left) {
+        return Commands.literal((left ? "left" : "right") + "-rotation").then(Commands.argument(
+                "x", FloatArgumentType.floatArg()
+        ).then(Commands.argument(
+                "y", FloatArgumentType.floatArg()
+        ).then(Commands.argument(
+                "z", FloatArgumentType.floatArg()
+        ).then(Commands.argument(
+                "w", FloatArgumentType.floatArg()
+        ).executes(context -> {
+            var w = context.getArgument("w", float.class);
+            var x = context.getArgument("x", float.class);
+            var y = context.getArgument("y", float.class);
+            var z = context.getArgument("z", float.class);
+            return setRotation(context, new Quaternionf(x, y, z, w), left, plugin);
+        })))));
+    }
+
+    private static int setRotation(CommandContext<CommandSourceStack> context, Quaternionf rotation, boolean left, CharacterPlugin plugin) {
+        var character = context.getArgument("character", Character.class);
+        var success = left ? character.getTagOptions().setLeftRotation(rotation)
+                : character.getTagOptions().setRightRotation(rotation);
+        var message = !success ? "nothing.changed" : left
+                ? "character.tag.left-rotation" : "character.tag.right-rotation";
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                Placeholder.unparsed("character", character.getName()),
+                Formatter.number("w", rotation.w()),
+                Formatter.number("x", rotation.x()),
+                Formatter.number("y", rotation.y()),
+                Formatter.number("z", rotation.z()));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
