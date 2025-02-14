@@ -53,32 +53,21 @@ class CharacterAttributeCommand {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var tree = characterArgument(plugin);
-        AttributeTypes.types().forEach(type -> tree.then(resetAttribute(type, plugin)));
-        return Commands.literal("reset").then(tree);
-                /*
-                .then(resetAI(plugin))
+        var tree = characterArgument(plugin)
                 .then(resetListed(plugin))
                 .then(resetPathfinding(plugin))
-                .then(resetScale(plugin))
-                .then(resetTeamColor(plugin)));
-                 */
+                .then(resetTeamColor(plugin));
+        AttributeTypes.types().forEach(type -> tree.then(resetAttribute(type, plugin)));
+        return Commands.literal("reset").then(tree);
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var tree = characterArgument(plugin);
-        AttributeTypes.types().forEach(type -> tree.then(setAttribute(type, plugin)));
-        return Commands.literal("set").then(tree);
-                /*
-                .then(setAI(plugin))
-                .then(setColliding(plugin))
-                .then(setGlowing(plugin))
-                .then(setGravity(plugin))
+        var tree = characterArgument(plugin)
                 .then(setListed(plugin))
                 .then(setPathfinding(plugin))
-                .then(setScale(plugin))
-                .then(setTeamColor(plugin)));
-                 */
+                .then(setTeamColor(plugin));
+        AttributeTypes.types().forEach(type -> tree.then(setAttribute(type, plugin)));
+        return Commands.literal("set").then(tree);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
