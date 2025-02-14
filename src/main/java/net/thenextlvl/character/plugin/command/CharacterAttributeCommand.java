@@ -142,28 +142,28 @@ class CharacterAttributeCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetListed(CharacterPlugin plugin) {
-        return reset("listed", character -> character instanceof PlayerCharacter p && p.setListed(false),
+        return reset("character:listed", character -> character instanceof PlayerCharacter p && p.setListed(false),
                 character -> character instanceof PlayerCharacter p && p.isListed(), plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetPathfinding(CharacterPlugin plugin) {
-        return reset("pathfinding", character -> character.setPathfinding(false), Character::isPathfinding, plugin);
+        return reset("character:pathfinding", character -> character.setPathfinding(false), Character::isPathfinding, plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> resetTeamColor(CharacterPlugin plugin) {
-        return reset("team-color", character -> character.setTeamColor(null), Character::getTeamColor, plugin);
+        return reset("character:team-color", character -> character.setTeamColor(null), Character::getTeamColor, plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setListed(CharacterPlugin plugin) {
-        return attribute("listed", (c, b) -> c instanceof PlayerCharacter p && p.setListed(b), plugin);
+        return attribute("character:listed", (c, b) -> c instanceof PlayerCharacter p && p.setListed(b), plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setPathfinding(CharacterPlugin plugin) {
-        return attribute("pathfinding", Character::setPathfinding, plugin);
+        return attribute("character:pathfinding", Character::setPathfinding, plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> setTeamColor(CharacterPlugin plugin) {
-        return Commands.literal("team-color").then(Commands.argument("color", new NamedTextColorArgument())
+        return Commands.literal("character:team-color").then(Commands.argument("color", new NamedTextColorArgument())
                 .executes(context -> {
                     var color = context.getArgument("color", NamedTextColor.class);
                     var success = set(context, "team-color",
