@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeType;
+import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -37,6 +38,13 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     @Nullable
     Component getDisplayName();
+
+    @Unmodifiable
+    Set<Goal> getGoals();
+
+    boolean addGoal(Goal goal);
+
+    boolean removeGoal(Goal goal);
 
     <T> Optional<T> getEntity(Class<T> type);
 

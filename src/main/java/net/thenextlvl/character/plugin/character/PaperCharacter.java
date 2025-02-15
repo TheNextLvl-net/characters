@@ -16,6 +16,7 @@ import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.attribute.AttributeTypes;
+import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.attribute.PaperAttribute;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
@@ -74,6 +75,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<Attribute<?, ?>> attributes = new HashSet<>();
+    protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
     protected final TagOptions tagOptions = new PaperTagOptions();
@@ -120,6 +122,21 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public @Nullable Component getDisplayName() {
         return displayName;
+    }
+
+    @Override
+    public @Unmodifiable Set<Goal> getGoals() {
+        return Set.copyOf(goals);
+    }
+
+    @Override
+    public boolean addGoal(Goal goal) {
+        return goals.add(goal);
+    }
+
+    @Override
+    public boolean removeGoal(Goal goal) {
+        return goals.remove(goal);
     }
 
     @Override
