@@ -5,25 +5,25 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public interface WalkGoal extends Goal, PathfindOptions {
 
-    interface Builder<T extends WalkGoal, S extends Builder<T, S>> extends Goal.Builder<T> {
-        S avoidWater(boolean avoidWater);
+    interface Builder<T extends WalkGoal, B extends Builder<T, B>> extends Goal.Builder<T> {
+        B avoidWater(boolean avoidWater);
 
-        S canFloat(boolean canFloat);
+        B canFloat(boolean canFloat);
 
         // S canFly(boolean canFly);
 
-        S canOpenDoors(boolean canOpenDoors);
+        B canOpenDoors(boolean canOpenDoors);
 
-        S canPassDoors(boolean canPassDoors);
+        B canPassDoors(boolean canPassDoors);
 
-        S distanceMargin(double margin);
+        B distanceMargin(double margin);
 
-        S maxFallDistance(double distance);
+        B maxFallDistance(double distance);
 
-        S speed(double speed);
+        B speed(double speed);
 
-        S speedMultiplier(double multiplier);
+        B speedMultiplier(double multiplier);
 
-        S getSelf();
+        B getSelf();
     }
 }

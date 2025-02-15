@@ -54,7 +54,7 @@ public abstract class PaperWalkGoal extends PaperGoal implements WalkGoal {
         return options.getSpeedMultiplier();
     }
 
-    public static abstract class Builder<T extends WalkGoal, S extends WalkGoal.Builder<T, S>> extends PaperGoal.Builder<T> implements WalkGoal.Builder<T, S> {
+    public static abstract class Builder<T extends WalkGoal, B extends WalkGoal.Builder<T, B>> extends PaperGoal.Builder<T> implements WalkGoal.Builder<T, B> {
         protected final PaperPathfindOptions options = new PaperPathfindOptions();
 
         public Builder(CharacterPlugin plugin) {
@@ -62,49 +62,49 @@ public abstract class PaperWalkGoal extends PaperGoal implements WalkGoal {
         }
 
         @Override
-        public S avoidWater(boolean avoidWater) {
+        public B avoidWater(boolean avoidWater) {
             options.setAvoidWater(avoidWater);
             return getSelf();
         }
 
         @Override
-        public S canFloat(boolean canFloat) {
+        public B canFloat(boolean canFloat) {
             options.setCanFloat(canFloat);
             return getSelf();
         }
 
         @Override
-        public S canOpenDoors(boolean canOpenDoors) {
+        public B canOpenDoors(boolean canOpenDoors) {
             options.setCanOpenDoors(canOpenDoors);
             return getSelf();
         }
 
         @Override
-        public S canPassDoors(boolean canPassDoors) {
+        public B canPassDoors(boolean canPassDoors) {
             options.setCanPassDoors(canPassDoors);
             return getSelf();
         }
 
         @Override
-        public S distanceMargin(double margin) {
+        public B distanceMargin(double margin) {
             options.setDistanceMargin(margin);
             return getSelf();
         }
 
         @Override
-        public S maxFallDistance(double distance) {
+        public B maxFallDistance(double distance) {
             options.setMaxFallDistance(distance);
             return getSelf();
         }
 
         @Override
-        public S speed(double speed) {
+        public B speed(double speed) {
             options.setSpeed(speed);
             return getSelf();
         }
 
         @Override
-        public S speedMultiplier(double multiplier) {
+        public B speedMultiplier(double multiplier) {
             options.setSpeedMultiplier(multiplier);
             return getSelf();
         }
