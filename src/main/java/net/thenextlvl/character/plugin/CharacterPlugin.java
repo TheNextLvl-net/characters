@@ -27,6 +27,7 @@ import net.thenextlvl.character.plugin.character.PaperCharacterController;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.action.PaperActionType;
 import net.thenextlvl.character.plugin.character.action.PaperActionTypeProvider;
+import net.thenextlvl.character.plugin.character.goal.PaperGoalFactory;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
@@ -132,6 +133,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
 
     private final PaperActionTypeProvider actionTypeProvider = new PaperActionTypeProvider();
     private final PaperCharacterController characterController = new PaperCharacterController(this);
+    private final PaperGoalFactory goalFactory = new PaperGoalFactory(this);
     private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
     private final PluginMessenger messenger = new PluginMessenger(this);
 
@@ -232,6 +234,11 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     @Override
     public PaperCharacterController characterController() {
         return characterController;
+    }
+
+    @Override
+    public PaperGoalFactory goalFactory() {
+        return goalFactory;
     }
 
     @Override
