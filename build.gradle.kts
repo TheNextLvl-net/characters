@@ -33,7 +33,7 @@ dependencies {
     implementation("net.thenextlvl.core:i18n:1.0.20")
     implementation("net.thenextlvl.core:paper:2.0.3")
     implementation("org.bstats:bstats-bukkit:3.1.0")
-    implementation("org.mineskin:java-client-java11:3.0.1-SNAPSHOT") {
+    implementation("org.mineskin:java-client-java11:3.0.2.capes-SNAPSHOT") {
         exclude("com.google.code.gson", "gson")
         exclude("com.google.guava", "guava")
     }
