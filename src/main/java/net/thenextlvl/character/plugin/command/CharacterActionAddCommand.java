@@ -40,7 +40,8 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterActionAddCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = Commands.literal("add");
+        var command = Commands.literal("add")
+                .requires(source -> source.getSender().hasPermission("characters.command.action.add"));
         for (var clickTypes : ClickTypes.values()) {
             var literal = clickTypes.name().toLowerCase();
             var chain = Commands.literal(literal)

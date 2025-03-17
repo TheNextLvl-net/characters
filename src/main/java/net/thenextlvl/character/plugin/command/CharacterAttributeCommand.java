@@ -49,7 +49,9 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterAttributeCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("attribute").then(reset(plugin)).then(set(plugin));
+        return Commands.literal("attribute")
+                .requires(source -> source.getSender().hasPermission("characters.command.attribute"))
+                .then(reset(plugin)).then(set(plugin));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {

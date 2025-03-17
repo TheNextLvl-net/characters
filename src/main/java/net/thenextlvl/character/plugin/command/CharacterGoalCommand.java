@@ -13,6 +13,7 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 public class CharacterGoalCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("goal")
+                .requires(source -> source.getSender().hasPermission("characters.command.goal"))
                 .then(add(plugin))
                 .then(remove(plugin));
     }

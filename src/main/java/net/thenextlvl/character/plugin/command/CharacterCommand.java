@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 public class CharacterCommand {
     public static LiteralCommandNode<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("character")
-                // todo: add permissions
+                .requires(source -> source.getSender().hasPermission("characters.command"))
                 .then(CharacterActionCommand.create(plugin))
                 .then(CharacterAttributeCommand.create(plugin))
                 .then(CharacterCreateCommand.create(plugin))

@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
 class CharacterActionCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("action")
+                .requires(source -> source.getSender().hasPermission("characters.command.action"))
                 .then(CharacterActionAddCommand.create(plugin))
                 .then(CharacterActionCooldownCommand.create(plugin))
                 .then(CharacterActionListCommand.create(plugin))

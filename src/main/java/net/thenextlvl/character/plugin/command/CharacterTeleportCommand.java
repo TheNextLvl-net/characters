@@ -29,7 +29,9 @@ class CharacterTeleportCommand {
         var teleport = characterArgument(plugin).executes(context -> teleportSelf(context, plugin))
                 .then(positionArgument(plugin).executes(context -> teleportPosition(context, plugin)))
                 .then(entityArgument(plugin).executes(context -> teleportEntity(context, plugin)));
-        return Commands.literal("teleport").then(teleport);
+        return Commands.literal("teleport")
+                .requires(source -> source.getSender().hasPermission("characters.command.teleport"))
+                .then(teleport);
     }
 
     private static int teleportSelf(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {

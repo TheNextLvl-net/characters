@@ -68,6 +68,27 @@ paper {
             required = false
         }
     }
+
+    permissions {
+        register("characters.command")
+        register("characters.command.action") { children = listOf("characters.command") }
+        register("characters.command.action.add") { children = listOf("characters.command.action") }
+        register("characters.command.action.cooldown") { children = listOf("characters.command.action") }
+        register("characters.command.action.list") { children = listOf("characters.command.action") }
+        register("characters.command.action.permission") { children = listOf("characters.command.action") }
+        register("characters.command.action.remove") { children = listOf("characters.command.action") }
+        register("characters.command.attribute") { children = listOf("characters.command") }
+        register("characters.command.create") { children = listOf("characters.command") }
+        register("characters.command.delete") { children = listOf("characters.command") }
+        register("characters.command.equipment") { children = listOf("characters.command") }
+        register("characters.command.goal") { children = listOf("characters.command") }
+        register("characters.command.list") { children = listOf("characters.command") }
+        register("characters.command.save") { children = listOf("characters.command") }
+        register("characters.command.skin") { children = listOf("characters.command") }
+        register("characters.command.tag") { children = listOf("characters.command") }
+        register("characters.command.teleport") { children = listOf("characters.command") }
+        register("characters.command.view-permission") { children = listOf("characters.command") }
+    }
 }
 
 val versionString: String = project.version as String

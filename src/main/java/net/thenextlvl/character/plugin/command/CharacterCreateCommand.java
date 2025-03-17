@@ -25,7 +25,9 @@ class CharacterCreateCommand {
         var create = nameArgument(plugin).executes(context ->
                 create(context, EntityType.PLAYER, plugin)
         ).then(type);
-        return Commands.literal("create").then(create);
+        return Commands.literal("create")
+                .requires(source -> source.getSender().hasPermission("characters.command.create"))
+                .then(create);
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, EntityType> typeArgument(CharacterPlugin plugin) {

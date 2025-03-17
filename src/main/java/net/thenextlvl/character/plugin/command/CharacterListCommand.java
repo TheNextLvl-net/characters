@@ -12,7 +12,9 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 class CharacterListCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("list").executes(context -> list(context, plugin));
+        return Commands.literal("list")
+                .requires(source -> source.getSender().hasPermission("characters.command.list"))
+                .executes(context -> list(context, plugin));
     }
 
     private static int list(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {

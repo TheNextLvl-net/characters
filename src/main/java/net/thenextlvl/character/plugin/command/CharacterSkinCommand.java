@@ -31,6 +31,7 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.playerCha
 class CharacterSkinCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("skin")
+                .requires(source -> source.getSender().hasPermission("characters.command.skin"))
                 .then(layer(plugin))
                 .then(reset(plugin))
                 .then(set(plugin));

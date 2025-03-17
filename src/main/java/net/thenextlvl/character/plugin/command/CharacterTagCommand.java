@@ -33,6 +33,7 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 class CharacterTagCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("tag")
+                .requires(source -> source.getSender().hasPermission("characters.command.tag"))
                 .then(reset(plugin))
                 .then(set(plugin));
     }

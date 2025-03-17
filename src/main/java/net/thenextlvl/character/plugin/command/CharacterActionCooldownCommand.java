@@ -23,10 +23,12 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterActionCooldownCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("cooldown").then(characterArgument(plugin)
-                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .then(actionArgument(plugin).then(cooldownArgument(plugin)
-                        .executes(context -> set(context, plugin)))));
+        return Commands.literal("cooldown")
+                .requires(source -> source.getSender().hasPermission("characters.command.action.cooldown"))
+                .then(characterArgument(plugin)
+                        .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                        .then(actionArgument(plugin).then(cooldownArgument(plugin)
+                                .executes(context -> set(context, plugin)))));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> cooldownArgument(CharacterPlugin plugin) {

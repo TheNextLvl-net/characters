@@ -21,6 +21,7 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 class CharacterEquipmentCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return Commands.literal("equipment")
+                .requires(source -> source.getSender().hasPermission("characters.command.equipment"))
                 .then(clear(plugin))
                 .then(set(plugin));
     }

@@ -17,9 +17,11 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterActionRemoveCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("remove").then(characterArgument(plugin)
-                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .then(actionArgument(plugin).executes(context -> remove(context, plugin))));
+        return Commands.literal("remove")
+                .requires(source -> source.getSender().hasPermission("characters.command.action.remove"))
+                .then(characterArgument(plugin)
+                        .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                        .then(actionArgument(plugin).executes(context -> remove(context, plugin))));
     }
 
     private static int remove(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {

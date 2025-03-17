@@ -15,7 +15,9 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterDeleteCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("delete").then(characterArgument(plugin)
+        return Commands.literal("delete")
+                .requires(source -> source.getSender().hasPermission("characters.command.delete"))
+                .then(characterArgument(plugin)
                 .executes(context -> delete(context, plugin)));
     }
 

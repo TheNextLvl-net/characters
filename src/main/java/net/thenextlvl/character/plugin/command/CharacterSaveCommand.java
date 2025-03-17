@@ -15,8 +15,9 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 public class CharacterSaveCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("save").then(characterArgument(plugin)
-                .executes(context -> save(context, plugin)));
+        return Commands.literal("save")
+                .requires(source -> source.getSender().hasPermission("characters.command.save"))
+                .then(characterArgument(plugin).executes(context -> save(context, plugin)));
     }
 
     private static int save(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {

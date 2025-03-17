@@ -16,9 +16,11 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 @NullMarked
 class CharacterActionListCommand {
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("list").then(characterArgument(plugin)
-                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .executes(context -> list(context, plugin)));
+        return Commands.literal("list")
+                .requires(source -> source.getSender().hasPermission("characters.command.action.list"))
+                .then(characterArgument(plugin)
+                        .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                        .executes(context -> list(context, plugin)));
     }
 
     private static int list(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
