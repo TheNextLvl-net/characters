@@ -20,7 +20,7 @@ public class CharacterCommand {
                 .then(CharacterCreateCommand.create(plugin))
                 .then(CharacterDeleteCommand.create(plugin))
                 .then(CharacterEquipmentCommand.create(plugin))
-                .then(CharacterGoalCommand.create(plugin))
+                // .then(CharacterGoalCommand.create(plugin))
                 .then(CharacterListCommand.create(plugin))
                 .then(CharacterSaveCommand.create(plugin))
                 .then(CharacterSkinCommand.create(plugin))
