@@ -9,6 +9,8 @@ jobs:
       REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
