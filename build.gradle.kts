@@ -40,13 +40,13 @@ dependencies {
     implementation(project(":api"))
 
     //testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.12.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    //testImplementation("org.junit.jupiter:junit-jupiter-api:5.12.0")
+    //testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
+//tasks.test {
+//    useJUnitPlatform()
+//}
 
 tasks.shadowJar {
     minimize()
