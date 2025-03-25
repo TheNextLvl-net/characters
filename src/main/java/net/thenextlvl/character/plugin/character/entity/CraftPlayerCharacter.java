@@ -13,6 +13,7 @@ public class CraftPlayerCharacter extends CraftPlayer {
     public CraftPlayerCharacter(PaperPlayerCharacter character, CraftServer server, ServerPlayer handle) {
         super(server, handle);
         this.character = character;
+        setSleepingIgnored(true);
     }
 
     @Override

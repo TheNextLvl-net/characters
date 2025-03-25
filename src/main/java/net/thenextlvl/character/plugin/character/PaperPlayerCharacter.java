@@ -128,7 +128,6 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         } else {
             server.getHandle().placeNewPlayer(serverPlayer.connection.connection, serverPlayer, cookie);
             serverPlayer.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
-            entity.setSleepingIgnored(true);
         }
 
         preSpawn(this.entity);
