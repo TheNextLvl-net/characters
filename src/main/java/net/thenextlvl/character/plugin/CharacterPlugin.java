@@ -53,6 +53,7 @@ import net.thenextlvl.character.plugin.serialization.TitleAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
 import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
+import net.thenextlvl.character.plugin.version.PluginVersionChecker;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -131,6 +132,8 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
 
+    private final PluginVersionChecker versionChecker = new PluginVersionChecker(this);
+
     private final PaperActionTypeProvider actionTypeProvider = new PaperActionTypeProvider();
     private final PaperCharacterController characterController = new PaperCharacterController(this);
     private final PaperGoalFactory goalFactory = new PaperGoalFactory(this);
@@ -170,6 +173,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     @Override
     public void onLoad() {
         getServer().getServicesManager().register(CharacterProvider.class, this, this, ServicePriority.Highest);
+        versionChecker.checkVersion();
     }
 
     @Override
