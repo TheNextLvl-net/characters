@@ -14,6 +14,7 @@ public class CraftPlayerCharacter extends CraftPlayer {
         super(server, handle);
         this.character = character;
         setSleepingIgnored(true);
+        setAffectsSpawning(false);
     }
 
     @Override
