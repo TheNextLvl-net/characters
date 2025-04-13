@@ -12,6 +12,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 
@@ -51,6 +52,13 @@ public class EntityListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageEvent event) {
+        plugin.characterController().getCharacter(event.getEntity())
+                .flatMap(character -> character.getAttributeValue(AttributeTypes.ENTITY.INVULNERABLE))
+                .ifPresent(event::setCancelled);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onHangingBreak(HangingBreakEvent event) {
         plugin.characterController().getCharacter(event.getEntity())
                 .flatMap(character -> character.getAttributeValue(AttributeTypes.ENTITY.INVULNERABLE))
                 .ifPresent(event::setCancelled);
