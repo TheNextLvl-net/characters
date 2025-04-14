@@ -41,7 +41,7 @@ dependencies {
 
     //testImplementation("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(platform("org.junit:junit-bom:5.12.1"))
+    testImplementation(platform("org.junit:junit-bom:5.12.2"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
