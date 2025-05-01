@@ -45,6 +45,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION;
@@ -93,7 +94,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
                 handle.setServerLevel(level);
                 handle.spawnIn(level);
                 broadcastCharacter();
-                handle.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+                handle.teleportTo(level, location.getX(), location.getY(), location.getZ(),
+                        Set.of(), location.getYaw(), location.getPitch(), false);
             }
             return true;
         } else if (isSpawned()) return false;
@@ -127,7 +129,8 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
             broadcastCharacter();
         } else {
             server.getHandle().placeNewPlayer(serverPlayer.connection.connection, serverPlayer, cookie);
-            serverPlayer.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            serverPlayer.teleportTo(level, location.getX(), location.getY(), location.getZ(),
+                    Set.of(), location.getYaw(), location.getPitch(), false);
         }
 
         preSpawn(this.entity);
