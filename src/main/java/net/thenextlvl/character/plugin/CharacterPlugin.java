@@ -14,9 +14,6 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.title.Title;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterProvider;
@@ -67,7 +64,6 @@ import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Frog;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.ServicePriority;
@@ -84,6 +80,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -100,7 +97,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new";
     private final Metrics metrics = new Metrics(this, 24223);
     private final File savesFolder = new File(getDataFolder(), "saves");
-    private final File translations = new File(getDataFolder(), "translations");
+    private final Path translations = getDataPath().resolve("translations");
 
     private final NBT nbt = NBT.builder()
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter(this))
@@ -161,14 +158,12 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     public final ActionType<String> connect = register(new PaperActionType<>("connect", String.class,
             (player, character, server) -> messenger.connect(player, server)));
 
-    private final ComponentBundle bundle = new ComponentBundle(translations,
-            audience -> audience instanceof Player player ? player.locale() : Locale.US)
-            .register("messages", Locale.US)
-            .register("messages_german", Locale.GERMANY)
-            .miniMessage(bundle -> MiniMessage.builder().tags(TagResolver.resolver(
-                    TagResolver.standard(),
-                    Placeholder.component("prefix", bundle.component(Locale.US, "prefix"))
-            )).build());
+    private final Key key = Key.key("characters", "translations");
+    private final ComponentBundle bundle = ComponentBundle.builder(key, translations)
+            .placeholder("prefix", "prefix")
+            .resource("messages", Locale.US)
+            .resource("messages_german", Locale.GERMANY)
+            .build();
 
     @Override
     public void onLoad() {
