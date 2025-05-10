@@ -49,7 +49,7 @@ public class ConnectionListener implements Listener {
         characters.stream()
                 .filter(character -> character.getType().equals(EntityType.PLAYER))
                 .filter(character -> character.canSee(player))
-                .map(character -> (PaperPlayerCharacter) character)
+                .map(PaperPlayerCharacter.class::cast)
                 .forEach(character -> character.loadCharacter(player));
     }
 }
