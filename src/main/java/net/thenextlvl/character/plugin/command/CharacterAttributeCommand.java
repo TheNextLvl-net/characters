@@ -17,6 +17,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.minecraft.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.attribute.AttributeType;
@@ -85,6 +86,7 @@ class CharacterAttributeCommand {
         if (type.equals(Particle.class)) return new ParticleArgument();
         if (type.equals(PotionType.class)) return ArgumentTypes.resource(RegistryKey.POTION);
         if (type.equals(String.class)) return StringArgumentType.string();
+        if (type.equals(TriState.class)) return new EnumArgument<>(TriState.class);
         if (type.equals(boolean.class) || type.equals(Boolean.class)) return BoolArgumentType.bool();
         if (type.equals(double.class) || type.equals(Double.class)) return DoubleArgumentType.doubleArg();
         if (type.equals(float.class) || type.equals(Float.class)) return FloatArgumentType.floatArg();

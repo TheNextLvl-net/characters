@@ -4,6 +4,7 @@ import io.papermc.paper.entity.CollarColorable;
 import io.papermc.paper.util.Tick;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
+import net.kyori.adventure.util.TriState;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Particle;
@@ -386,9 +387,9 @@ public class AttributeTypes {
     }
 
     public static class EntityAttributes {
-        public final AttributeType<Entity, Boolean> VISUAL_FIRE = register(
-                "entity:visual_fire", Entity.class, boolean.class,
-                Entity::isVisualFire, Entity::setVisualFire
+        public final AttributeType<Entity, TriState> VISUAL_FIRE = register(
+                "entity:visual_fire", Entity.class, TriState.class,
+                Entity::getVisualFire, Entity::setVisualFire
         );
 
         public final AttributeType<Entity, Integer> FIRE_TICKS = register(
