@@ -121,7 +121,7 @@ public class PaperCharacterController implements CharacterController {
                 .filter(character -> character.getEntity()
                         .filter(player::equals)
                         .isPresent()
-                ).map(character -> (PlayerCharacter) character)
+                ).map(PlayerCharacter.class::cast)
                 .findFirst();
     }
 
@@ -146,8 +146,8 @@ public class PaperCharacterController implements CharacterController {
     }
 
     @Override
-    public Set<String> getCharacterNames() {
-        return characters.keySet();
+    public @Unmodifiable Set<String> getCharacterNames() {
+        return Set.copyOf(characters.keySet());
     }
 
     @Override

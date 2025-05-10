@@ -49,6 +49,7 @@ public interface CharacterController {
 
     PlayerCharacter spawnCharacter(String name, Location location);
 
+    @Unmodifiable
     Set<String> getCharacterNames();
 
     boolean characterExists(String name);
