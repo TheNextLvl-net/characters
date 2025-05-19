@@ -5,7 +5,7 @@ plugins {
     id("java")
     id("com.gradleup.shadow") version "9.0.0-beta13"
     id("io.papermc.hangar-publish-plugin") version "0.1.3"
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.16"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.17"
     id("de.eldoria.plugin-yml.paper") version "0.7.1"
 }
 
