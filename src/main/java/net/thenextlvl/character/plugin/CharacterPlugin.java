@@ -17,12 +17,15 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
+import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterProvider;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.character.PaperCharacterController;
+import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.action.PaperActionType;
 import net.thenextlvl.character.plugin.character.action.PaperActionTypeProvider;
@@ -127,6 +130,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
             .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
             .registerTypeHierarchyAdapter(Title.class, new TitleAdapter())
+            .registerTypeHierarchyAdapter(TriState.class, new EnumAdapter<>(TriState.class))
             .registerTypeHierarchyAdapter(Vector3f.class, new Vector3fAdapter())
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
@@ -287,19 +291,20 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         var character = type.equals(EntityType.PLAYER)
                 ? createPlayerCharacter(root, name)
                 : createCharacter(root, name, type);
+        characterController.characters.put(name, character);
         character.setSpawnLocation(location);
         return character;
     }
 
     private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
         var uuid = root.optional("uuid").map(tag -> nbt.fromTag(tag, UUID.class)).orElseGet(UUID::randomUUID);
-        var character = characterController.createCharacter(name, uuid);
+        var character = new PaperPlayerCharacter(this, name, uuid);
         character.deserialize(root);
         return character;
     }
 
     private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
-        var character = characterController.createCharacter(name, type);
+        var character = new PaperCharacter<>(this, name, type);
         character.deserialize(root);
         return character;
     }
