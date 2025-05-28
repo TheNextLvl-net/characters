@@ -161,8 +161,8 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     private final Key key = Key.key("characters", "translations");
     private final ComponentBundle bundle = ComponentBundle.builder(key, translations)
             .placeholder("prefix", "prefix")
-            .resource("messages", Locale.US)
-            .resource("messages_german", Locale.GERMANY)
+            .resource("messages.properties", Locale.US)
+            .resource("messages_german.properties", Locale.GERMANY)
             .build();
 
     @Override
