@@ -111,7 +111,7 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendActionBar(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("send-actionbar").then(messageArgument(plugin.sendActionbar, clickTypes, plugin));
+        return Commands.literal("send-actionbar").then(stringArgument("message", plugin.sendActionbar, clickTypes, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendEntityEffect(ClickTypes clickTypes, CharacterPlugin plugin) {
@@ -122,7 +122,7 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendMessage(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("send-message").then(messageArgument(plugin.sendMessage, clickTypes, plugin));
+        return Commands.literal("send-message").then(stringArgument("message", plugin.sendMessage, clickTypes, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> teleport(ClickTypes clickTypes, CharacterPlugin plugin) {
@@ -156,14 +156,6 @@ class CharacterActionAddCommand {
                             return transfer(context, port, clickTypes, plugin);
                         }))
                 .executes(context -> transfer(context, 25565, clickTypes, plugin)));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> messageArgument(ActionType<Component> actionType, ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.argument("message", StringArgumentType.greedyString())
-                .executes(context -> {
-                    var message = MiniMessage.miniMessage().deserialize(context.getArgument("message", String.class));
-                    return addAction(context, actionType, message, clickTypes, plugin);
-                });
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> stringArgument(String name, ActionType<String> actionType, ClickTypes clickTypes, CharacterPlugin plugin) {
