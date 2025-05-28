@@ -154,9 +154,10 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Sound.class,
             (player, character, sound) -> player.playSound(sound)));
     public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", String.class,
-            (player, character, command) -> player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command)));
+            (player, character, command) -> player.getServer().dispatchCommand(player.getServer().getConsoleSender(),
+                    command.replace("<player>", player.getName()))));
     public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", String.class,
-            (player, character, command) -> player.performCommand(command)));
+            (player, character, command) -> player.performCommand(command.replace("<player>", player.getName()))));
     public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Title.class,
             (player, character, title) -> player.showTitle(title)));
     public final ActionType<String> connect = register(new PaperActionType<>("connect", String.class,
