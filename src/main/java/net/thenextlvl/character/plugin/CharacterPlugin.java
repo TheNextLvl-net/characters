@@ -22,7 +22,9 @@ import net.thenextlvl.character.CharacterProvider;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.character.PaperCharacterController;
+import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.action.PaperActionType;
 import net.thenextlvl.character.plugin.character.action.PaperActionTypeProvider;
@@ -287,19 +289,20 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         var character = type.equals(EntityType.PLAYER)
                 ? createPlayerCharacter(root, name)
                 : createCharacter(root, name, type);
+        characterController.characters.put(name, character);
         character.setSpawnLocation(location);
         return character;
     }
 
     private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
         var uuid = root.optional("uuid").map(tag -> nbt.fromTag(tag, UUID.class)).orElseGet(UUID::randomUUID);
-        var character = characterController.createCharacter(name, uuid);
+        var character = new PaperPlayerCharacter(this, name, uuid);
         character.deserialize(root);
         return character;
     }
 
     private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
-        var character = characterController.createCharacter(name, type);
+        var character = new PaperCharacter<>(this, name, type);
         character.deserialize(root);
         return character;
     }

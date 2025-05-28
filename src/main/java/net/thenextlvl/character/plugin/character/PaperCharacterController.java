@@ -25,7 +25,7 @@ import java.util.UUID;
 @NullMarked
 public class PaperCharacterController implements CharacterController {
     private final CharacterPlugin plugin;
-    private final Map<String, Character<?>> characters = new HashMap<>();
+    public final Map<String, Character<?>> characters = new HashMap<>();
 
     public PaperCharacterController(CharacterPlugin plugin) {
         this.plugin = plugin;
