@@ -17,6 +17,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
+import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterProvider;
 import net.thenextlvl.character.PlayerCharacter;
@@ -129,6 +130,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
             .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
             .registerTypeHierarchyAdapter(Title.class, new TitleAdapter())
+            .registerTypeHierarchyAdapter(TriState.class, new EnumAdapter<>(TriState.class))
             .registerTypeHierarchyAdapter(Vector3f.class, new Vector3fAdapter())
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
             .build();
