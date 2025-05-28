@@ -14,6 +14,8 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterProvider;
@@ -137,10 +139,12 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
     private final PluginMessenger messenger = new PluginMessenger(this);
 
-    public final ActionType<Component> sendActionbar = register(new PaperActionType<>("send_actionbar", Component.class,
-            (player, character, message) -> player.sendActionBar(message)));
-    public final ActionType<Component> sendMessage = register(new PaperActionType<>("send_message", Component.class,
-            (player, character, message) -> player.sendMessage(message)));
+    public final ActionType<String> sendActionbar = register(new PaperActionType<>("send_actionbar", String.class,
+            (player, character, message) -> player.sendActionBar(MiniMessage.miniMessage().deserialize(message,
+                    Placeholder.parsed("player", player.getName())))));
+    public final ActionType<String> sendMessage = register(new PaperActionType<>("send_message", String.class,
+            (player, character, message) -> player.sendMessage(MiniMessage.miniMessage().deserialize(message,
+                    Placeholder.parsed("player", player.getName())))));
     public final ActionType<EntityEffect> sendEntityEffect = register(new PaperActionType<>("send_entity_effect", EntityEffect.class,
             (player, character, entityEffect) -> player.sendEntityEffect(entityEffect, character)));
     public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
