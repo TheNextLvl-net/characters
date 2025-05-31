@@ -71,6 +71,29 @@ paper {
     }
 
     permissions {
+        register("characters.admin") {
+            description = "Allows access to all characters commands"
+            children = listOf(
+                "characters.command.action",
+                "characters.command.action.add",
+                "characters.command.action.cooldown",
+                "characters.command.action.list",
+                "characters.command.action.permission",
+                "characters.command.action.remove",
+                "characters.command.attribute",
+                "characters.command.create",
+                "characters.command.delete",
+                "characters.command.equipment",
+                "characters.command.goal",
+                "characters.command.list",
+                "characters.command.save",
+                "characters.command.skin",
+                "characters.command.tag",
+                "characters.command.teleport",
+                "characters.command.view-permission"
+            )
+        }
+        
         register("characters.command")
         register("characters.command.action") { children = listOf("characters.command") }
         register("characters.command.action.add") { children = listOf("characters.command.action") }
