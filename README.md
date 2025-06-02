@@ -21,6 +21,6 @@ This plugin makes it simple!
 With **Characters**, adding lifelike NPCs to your world has never been easier.
 Whether you’re a server owner or a developer, this plugin has you covered!
 
-⬇️ [Download now on Hangar](https://hangar.papermc.io/TheNextLvl/Characters)<br>
-🔗 [Check out the Wiki](https://github.com/TheNextLvl-net/characters/wiki)<br>
-🛠 [Our Maven Repository](https://repo.thenextlvl.net/#/releases/net/thenextlvl/characters/api)<br>
+⬇️ [Download now](https://modrinth.com/project/oeBa7ep1)<br>
+🔗 [Check out the Wiki](https://thenextlvl.net/docs/characters)<br>
+🛠 [Our Maven Repository](https://repo.thenextlvl.net/#/releases/net/thenextlvl/characters)<br>
