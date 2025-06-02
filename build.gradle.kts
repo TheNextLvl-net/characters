@@ -1,5 +1,4 @@
 import io.papermc.hangarpublishplugin.model.Platforms
-import net.minecrell.pluginyml.paper.PaperPluginDescription
 
 plugins {
     id("java")
@@ -63,13 +62,6 @@ paper {
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
     // foliaSupported = true
-
-    serverDependencies {
-        register("HologramAPI") {
-            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
-            required = false
-        }
-    }
 
     permissions {
         register("characters.admin") {
