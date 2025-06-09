@@ -86,7 +86,7 @@ paper {
                 "characters.command.view-permission"
             )
         }
-        
+
         register("characters.command")
         register("characters.command.action") { children = listOf("characters.command") }
         register("characters.command.action.add") { children = listOf("characters.command.action") }
