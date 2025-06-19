@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.5-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.6-R0.1-SNAPSHOT")
 
     implementation("net.thenextlvl.core:i18n:3.2.0")
     implementation("net.thenextlvl.core:paper:2.2.1")
@@ -39,7 +39,7 @@ dependencies {
     }
     implementation(project(":api"))
 
-    //testImplementation("io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT")
+    //testImplementation("io.papermc.paper:paper-api:1.21.6-R0.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(platform("org.junit:junit-bom:5.13.1"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

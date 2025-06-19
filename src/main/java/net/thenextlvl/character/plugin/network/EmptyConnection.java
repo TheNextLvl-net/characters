@@ -2,11 +2,9 @@ package net.thenextlvl.character.plugin.network;
 
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketListener;
-import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.net.SocketAddress;
 
@@ -27,14 +25,6 @@ class EmptyConnection extends Connection {
 
     @Override
     public void send(Packet<?> packet) {
-    }
-
-    @Override
-    public void send(Packet<?> packet, @Nullable PacketSendListener sendListener) {
-    }
-
-    @Override
-    public void send(Packet<?> packet, @Nullable PacketSendListener listener, boolean flush) {
     }
 
     @Override
