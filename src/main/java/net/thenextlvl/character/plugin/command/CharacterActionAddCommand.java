@@ -12,6 +12,8 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
+import io.papermc.paper.math.Rotation;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -127,24 +129,21 @@ class CharacterActionAddCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> teleport(ClickTypes clickTypes, CharacterPlugin plugin) {
         return Commands.literal("teleport").then(positionArgument(plugin)
-                .then(Commands.argument("yaw", FloatArgumentType.floatArg(-180, 180))
-                        .then(Commands.argument("pitch", FloatArgumentType.floatArg(-90, 90))
-                                .then(Commands.argument("world", ArgumentTypes.world())
-                                        .executes(context -> {
-                                            var yaw = context.getArgument("yaw", float.class);
-                                            var pitch = context.getArgument("pitch", float.class);
-                                            var world = context.getArgument("world", World.class);
-                                            return teleport(context, yaw, pitch, world, clickTypes, plugin);
-                                        }))
+                .then(Commands.argument("rotation", ArgumentTypes.rotation())
+                        .then(Commands.argument("world", ArgumentTypes.world())
                                 .executes(context -> {
-                                    var yaw = context.getArgument("yaw", float.class);
-                                    var pitch = context.getArgument("pitch", float.class);
-                                    var world = context.getSource().getLocation().getWorld();
-                                    return teleport(context, yaw, pitch, world, clickTypes, plugin);
-                                })))
+                                    var rotation = context.getArgument("rotation", RotationResolver.class);
+                                    var world = context.getArgument("world", World.class);
+                                    return teleport(context, rotation.resolve(context.getSource()), world, clickTypes, plugin);
+                                }))
+                        .executes(context -> {
+                            var rotation = context.getArgument("rotation", RotationResolver.class);
+                            var world = context.getSource().getLocation().getWorld();
+                            return teleport(context, rotation.resolve(context.getSource()), world, clickTypes, plugin);
+                        }))
                 .executes(context -> {
                     var world = context.getSource().getLocation().getWorld();
-                    return teleport(context, 0, 0, world, clickTypes, plugin);
+                    return teleport(context, Rotation.rotation(0, 0), world, clickTypes, plugin);
                 }));
     }
 
@@ -174,12 +173,10 @@ class CharacterActionAddCommand {
         return addAction(context, plugin.playSound, Sound.sound(key, source, volume, pitch), clickTypes, plugin);
     }
 
-    private static int teleport(CommandContext<CommandSourceStack> context, float yaw, float pitch, World world, ClickTypes clickTypes, CharacterPlugin plugin) throws CommandSyntaxException {
+    private static int teleport(CommandContext<CommandSourceStack> context, Rotation rotation, World world, ClickTypes clickTypes, CharacterPlugin plugin) throws CommandSyntaxException {
         var resolver = context.getArgument("position", FinePositionResolver.class);
         var position = resolver.resolve(context.getSource());
-        var location = position.toLocation(world);
-        location.setYaw(yaw);
-        location.setPitch(pitch);
+        var location = position.toLocation(world).setRotation(rotation);
         return addAction(context, plugin.teleport, location, clickTypes, plugin);
     }
 
