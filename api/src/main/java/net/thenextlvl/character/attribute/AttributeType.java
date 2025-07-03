@@ -1,7 +1,6 @@
 package net.thenextlvl.character.attribute;
 
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
 import net.thenextlvl.character.Character;
 import org.jspecify.annotations.NonNull;
@@ -15,30 +14,35 @@ public class AttributeType<E, T> implements Keyed {
     private final @NonNull Class<E> entityType;
     private final @NonNull Class<T> dataType;
     private final @NonNull Function<@NonNull E, T> getter;
+    private final @NonNull Function<@NonNull E, T> defaultGetter;
     private final @NonNull Key key;
-
-    public AttributeType(@KeyPattern String key, @NonNull Class<E> entityType, @NonNull Class<T> dataType,
-                         @NonNull Function<@NonNull E, T> getter,
-                         @NonNull BiConsumer<@NonNull E, T> setter) {
-        this(Key.key(key), entityType, dataType, getter, setter);
-    }
 
     public AttributeType(@NonNull Key key, @NonNull Class<E> entityType, @NonNull Class<T> dataType,
                          @NonNull Function<@NonNull E, T> getter,
+                         @NonNull Function<@NonNull E, T> defaultGetter,
                          @NonNull BiConsumer<@NonNull E, T> setter) {
         this.dataType = dataType;
         this.entityType = entityType;
         this.getter = getter;
+        this.defaultGetter = defaultGetter;
         this.key = key;
         this.setter = setter;
     }
 
     public void set(@NonNull E entity, T value) {
-        setter.accept(entity, value);
+        setter.accept(entity, value == null ? getDefault(entity) : value);
     }
 
     public T get(E entity) {
         return getter.apply(entity);
+    }
+
+    public T getOrDefault(E entity) {
+        return Objects.requireNonNullElseGet(get(entity), () -> getDefault(entity));
+    }
+
+    public T getDefault(E entity) {
+        return defaultGetter.apply(entity);
     }
 
     public @NonNull Class<T> dataType() {
