@@ -97,8 +97,16 @@ class CharacterAttributeCommand {
     }
 
     private static <E, T> ArgumentBuilder<CommandSourceStack, ?> resetAttribute(AttributeType<E, T> attribute, CharacterPlugin plugin) {
-        // todo: reset attribute to default value
-        return Commands.literal(attribute.key().asString());
+        return Commands.literal(attribute.key().asString()).executes(context -> {
+            var character = (Character<?>) context.getArgument("character", Character.class);
+            var success = character.setAttributeValue(attribute, null);
+            var message = success ? "character.attribute" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("attribute", attribute.key().asString()),
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", character.getAttributeValue(attribute).map(Object::toString).orElse("null")));
+            return success ? Command.SINGLE_SUCCESS : 0;
+        });
     }
 
     private static <E, T> ArgumentBuilder<CommandSourceStack, ?> setAttribute(AttributeType<E, T> attribute, CharacterPlugin plugin) {
