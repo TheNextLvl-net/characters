@@ -1,5 +1,7 @@
 package net.thenextlvl.character;
 
+import com.destroystokyo.paper.entity.Pathfinder;
+import core.nbt.serialization.TagSerializable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
@@ -77,12 +79,14 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     <T> Optional<T> getAttributeValue(AttributeType<?, T> type);
 
-    <T> boolean setAttributeValue(AttributeType<?, T> type, T value);
+    <T> boolean setAttributeValue(AttributeType<?, T> type, @Nullable T value);
 
     <V, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type);
 
     @Nullable
     World getWorld();
+
+    Optional<Pathfinder> getPathfinder();
 
     <T> boolean addAction(String name, ClickAction<T> action);
 

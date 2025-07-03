@@ -3,11 +3,14 @@ package net.thenextlvl.character.attribute;
 import net.thenextlvl.nbt.serialization.TagSerializable;
 import org.jspecify.annotations.NonNull;
 
-public interface Attribute<E, T> extends TagSerializable {
+public interface AttributeInstance<T> extends TagSerializable {
     @NonNull
-    AttributeType<E, T> getType();
+    AttributeType<?, T> getType();
+
+    @NonNull
+    Class<T> getDataType();
 
     T getValue();
 
-    boolean setValue(T value);
+    void setValue(T value);
 }

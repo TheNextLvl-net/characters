@@ -3,15 +3,17 @@ package net.thenextlvl.character.plugin.character.attribute;
 import com.google.common.base.Preconditions;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.attribute.Attribute;
+import net.thenextlvl.character.attribute.AttributeInstance;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
-public class PaperAttribute<E, T> implements Attribute<@NonNull E, T> {
+public class PaperAttribute<E, T> implements AttributeInstance<T> {
     private final @NonNull AttributeType<@NonNull E, T> type;
     private final @NonNull Character<?> character;
     private final @NonNull CharacterPlugin plugin;
@@ -22,7 +24,7 @@ public class PaperAttribute<E, T> implements Attribute<@NonNull E, T> {
             @NonNull Character<?> character,
             @NonNull CharacterPlugin plugin
     ) {
-        character.getEntity(type.entityType()).ifPresent(entity -> this.value = type.get(entity));
+        character.getEntity(type.entityType()).ifPresent(entity -> this.value = type.getOrDefault(entity));
         this.character = character;
         this.plugin = plugin;
         this.type = type;
@@ -34,12 +36,17 @@ public class PaperAttribute<E, T> implements Attribute<@NonNull E, T> {
     }
 
     @Override
+    public @NonNull Class<T> getDataType() {
+        return type.dataType();
+    }
+
+    @Override
     public T getValue() {
         return value;
     }
 
     @Override
-    public boolean setValue(T value) {
+    public boolean setValue(@Nullable T value) {
         if (Objects.equals(this.getValue(), value)) return false;
         character.getEntity(type.entityType()).ifPresent(entity -> type.set(entity, value));
         this.value = value;
