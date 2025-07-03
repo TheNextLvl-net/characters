@@ -20,8 +20,8 @@ public class PaperSkinFactory implements SkinFactory {
 
     public PaperSkinFactory(CharacterPlugin plugin) {
         this.client = MineSkinClient.builder()
-                .requestHandler((userAgent, apiKey, timeout, gson) ->
-                        new Java11RequestHandler(userAgent, apiKey.isBlank() ? null : apiKey, timeout, gson))
+                .requestHandler((baseUrl, userAgent, apiKey, timeout, gson) ->
+                        new Java11RequestHandler(baseUrl, userAgent, apiKey.isBlank() ? null : apiKey, timeout, gson))
                 .userAgent("Characters/" + plugin.getPluginMeta().getVersion())
                 .apiKey(Objects.requireNonNullElse(System.getenv("MINESKIN_API_KEY"), ""))
                 .timeout(3000)
