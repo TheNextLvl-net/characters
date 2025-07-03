@@ -237,6 +237,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
+    public Optional<Pathfinder> getPathfinder() {
+        return getEntity(Mob.class).map(Mob::getPathfinder);
+    }
+
+    @Override
     public <T> boolean addAction(String name, ClickAction<T> action) {
         return action.getActionType().isApplicable(action.getInput(), this)
                && !action.equals(actions.put(name, action));
