@@ -11,7 +11,6 @@ import org.mineskin.request.GenerateRequest;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 // https://docs.mineskin.org/docs/category/mineskin-api
@@ -19,13 +18,16 @@ public class PaperSkinFactory implements SkinFactory {
     private final MineSkinClient client;
 
     public PaperSkinFactory(CharacterPlugin plugin) {
+        var apiKey = System.getenv("MINESKIN_API_KEY");
         this.client = MineSkinClient.builder()
-                .requestHandler((baseUrl, userAgent, apiKey, timeout, gson) ->
-                        new Java11RequestHandler(baseUrl, userAgent, apiKey.isBlank() ? null : apiKey, timeout, gson))
+                .requestHandler(Java11RequestHandler::new)
                 .userAgent("Characters/" + plugin.getPluginMeta().getVersion())
-                .apiKey(Objects.requireNonNullElse(System.getenv("MINESKIN_API_KEY"), ""))
+                .apiKey(apiKey)
                 .timeout(3000)
                 .build();
+        if (apiKey != null && !apiKey.isBlank()) return;
+        plugin.getComponentLogger().warn("You can define an API key via the environment variable MINESKIN_API_KEY");
+        plugin.getComponentLogger().warn("If you don't plan on using the skin file or url service a lot you can ignore this warning");
     }
 
     @Override
