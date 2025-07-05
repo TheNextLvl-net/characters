@@ -26,7 +26,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity.RemovalReason;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.ChatVisiblity;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -49,6 +48,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION;
+import static net.minecraft.world.entity.player.Player.DEFAULT_MAIN_HAND;
 
 @NullMarked
 public class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
@@ -103,10 +103,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         super.spawnLocation = location;
 
         var information = createClientInformation();
-        var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false);
+        var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false, null, Set.of(), new io.papermc.paper.util.KeepAlive());
         var serverPlayer = new ServerCharacter(server.getServer(), level, information, cookie);
 
-        serverPlayer.setClientLoaded(true);
         this.entity = new CraftPlayerCharacter(this, server, serverPlayer);
 
         server.getServer().getConnection().getConnections().add(serverPlayer.connection.connection);
@@ -135,6 +134,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
 
         preSpawn(this.entity);
         applySkinPartConfig(serverPlayer);
+        serverPlayer.setClientLoaded(true);
         plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, scheduledTask -> {
             if (entity == null) scheduledTask.cancel();
             else if (serverPlayer.valid) serverPlayer.doTick();
@@ -291,7 +291,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     private ClientInformation createClientInformation() {
-        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
+        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), DEFAULT_MAIN_HAND, false, isListed(), ParticleStatus.MINIMAL);
     }
 
     private ClientboundPlayerInfoUpdatePacket createInitializationPacket(ServerPlayer entity) {

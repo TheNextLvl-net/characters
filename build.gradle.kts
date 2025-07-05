@@ -5,12 +5,12 @@ plugins {
     id("com.gradleup.shadow") version "9.0.0-rc1"
     id("com.modrinth.minotaur") version "2.+"
     id("io.papermc.hangar-publish-plugin") version "0.1.3"
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.17"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
     id("de.eldoria.plugin-yml.paper") version "0.7.1"
 }
 
 group = "net.thenextlvl.characters"
-version = "0.2.0"
+version = "0.3.0"
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -28,18 +28,18 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.6-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.7-R0.1-SNAPSHOT")
 
     implementation("net.thenextlvl.core:i18n:3.2.0")
     implementation("net.thenextlvl.core:paper:2.2.1")
     implementation("org.bstats:bstats-bukkit:3.1.1-SNAPSHOT")
-    implementation("org.mineskin:java-client-java11:3.0.4-SNAPSHOT") {
+    implementation("org.mineskin:java-client-java11:3.0.6-SNAPSHOT") {
         exclude("com.google.code.gson", "gson")
         exclude("com.google.guava", "guava")
     }
     implementation(project(":api"))
 
-    //testImplementation("io.papermc.paper:paper-api:1.21.6-R0.1-SNAPSHOT")
+    //testImplementation("io.papermc.paper:paper-api:1.21.7-R0.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(platform("org.junit:junit-bom:6.0.0-SNAPSHOT"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -58,7 +58,7 @@ tasks.shadowJar {
 paper {
     name = "Characters"
     main = "net.thenextlvl.character.plugin.CharacterPlugin"
-    apiVersion = "1.21.5"
+    apiVersion = "1.21.7"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
     // foliaSupported = true
