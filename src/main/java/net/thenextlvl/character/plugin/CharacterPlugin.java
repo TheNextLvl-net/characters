@@ -208,7 +208,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public Character<?> read(File file) throws IOException {
+    public @Nullable Character<?> read(File file) throws IOException {
         try (var inputStream = stream(IO.of(file))) {
             return read(inputStream);
         } catch (Exception e) {
@@ -282,12 +282,18 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         return new NBTInputStream(file.inputStream(READ), StandardCharsets.UTF_8);
     }
 
-    private Character<?> read(NBTInputStream inputStream) throws IOException {
+    private @Nullable Character<?> read(NBTInputStream inputStream) throws IOException {
         var entry = inputStream.readNamedTag();
         var root = entry.getKey().getAsCompound();
         var name = entry.getValue().orElseThrow(() -> new ParserException("Character misses root name"));
         var type = nbt.fromTag(root.get("type"), EntityType.class);
-        var location = root.optional("location").map(tag -> nbt.fromTag(tag, Location.class)).orElse(null);
+        Location location;
+        try {
+            location = root.optional("location").map(tag -> nbt.fromTag(tag, Location.class)).orElse(null);
+        } catch (ParserException e) {
+            getComponentLogger().warn("Skip loading character '{}': {}", name, e.getMessage());
+            return null;
+        }
         var character = type.equals(EntityType.PLAYER)
                 ? createPlayerCharacter(root, name)
                 : createCharacter(root, name, type);
