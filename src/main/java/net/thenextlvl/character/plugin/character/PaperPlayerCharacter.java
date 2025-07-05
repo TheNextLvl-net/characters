@@ -103,7 +103,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         super.spawnLocation = location;
 
         var information = createClientInformation();
-        var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false);
+        var cookie = new CommonListenerCookie(profile.getGameProfile(), 0, information, false, null, Set.of(), new io.papermc.paper.util.KeepAlive());
         var serverPlayer = new ServerCharacter(server.getServer(), level, information, cookie);
 
         serverPlayer.setClientLoaded(true);
@@ -291,7 +291,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     private ClientInformation createClientInformation() {
-        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), HumanoidArm.RIGHT, false, isListed(), ParticleStatus.MINIMAL);
+        return new ClientInformation("en_us", 2, ChatVisiblity.HIDDEN, true, skinParts.getRaw(), DEFAULT_MAIN_HAND, false, isListed(), ParticleStatus.MINIMAL);
     }
 
     private ClientboundPlayerInfoUpdatePacket createInitializationPacket(ServerPlayer entity) {
