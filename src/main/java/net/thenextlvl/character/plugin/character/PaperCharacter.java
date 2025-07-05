@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.character;
 
+import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.nbt.NBTOutputStream;
@@ -7,7 +8,6 @@ import core.nbt.serialization.ParserException;
 import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
 import core.util.StringUtil;
-import io.papermc.paper.util.Tick;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -24,7 +24,6 @@ import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
@@ -53,7 +52,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -89,7 +87,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable String viewPermission = null;
-    protected @Nullable TextDisplay textDisplayName;
+    protected @Nullable TextDisplay textDisplayName = null;
 
     protected Pose pose = Pose.STANDING;
 
@@ -200,7 +198,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public <T> boolean setAttributeValue(AttributeType<?, T> type, T value) {
+    public <T> boolean setAttributeValue(AttributeType<?, T> type, @Nullable T value) {
         return getAttribute(type).map(attribute -> attribute.setValue(value)).orElse(false);
     }
 
@@ -221,6 +219,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public @Nullable World getWorld() {
         return getEntity().map(Entity::getWorld).orElse(null);
+    }
+
+    @Override
+    public Optional<Pathfinder> getPathfinder() {
+        return getEntity(Mob.class).map(Mob::getPathfinder);
     }
 
     @Override
@@ -527,13 +530,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected void preSpawn(E entity) {
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setVisibleByDefault(visibleByDefault);
-        entity.lockFreezeTicks(true);
-        entity.setInvulnerable(true);
-        entity.setPersistent(false);
-        entity.setSilent(true);
 
-        if (entity instanceof LivingEntity living) living.setAI(false);
-        if (entity instanceof AreaEffectCloud cloud) cloud.setDuration(Tick.tick().fromDuration(Duration.ofDays(999)));
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
         attributes.forEach(attribute -> {
