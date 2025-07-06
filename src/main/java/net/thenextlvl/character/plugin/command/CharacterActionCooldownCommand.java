@@ -27,12 +27,32 @@ class CharacterActionCooldownCommand {
                 .requires(source -> source.getSender().hasPermission("characters.command.action.cooldown"))
                 .then(characterArgument(plugin)
                         .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                        .then(actionArgument(plugin).then(cooldownArgument(plugin)
-                                .executes(context -> set(context, plugin)))));
+                        .then(actionArgument(plugin)
+                                .then(cooldownArgument(plugin))
+                                .executes(context -> get(context, plugin))));
+    }
+
+    private static int get(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+        var sender = context.getSource().getSender();
+        var character = context.getArgument("character", Character.class);
+        var actionName = context.getArgument("action", String.class);
+        var action = character.getAction(actionName);
+        if (action == null) {
+            plugin.bundle().sendMessage(sender, "character.action.not_found",
+                    Placeholder.parsed("character", character.getName()),
+                    Placeholder.unparsed("name", actionName));
+            return 0;
+        }
+        plugin.bundle().sendMessage(sender, "character.action.cooldown",
+                Placeholder.parsed("character", character.getName()),
+                Placeholder.parsed("action", actionName),
+                Formatter.number("cooldown", action.getCooldown().toSeconds()));
+        return Command.SINGLE_SUCCESS;
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> cooldownArgument(CharacterPlugin plugin) {
-        return Commands.argument("cooldown", ArgumentTypes.time());
+        return Commands.argument("cooldown", ArgumentTypes.time())
+                .executes(context -> set(context, plugin));
     }
 
     private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
