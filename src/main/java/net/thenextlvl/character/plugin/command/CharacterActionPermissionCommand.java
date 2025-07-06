@@ -11,6 +11,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
+import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -34,7 +35,7 @@ class CharacterActionPermissionCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(permissionArgument()
+        return Commands.literal("set").then(permissionArgument(plugin)
                 .executes(context -> set(context, plugin)));
     }
 
@@ -64,8 +65,9 @@ class CharacterActionPermissionCommand {
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> permissionArgument() {
-        return Commands.argument("permission", StringArgumentType.string());
+    private static ArgumentBuilder<CommandSourceStack, ?> permissionArgument(CharacterPlugin plugin) {
+        return Commands.argument("permission", StringArgumentType.string())
+                .suggests(new PermissionSuggestionProvider<>(plugin));
     }
 
     private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
