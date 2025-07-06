@@ -205,9 +205,13 @@ class CharacterActionAddCommand {
         return Commands.argument("click-types", new EnumArgument<>(ClickTypes.class));
     }
 
+    @SuppressWarnings("unchecked")
     private static ArgumentBuilder<CommandSourceStack, ?> entityEffectArgument(CharacterPlugin plugin) {
-        return Commands.argument("entity-effect", new EnumArgument<>(EntityEffect.class, (context, entityEffect) ->
-                !entityEffect.getClass().isAnnotationPresent(Deprecated.class)));
+        return Commands.argument("entity-effect", new EnumArgument<>(EntityEffect.class, (context, entityEffect) -> {
+            var character = context.getLastChild().getArgument("character", Character.class);
+            if (!entityEffect.isApplicableTo(character.getEntityClass())) return false;
+            return !plugin.isDeprecated(entityEffect);
+        }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> positionArgument(CharacterPlugin plugin) {
