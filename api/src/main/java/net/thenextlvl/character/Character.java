@@ -49,6 +49,8 @@ public interface Character<E extends Entity> extends TagSerializable {
     <T> Optional<T> getEntity(Class<T> type);
 
     Optional<E> getEntity();
+    
+    Class<? extends E> getEntityClass();
 
     @Nullable
     NamedTextColor getTeamColor();
@@ -82,7 +84,7 @@ public interface Character<E extends Entity> extends TagSerializable {
     @Nullable
     World getWorld();
 
-    boolean addAction(String name, ClickAction<?> action);
+    <T> boolean addAction(String name, ClickAction<T> action);
 
     boolean addViewer(UUID player);
 

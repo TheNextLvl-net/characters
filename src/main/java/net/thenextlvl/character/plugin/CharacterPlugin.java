@@ -105,12 +105,12 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     private final Path translations = getDataPath().resolve("translations");
 
     private final NBT nbt = NBT.builder()
+            .registerTypeAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter(this))
             .registerTypeHierarchyAdapter(BlockData.class, new BlockDataAdapter(getServer()))
             .registerTypeHierarchyAdapter(Brightness.class, new BrightnessAdapter())
             .registerTypeHierarchyAdapter(Cat.Type.class, new CatVariantAdapter())
             .registerTypeHierarchyAdapter(Character.class, new CharacterSerializer())
-            .registerTypeHierarchyAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(Color.class, new ColorAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
             .registerTypeHierarchyAdapter(DyeColor.class, new EnumAdapter<>(DyeColor.class))
@@ -150,7 +150,8 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             (player, character, message) -> player.sendMessage(MiniMessage.miniMessage().deserialize(message,
                     Placeholder.parsed("player", player.getName())))));
     public final ActionType<EntityEffect> sendEntityEffect = register(new PaperActionType<>("send_entity_effect", EntityEffect.class,
-            (player, character, entityEffect) -> player.sendEntityEffect(entityEffect, character)));
+            (player, character, entityEffect) -> player.sendEntityEffect(entityEffect, character),
+            (entityEffect, character) -> entityEffect.isApplicableTo(character.getEntityClass()) && !isDeprecated(entityEffect)));
     public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
             (player, character, address) -> player.transfer(address.getHostName(), address.getPort())));
     public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Location.class,
@@ -263,6 +264,14 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         getServer().getPluginManager().registerEvents(new CharacterListener(), this);
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
+    }
+
+    public boolean isDeprecated(Enum<?> anEnum) {
+        try {
+            return anEnum.getDeclaringClass().getField(anEnum.name()).isAnnotationPresent(Deprecated.class);
+        } catch (NoSuchFieldException e) {
+            return false;
+        }
     }
 
     private @Nullable Character<?> readSafe(File file) {

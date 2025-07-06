@@ -72,6 +72,7 @@ import static org.bukkit.attribute.Attribute.MAX_HEALTH;
 
 @NullMarked
 public class PaperCharacter<E extends Entity> implements Character<E> {
+    protected final Class<? extends E> entityClass;
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<Attribute<?, ?>> attributes = new HashSet<>();
@@ -98,7 +99,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected boolean persistent = true;
     protected boolean visibleByDefault = true;
 
+    @SuppressWarnings("unchecked")
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
+        Class<? extends Entity> entityClass = type.getEntityClass();
+        Preconditions.checkArgument(entityClass != null, "Cannot spawn entity of type %s", type);
+        this.entityClass = (Class<? extends E>) entityClass;
         this.name = name;
         this.plugin = plugin;
         this.type = type;
@@ -147,6 +152,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public Optional<E> getEntity() {
         return Optional.ofNullable(entity);
+    }
+
+    @Override
+    public Class<? extends E> getEntityClass() {
+        return entityClass;
     }
 
     @Override
@@ -224,8 +234,9 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public boolean addAction(String name, ClickAction<?> action) {
-        return !action.equals(actions.put(name, action));
+    public <T> boolean addAction(String name, ClickAction<T> action) {
+        return action.getActionType().isApplicable(action.getInput(), this)
+               && !action.equals(actions.put(name, action));
     }
 
     @Override
@@ -499,7 +510,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             AttributeTypes.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
         }));
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
-                addAction(name, plugin.nbt().fromTag(action, ClickAction.class))));
+                addAction(name, plugin.nbt().<ClickAction<?>>fromTag(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().fromTag(t, Component.class)).ifPresent(this::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
         root.optional("equipment").ifPresent(equipment::deserialize);
