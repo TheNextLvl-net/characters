@@ -11,7 +11,7 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.attribute.AttributeInstance;
 import net.thenextlvl.character.attribute.AttributeType;
-import net.thenextlvl.character.attribute.AttributeTypes;
+import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.attribute.PaperAttribute;
@@ -73,6 +73,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected final Class<? extends E> entityClass;
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
+    // todo: remove, use codecs
     protected final Set<AttributeInstance<?>> attributes = new HashSet<>();
     protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
@@ -498,6 +499,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         var actions = CompoundTag.empty();
         var attributes = CompoundTag.empty();
         this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().serialize(clickAction)));
+        // todo: use codecs in some way
         this.attributes.stream().filter(attribute -> attribute.getValue() != null).forEach(attribute ->
                 attributes.add(attribute.getType().key().asString(), attribute.serialize()));
         if (!actions.isEmpty()) tag.add("clickActions", actions);
@@ -508,9 +510,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public void deserialize(Tag tag) throws ParserException {
         var root = tag.getAsCompound();
+        // todo: use codecs in some way
         root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, t) -> {
             @SuppressWarnings("PatternValidation") var key = Key.key(name);
-            AttributeTypes.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
+            EntityCodecs.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
         }));
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
@@ -642,7 +645,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected void updateTeamOptions(Team team) {
         team.color(teamColor);
         var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable)
-                .orElse(getAttributeValue(AttributeTypes.LIVING_ENTITY.COLLIDABLE).orElse(false));
+                .orElse(getAttributeValue(EntityCodecs.LIVING_ENTITY.COLLIDABLE).orElse(false));
         team.setOption(Team.Option.COLLISION_RULE, collidable ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }

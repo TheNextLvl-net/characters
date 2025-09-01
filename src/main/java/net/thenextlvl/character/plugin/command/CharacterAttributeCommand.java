@@ -21,7 +21,7 @@ import net.minecraft.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.attribute.AttributeType;
-import net.thenextlvl.character.attribute.AttributeTypes;
+import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.BlockDataArgument;
 import net.thenextlvl.character.plugin.command.argument.ColorArgument;
@@ -60,7 +60,7 @@ class CharacterAttributeCommand {
                 .then(resetListed(plugin))
                 .then(resetPathfinding(plugin))
                 .then(resetTeamColor(plugin));
-        AttributeTypes.types().forEach(type -> tree.then(resetAttribute(type, plugin)));
+        EntityCodecs.types().forEach(type -> tree.then(resetAttribute(type, plugin)));
         return Commands.literal("reset").then(tree);
     }
 
@@ -69,7 +69,7 @@ class CharacterAttributeCommand {
                 .then(setListed(plugin))
                 .then(setPathfinding(plugin))
                 .then(setTeamColor(plugin));
-        AttributeTypes.types().forEach(type -> tree.then(setAttribute(type, plugin)));
+        EntityCodecs.types().forEach(type -> tree.then(setAttribute(type, plugin)));
         return Commands.literal("set").then(tree);
     }
 

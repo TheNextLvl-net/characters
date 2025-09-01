@@ -1,10 +1,12 @@
-package net.thenextlvl.character.attribute;
+package net.thenextlvl.character.plugin.codec;
 
 import io.papermc.paper.entity.CollarColorable;
 import io.papermc.paper.util.Tick;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.util.TriState;
+import net.thenextlvl.character.attribute.AttributeType;
+import net.thenextlvl.character.codec.EntityCodec;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Particle;
@@ -40,7 +42,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 @NullMarked
-public class AttributeTypes {
+public final class EntityCodecs {
+    // todo: revise whole class to use codecs
     private static final Set<AttributeType<?, ?>> attributeTypes = new HashSet<>();
 
     public static final AgeableAttributes AGEABLE = new AgeableAttributes();
@@ -69,12 +72,12 @@ public class AttributeTypes {
     }
 
     public static class AgeableAttributes {
-        public final AttributeType<Ageable, Boolean> BABY = register(
-                "ageable:baby", Ageable.class, boolean.class,
-                ageable -> !ageable.isAdult(), ageable -> false, (ageable, baby) -> {
+        public final EntityCodec<Ageable, Boolean> BABY = EntityCodec.booleanCodec(Key.key("ageable", "baby"), Ageable.class)
+                .getter(ageable -> !ageable.isAdult())
+                .setter((ageable, baby) -> {
                     if (baby) ageable.setBaby();
                     else ageable.setAdult();
-                });
+                }).build();
     }
 
     public static class AreaEffectCloudAttributes {

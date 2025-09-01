@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+// todo: revise, still needed?
 public class AttributeType<E, T> implements Keyed {
     private final @NonNull BiConsumer<@NonNull E, T> setter;
     private final @NonNull Class<E> entityType;
