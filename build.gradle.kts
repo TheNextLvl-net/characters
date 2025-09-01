@@ -30,8 +30,9 @@ repositories {
 dependencies {
     paperweight.paperDevBundle("1.21.7-R0.1-SNAPSHOT")
 
-    implementation("net.thenextlvl.core:i18n:3.2.0")
+    implementation("net.thenextlvl.core:i18n:3.2.1")
     implementation("net.thenextlvl.core:paper:2.2.1")
+    implementation("net.thenextlvl.core:utils:1.1.1")
     implementation("org.bstats:bstats-bukkit:3.1.1-SNAPSHOT")
     implementation("org.mineskin:java-client-java11:3.0.7-SNAPSHOT") {
         exclude("com.google.code.gson", "gson")
