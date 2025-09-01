@@ -12,5 +12,5 @@ public interface AttributeInstance<T> extends TagSerializable {
 
     T getValue();
 
-    void setValue(T value);
+    boolean setValue(T value);
 }

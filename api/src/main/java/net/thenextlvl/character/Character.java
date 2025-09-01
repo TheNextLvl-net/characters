@@ -5,7 +5,7 @@ import core.nbt.serialization.TagSerializable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
-import net.thenextlvl.character.attribute.Attribute;
+import net.thenextlvl.character.attribute.AttributeInstance;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.tag.TagOptions;
@@ -81,7 +81,7 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     <T> boolean setAttributeValue(AttributeType<?, T> type, @Nullable T value);
 
-    <V, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type);
+    <V, T> Optional<AttributeInstance<T>> getAttribute(AttributeType<V, T> type);
 
     @Nullable
     World getWorld();

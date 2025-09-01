@@ -9,7 +9,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
-import net.thenextlvl.character.attribute.Attribute;
+import net.thenextlvl.character.attribute.AttributeInstance;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.attribute.AttributeTypes;
 import net.thenextlvl.character.goal.Goal;
@@ -73,7 +73,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected final Class<? extends E> entityClass;
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
-    protected final Set<Attribute<?, ?>> attributes = new HashSet<>();
+    protected final Set<AttributeInstance<?>> attributes = new HashSet<>();
     protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
@@ -204,20 +204,20 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     @Override
     public <T> Optional<T> getAttributeValue(AttributeType<?, T> type) {
-        return getAttribute(type).map(Attribute::getValue);
+        return getAttribute(type).map(AttributeInstance::getValue);
     }
 
     @Override
-    public <T> boolean setAttributeValue(AttributeType<?, T> type, @Nullable T value) {
+    public <T> boolean setAttributeValue(AttributeType<?, T> type, T value) {
         return getAttribute(type).map(attribute -> attribute.setValue(value)).orElse(false);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type) {
+    public <V, T> Optional<AttributeInstance<T>> getAttribute(AttributeType<V, T> type) {
         return attributes.stream()
                 .filter(attribute -> attribute.getType().equals(type))
-                .map(attribute -> (Attribute<V, T>) attribute)
+                .map(attribute -> (AttributeInstance<T>) attribute)
                 .findAny().or(() -> {
                     if (!type.isApplicable(this)) return Optional.empty();
                     var attribute = new PaperAttribute<>(type, this, plugin);
@@ -229,11 +229,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public @Nullable World getWorld() {
         return getEntity().map(Entity::getWorld).orElse(null);
-    }
-
-    @Override
-    public Optional<Pathfinder> getPathfinder() {
-        return getEntity(Mob.class).map(Mob::getPathfinder);
     }
 
     @Override
@@ -550,8 +545,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
         attributes.forEach(attribute -> {
-            @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
-            casted.getType().set(entity, attribute.getValue());
+            @SuppressWarnings("unchecked") var type = (AttributeType<Object, Object>) attribute.getType();
+            type.set(entity, attribute.getValue());
         });
 
         if (entity instanceof LivingEntity living) {

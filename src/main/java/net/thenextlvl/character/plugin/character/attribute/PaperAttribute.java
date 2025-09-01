@@ -2,7 +2,6 @@ package net.thenextlvl.character.plugin.character.attribute;
 
 import com.google.common.base.Preconditions;
 import net.thenextlvl.character.Character;
-import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeInstance;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.plugin.CharacterPlugin;

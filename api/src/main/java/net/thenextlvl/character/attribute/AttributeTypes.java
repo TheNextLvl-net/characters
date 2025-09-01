@@ -83,11 +83,9 @@ public class AttributeTypes {
                 AreaEffectCloud::getBasePotionType, areaEffectCloud -> null, AreaEffectCloud::setBasePotionType
         );
 
-        // todo: replace with nullable
-        // https://github.com/PaperMC/Paper/pull/12760
-        public final AttributeType<AreaEffectCloud, Color> COLOR = register(
+        public final AttributeType<AreaEffectCloud, Color> COLOR = registerNullable(
                 "area_effect_cloud:color", AreaEffectCloud.class, Color.class,
-                AreaEffectCloud::getColor, areaEffectCloud -> Color.fromRGB(-13083194 & 0x00FFFFFF), AreaEffectCloud::setColor
+                AreaEffectCloud::getColor, areaEffectCloud -> null, AreaEffectCloud::setColor
         );
 
         public final AttributeType<AreaEffectCloud, Duration> DURATION_ON_USE = register(
