@@ -8,6 +8,8 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import core.paper.command.argument.EnumArgumentType;
+import core.paper.command.argument.codec.EnumStringCodec;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -26,7 +28,6 @@ import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.action.ClickTypes;
-import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.EntityEffect;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -202,16 +203,12 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> clickTypesArgument(CharacterPlugin plugin) {
-        return Commands.argument("click-types", new EnumArgument<>(ClickTypes.class));
+        return Commands.argument("click-types", EnumArgumentType.of(ClickTypes.class, EnumStringCodec.lowerHyphen()));
     }
 
     @SuppressWarnings("unchecked")
     private static ArgumentBuilder<CommandSourceStack, ?> entityEffectArgument(CharacterPlugin plugin) {
-        return Commands.argument("entity-effect", new EnumArgument<>(EntityEffect.class, (context, entityEffect) -> {
-            var character = context.getLastChild().getArgument("character", Character.class);
-            if (!entityEffect.isApplicableTo(character.getEntityClass())) return false;
-            return !plugin.isDeprecated(entityEffect);
-        }));
+        return Commands.argument("entity-effect", EnumArgumentType.of(EntityEffect.class, EnumStringCodec.lowerHyphen()));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> positionArgument(CharacterPlugin plugin) {
@@ -223,7 +220,7 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> soundSourceArgument(CharacterPlugin plugin) {
-        return Commands.argument("sound-source", new EnumArgument<>(Sound.Source.class));
+        return Commands.argument("sound-source", EnumArgumentType.of(Sound.Source.class, EnumStringCodec.lowerHyphen()));
     }
 
     private static Sound.Source getSource(CommandContext<CommandSourceStack> context) {
