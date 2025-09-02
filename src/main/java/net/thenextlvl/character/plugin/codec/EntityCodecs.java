@@ -1,18 +1,17 @@
 package net.thenextlvl.character.plugin.codec;
 
+import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.entity.CollarColorable;
-import io.papermc.paper.util.Tick;
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.util.TriState;
-import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.codec.EntityCodec;
+import net.thenextlvl.character.codec.EntityCodecRegistry;
+import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
-import org.bukkit.Particle;
+import org.bukkit.Registry;
 import org.bukkit.attribute.Attributable;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.block.data.BlockData;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.AreaEffectCloud;
@@ -23,579 +22,274 @@ import org.bukkit.entity.Damageable;
 import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fox;
-import org.bukkit.entity.Frog;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Steerable;
 import org.bukkit.entity.Tameable;
-import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
-import java.time.Duration;
-import java.util.HashSet;
-import java.util.Optional;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @NullMarked
 public final class EntityCodecs {
-    // todo: revise whole class to use codecs
-    private static final Set<AttributeType<?, ?>> attributeTypes = new HashSet<>();
 
-    public static final AgeableAttributes AGEABLE = new AgeableAttributes();
-    public static final AreaEffectCloudAttributes AREA_EFFECT_CLOUD = new AreaEffectCloudAttributes();
-    public static final ArrowAttributes ARROW = new ArrowAttributes();
-    public static final AttributableAttributes ATTRIBUTABLE = new AttributableAttributes();
-    public static final CatAttributes CAT = new CatAttributes();
-    public static final CollarColorableAttributes COLLAR_COLORABLE = new CollarColorableAttributes();
-    public static final CreeperAttributes CREEPER = new CreeperAttributes();
-    public static final DamageableAttributes DAMAGEABLE = new DamageableAttributes();
-    public static final EndermanAttributes ENDERMAN = new EndermanAttributes();
-    public static final EntityAttributes ENTITY = new EntityAttributes();
-    public static final FrogAttributes FROG = new FrogAttributes();
-    public static final LivingEntityAttributes LIVING_ENTITY = new LivingEntityAttributes();
-    public static final MobAttributes MOB = new MobAttributes();
-    public static final SittableAttributes SITTABLE = new SittableAttributes();
-    public static final SteerableAttributes STEERABLE = new SteerableAttributes();
-    public static final TameableAttributes TAMEABLE = new TameableAttributes();
-
-    public static Set<AttributeType<?, ?>> types() {
-        return Set.copyOf(attributeTypes);
+    public static void registerAll() {
+        EntityCodecRegistry.registry().registerAll(List.of(
+                AGE,
+                ATTRIBUTES,
+                RADIUS,
+                REAPPLICATION_DELAY,
+                WAIT_TIME,
+                COLOR,
+                HEAD_UP,
+                LYING_DOWN,
+                DANCING,
+                CAN_DUPLICATE,
+                DUPLICATION_COOLDOWN,
+                POWERED,
+                MAX_FUSE_TICKS,
+                EXPLOSION_RADIUS,
+                ABSORPTION_AMOUNT,
+                SCREAMING,
+                STARED_AT,
+                VISUAL_FIRE,
+                FIRE_TICKS,
+                GLOWING,
+                GRAVITY,
+                INVISIBLE,
+                INVULNERABLE,
+                NO_PHYSICS,
+                POSE,
+                FREEZE_TICKS,
+                SILENT,
+                SNEAKING,
+                CROUCHING,
+                LEAPING,
+                SLEEPING,
+                VARIANT,
+                AI,
+                ARROWS_IN_BODY,
+                BEE_STINGERS_IN_BODY,
+                BODY_YAW,
+                COLLIDABLE,
+                AGGRESSIVE,
+                AWARE,
+                LEFT_HANDED,
+                SITTING,
+                SADDLE,
+                TAMED
+        ));
     }
 
-    public static Optional<AttributeType<?, ?>> getByKey(Key key) {
-        return attributeTypes.stream().filter(type -> type.key().equals(key)).findAny();
-    }
+    private static final EntityCodec<?, ?> AGE = EntityCodec.intCodec(Key.key("ageable", "age"), Ageable.class)
+            .getter(Ageable::getAge)
+            .setter(Ageable::setAge)
+            .build();
 
-    public static class AgeableAttributes {
-        public final EntityCodec<Ageable, Boolean> BABY = EntityCodec.booleanCodec(Key.key("ageable", "baby"), Ageable.class)
-                .getter(ageable -> !ageable.isAdult())
-                .setter((ageable, baby) -> {
-                    if (baby) ageable.setBaby();
-                    else ageable.setAdult();
-                }).build();
-    }
+    // private static class AreaEffectCloudAttributes {
+    //     private static final AttributeType<AreaEffectCloud, @Nullable PotionType> BASE_POTION_TYPE = registerNullable(
+    //             "area_effect_cloud:base_potion_type", AreaEffectCloud.class, PotionType.class,
+    //             AreaEffectCloud::getBasePotionType, areaEffectCloud -> null, AreaEffectCloud::setBasePotionType
+    //     );
 
-    public static class AreaEffectCloudAttributes {
-        public final AttributeType<AreaEffectCloud, @Nullable PotionType> BASE_POTION_TYPE = registerNullable(
-                "area_effect_cloud:base_potion_type", AreaEffectCloud.class, PotionType.class,
-                AreaEffectCloud::getBasePotionType, areaEffectCloud -> null, AreaEffectCloud::setBasePotionType
-        );
+    //     private static final AttributeType<AreaEffectCloud, Color> COLOR = registerNullable(
+    //             "area_effect_cloud:color", AreaEffectCloud.class, Color.class,
+    //             AreaEffectCloud::getColor, areaEffectCloud -> null, AreaEffectCloud::setColor
+    //     );
 
-        public final AttributeType<AreaEffectCloud, Color> COLOR = registerNullable(
-                "area_effect_cloud:color", AreaEffectCloud.class, Color.class,
-                AreaEffectCloud::getColor, areaEffectCloud -> null, AreaEffectCloud::setColor
-        );
+    //     private static final AttributeType<AreaEffectCloud, Duration> DURATION_ON_USE = register(
+    //             "area_effect_cloud:duration_on_use", AreaEffectCloud.class, Duration.class,
+    //             cloud -> Tick.of(cloud.getDurationOnUse()), areaEffectCloud -> Duration.ZERO,
+    //             (cloud, duration) -> cloud.setDurationOnUse(Tick.tick().fromDuration(duration))
+    //     );
 
-        public final AttributeType<AreaEffectCloud, Duration> DURATION_ON_USE = register(
-                "area_effect_cloud:duration_on_use", AreaEffectCloud.class, Duration.class,
-                cloud -> Tick.of(cloud.getDurationOnUse()), areaEffectCloud -> Duration.ZERO,
-                (cloud, duration) -> cloud.setDurationOnUse(Tick.tick().fromDuration(duration))
-        );
+    //     private static final AttributeType<AreaEffectCloud, Particle> PARTICLE = register(
+    //             "area_effect_cloud:particle", AreaEffectCloud.class, Particle.class,
+    //             AreaEffectCloud::getParticle, areaEffectCloud -> Particle.ENTITY_EFFECT, AreaEffectCloud::setParticle
+    //     );
+    // }
 
-        public final AttributeType<AreaEffectCloud, Particle> PARTICLE = register(
-                "area_effect_cloud:particle", AreaEffectCloud.class, Particle.class,
-                AreaEffectCloud::getParticle, areaEffectCloud -> Particle.ENTITY_EFFECT, AreaEffectCloud::setParticle
-        );
+    // private static final EntityCodec<?, ?> PARTICLE = EntityCodec.floatCodec(Key.key("area_effect_cloud", "particle"), AreaEffectCloud.class)
+    //         .getter(AreaEffectCloud::getParticle).setter(AreaEffectCloud::setParticle).build();
 
-        public final AttributeType<AreaEffectCloud, Float> RADIUS = register(
-                "area_effect_cloud:radius", AreaEffectCloud.class, float.class,
-                AreaEffectCloud::getRadius, areaEffectCloud -> 3F, AreaEffectCloud::setRadius
-        );
+    private static final EntityCodec<?, ?> RADIUS = EntityCodec.floatCodec(Key.key("area_effect_cloud", "radius"), AreaEffectCloud.class)
+            .getter(AreaEffectCloud::getRadius).setter(AreaEffectCloud::setRadius).build();
 
-        public final AttributeType<AreaEffectCloud, Duration> REAPPLICATION_DELAY = register(
-                "area_effect_cloud:reapplication_delay", AreaEffectCloud.class, Duration.class,
-                cloud -> Tick.of(cloud.getDurationOnUse()), areaEffectCloud -> Duration.ZERO,
-                (cloud, duration) -> cloud.setReapplicationDelay(Tick.tick().fromDuration(duration))
-        );
+    private static final EntityCodec<?, ?> REAPPLICATION_DELAY = EntityCodec.intCodec(Key.key("area_effect_cloud", "reapplication_delay"), AreaEffectCloud.class)
+            .getter(AreaEffectCloud::getDurationOnUse).setter(AreaEffectCloud::setReapplicationDelay)
+            .argumentType(ArgumentTypes.time()).build();
 
-        public final AttributeType<AreaEffectCloud, Duration> WAIT_TIME = register(
-                "area_effect_cloud:wait_time", AreaEffectCloud.class, Duration.class,
-                cloud -> Tick.of(cloud.getWaitTime()), areaEffectCloud -> Duration.ofSeconds(1),
-                (cloud, duration) -> cloud.setWaitTime(Tick.tick().fromDuration(duration))
-        );
-    }
+    private static final EntityCodec<?, ?> WAIT_TIME = EntityCodec.intCodec(Key.key("area_effect_cloud", "wait_time"), AreaEffectCloud.class)
+            .getter(AreaEffectCloud::getWaitTime).setter(AreaEffectCloud::setWaitTime)
+            .argumentType(ArgumentTypes.time()).build();
 
-    public static class ArrowAttributes {
-        public final AttributeType<Arrow, @Nullable Color> TRAIL_COLOR = registerNullable(
-                "arrow:trail_color", Arrow.class, Color.class,
-                Arrow::getColor, arrow -> null, Arrow::setColor
-        );
-    }
+    private static final EntityCodec<?, ?> COLOR = EntityCodec.intCodec(Key.key("arrow", "color"), Arrow.class)
+            .getter(arrow -> {
+                var color = arrow.getColor();
+                return color != null ? color.asARGB() : null;
+            }).setter((arrow, color) -> {
+                arrow.setColor(color != null ? Color.fromARGB(color) : null);
+            }).build();
 
-    public static class AttributableAttributes {
-        public final AttributeType<Attributable, Double> ARMOR = register(
-                "attributable:armor", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.ARMOR, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.ARMOR, value)
-        );
-
-        public final AttributeType<Attributable, Double> ARMOR_TOUGHNESS = register(
-                "attributable:armor_toughness", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.ARMOR_TOUGHNESS, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.ARMOR_TOUGHNESS, value)
-        );
-
-        public final AttributeType<Attributable, Double> ATTACK_DAMAGE = register(
-                "attributable:attack_damage", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.ATTACK_DAMAGE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.ATTACK_DAMAGE, value)
-        );
-
-        public final AttributeType<Attributable, Double> ATTACK_KNOCKBACK = register(
-                "attributable:attack_knockback", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.ATTACK_KNOCKBACK, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.ATTACK_KNOCKBACK, value)
-        );
-
-        public final AttributeType<Attributable, Double> ATTACK_SPEED = register(
-                "attributable:attack_speed", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.ATTACK_SPEED, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.ATTACK_SPEED, value)
-        );
-
-        public final AttributeType<Attributable, Double> BLOCK_BREAK_SPEED = register(
-                "attributable:block_break_speed", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.BLOCK_BREAK_SPEED, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.BLOCK_BREAK_SPEED, value)
-        );
-
-        public final AttributeType<Attributable, Double> BLOCK_INTERACTION_RANGE = register(
-                "attributable:block_interaction_range", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.BLOCK_INTERACTION_RANGE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.BLOCK_INTERACTION_RANGE, value)
-        );
-
-        public final AttributeType<Attributable, Double> BURNING_TIME = register(
-                "attributable:burning_time", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.BURNING_TIME, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.BURNING_TIME, value)
-        );
-
-        public final AttributeType<Attributable, Double> ENTITY_INTERACTION_RANGE = register(
-                "attributable:entity_interaction_range", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.ENTITY_INTERACTION_RANGE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.ENTITY_INTERACTION_RANGE, value)
-        );
-
-        public final AttributeType<Attributable, Double> EXPLOSION_KNOCKBACK_RESISTANCE = register(
-                "attributable:explosion_knockback_resistance", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.EXPLOSION_KNOCKBACK_RESISTANCE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.EXPLOSION_KNOCKBACK_RESISTANCE, value)
-        );
-
-        public final AttributeType<Attributable, Double> FALL_DAMAGE_MULTIPLIER = register(
-                "attributable:fall_damage_multiplier", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.FALL_DAMAGE_MULTIPLIER, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.FALL_DAMAGE_MULTIPLIER, value)
-        );
-
-        public final AttributeType<Attributable, Double> FLYING_SPEED = register(
-                "attributable:flying_speed", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.FLYING_SPEED, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.FLYING_SPEED, value)
-        );
-
-        public final AttributeType<Attributable, Double> FOLLOW_RANGE = register(
-                "attributable:follow_range", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.FOLLOW_RANGE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.FOLLOW_RANGE, value)
-        );
-
-        public final AttributeType<Attributable, Double> GRAVITY = register(
-                "attributable:gravity", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.GRAVITY, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.GRAVITY, value)
-        );
-
-        public final AttributeType<Attributable, Double> JUMP_STRENGTH = register(
-                "attributable:jump_strength", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.JUMP_STRENGTH, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.JUMP_STRENGTH, value)
-        );
-
-        public final AttributeType<Attributable, Double> KNOCKBACK_RESISTANCE = register(
-                "attributable:knockback_resistance", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.KNOCKBACK_RESISTANCE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.KNOCKBACK_RESISTANCE, value)
-        );
-
-        public final AttributeType<Attributable, Double> LUCK = register(
-                "attributable:luck", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.LUCK, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.LUCK, value)
-        );
-
-        public final AttributeType<Attributable, Double> MAX_ABSORPTION = register(
-                "attributable:max_absorption", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.MAX_ABSORPTION, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.MAX_ABSORPTION, value)
-        );
-
-        public final AttributeType<Attributable, Double> MAX_HEALTH = register(
-                "attributable:max_health", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.MAX_HEALTH, 20),
-                attributable -> 20D,
-                (attributable, value) -> set(attributable, Attribute.MAX_HEALTH, value)
-        );
-
-        public final AttributeType<Attributable, Double> MINING_EFFICIENCY = register(
-                "attributable:mining_efficiency", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.MINING_EFFICIENCY, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.MINING_EFFICIENCY, value)
-        );
-
-        public final AttributeType<Attributable, Double> MOVEMENT_EFFICIENCY = register(
-                "attributable:movement_efficiency", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.MOVEMENT_EFFICIENCY, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.MOVEMENT_EFFICIENCY, value)
-        );
-
-        public final AttributeType<Attributable, Double> MOVEMENT_SPEED = register(
-                "attributable:movement_speed", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.MOVEMENT_SPEED, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.MOVEMENT_SPEED, value)
-        );
-
-        public final AttributeType<Attributable, Double> OXYGEN_BONUS = register(
-                "attributable:oxygen_bonus", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.OXYGEN_BONUS, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.OXYGEN_BONUS, value)
-        );
-
-        public final AttributeType<Attributable, Double> SAFE_FALL_DISTANCE = register(
-                "attributable:safe_fall_distance", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.SAFE_FALL_DISTANCE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.SAFE_FALL_DISTANCE, value)
-        );
-
-        public final AttributeType<Attributable, Double> SCALE = register(
-                "attributable:scale", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.SCALE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.SCALE, value)
-        );
-
-        public final AttributeType<Attributable, Double> SNEAKING_SPEED = register(
-                "attributable:sneaking_speed", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.SNEAKING_SPEED, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.SNEAKING_SPEED, value)
-        );
-
-        public final AttributeType<Attributable, Double> SPAWN_REINFORCEMENTS = register(
-                "attributable:spawn_reinforcements", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.SPAWN_REINFORCEMENTS, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.SPAWN_REINFORCEMENTS, value)
-        );
-
-        public final AttributeType<Attributable, Double> STEP_HEIGHT = register(
-                "attributable:step_height", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.STEP_HEIGHT, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.STEP_HEIGHT, value)
-        );
-
-        public final AttributeType<Attributable, Double> SUBMERGED_MINING_SPEED = register(
-                "attributable:submerged_mining_speed", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.SUBMERGED_MINING_SPEED, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.SUBMERGED_MINING_SPEED, value)
-        );
-
-        public final AttributeType<Attributable, Double> SWEEPING_DAMAGE_RATIO = register(
-                "attributable:sweeping_damage_ratio", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.SWEEPING_DAMAGE_RATIO, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.SWEEPING_DAMAGE_RATIO, value)
-        );
-
-        public final AttributeType<Attributable, Double> TEMPT_RANGE = register(
-                "attributable:tempt_range", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.TEMPT_RANGE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.TEMPT_RANGE, value)
-        );
-
-        public final AttributeType<Attributable, Double> WATER_MOVEMENT_EFFICIENCY = register(
-                "attributable:water_movement_efficiency", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.WATER_MOVEMENT_EFFICIENCY, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.WATER_MOVEMENT_EFFICIENCY, value)
-        );
-
-        public final AttributeType<Attributable, Double> WAYPOINT_TRANSMIT_RANGE = register(
-                "attributable:waypoint_transmit_range", Attributable.class, double.class,
-                attributable -> get(attributable, Attribute.WAYPOINT_TRANSMIT_RANGE, 0),
-                attributable -> 0D,
-                (attributable, value) -> set(attributable, Attribute.WAYPOINT_TRANSMIT_RANGE, value)
-        );
-
-        private double get(Attributable attributable, Attribute attribute, double defaultValue) {
-            var instance = attributable.getAttribute(attribute);
-            return instance != null ? instance.getDefaultValue() : defaultValue;
-        }
-
-        private void set(Attributable attributable, Attribute attribute, double value) {
-            var instance = attributable.getAttribute(attribute);
-            if (instance != null) instance.setBaseValue(value);
-        }
-    }
-
-    public static class CatAttributes {
-        public final AttributeType<Cat, Boolean> HEAD_UP = register(
-                "cat:head_up", Cat.class, boolean.class, Cat::isHeadUp, cat -> false, Cat::setHeadUp
-        );
-
-        public final AttributeType<Cat, Boolean> LYING_DOWN = register(
-                "cat:lying_down", Cat.class, boolean.class, Cat::isLyingDown, cat -> false, Cat::setLyingDown
-        );
-
-        public final AttributeType<Cat, Cat.Type> VARIANT = register(
-                "cat:variant", Cat.class, Cat.Type.class, Cat::getCatType, cat -> Cat.Type.ALL_BLACK, Cat::setCatType
-        );
-    }
-
-    public static class AllayAttributes {
-        public final AttributeType<Allay, Boolean> DANCING = register(
-                "allay:dancing", Allay.class, boolean.class,
-                Allay::isDancing, allay -> false, (allay, dancing) -> {
-                    if (dancing) allay.startDancing();
-                    else allay.stopDancing();
+    private static final EntityCodec<?, ?> ATTRIBUTES = EntityCodec.<Attributable, Set<AttributeInstance>>builder(
+                    Key.key("attributable", "attributes"), Attributable.class, Set.class
+            ).getter(attributable -> Registry.ATTRIBUTE.stream()
+                    .map(attributable::getAttribute)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet()))
+            .setter((attributable, attributes) -> {
+                attributes.forEach(attributeInstance -> {
+                    var attribute = attributable.getAttribute(attributeInstance.getAttribute());
+                    if (attribute == null) return;
+                    attribute.setBaseValue(attributeInstance.getBaseValue());
+                    attribute.getModifiers().forEach(attribute::addModifier);
                 });
-    }
+            })
+            // .argumentType() // todo: implement... somehow? or not? maybe make this optional?
+            .adapter(new AttributeAdapter())
+            .build();
 
-    public static class CollarColorableAttributes {
-        public final AttributeType<CollarColorable, DyeColor> COLLAR_COLOR = register(
-                "collar_colorable:collar_color", CollarColorable.class, DyeColor.class,
-                CollarColorable::getCollarColor, collarColorable -> DyeColor.RED, CollarColorable::setCollarColor
-        );
-    }
 
-    public static class CreeperAttributes {
-        public final AttributeType<Creeper, Boolean> POWERED = register(
-                "creeper:powered", Creeper.class, boolean.class,
-                Creeper::isPowered, creeper -> false, Creeper::setPowered
-        );
-    }
+    private static final EntityCodec<?, ?> HEAD_UP = EntityCodec.booleanCodec(Key.key("cat", "head_up"), Cat.class)
+            .getter(Cat::isHeadUp).setter(Cat::setHeadUp).build();
 
-    public static class DamageableAttributes {
-        public final AttributeType<Damageable, Double> ABSORPTION_AMOUNT = register(
-                "damageable:absorption_amount", Damageable.class, double.class,
-                Damageable::getAbsorptionAmount, damageable -> 0D, Damageable::setAbsorptionAmount
-        );
-    }
+    private static final EntityCodec<?, ?> LYING_DOWN = EntityCodec.booleanCodec(Key.key("cat", "lying_down"), Cat.class)
+            .getter(Cat::isLyingDown).setter(Cat::setLyingDown).build();
 
-    public static class EndermanAttributes {
-        public final AttributeType<Enderman, @Nullable BlockData> CARRIED_BLOCK = registerNullable(
-                "enderman:carried_block", Enderman.class, BlockData.class,
-                Enderman::getCarriedBlock, enderman -> null, Enderman::setCarriedBlock
-        );
+    // todo: convert to codec
+    // private static class CatAttributes {
+    //     private static final AttributeType<Cat, Cat.Type> VARIANT = register(
+    //             "cat:variant", Cat.class, Cat.Type.class, Cat::getCatType, cat -> Cat.Type.ALL_BLACK, Cat::setCatType
+    //     );
+    // }
 
-        public final AttributeType<Enderman, Boolean> SCREAMING = register(
-                "enderman:screaming", Enderman.class, boolean.class,
-                Enderman::isScreaming, enderman -> false, Enderman::setScreaming
-        );
+    private static final EntityCodec<?, ?> DANCING = EntityCodec.booleanCodec(Key.key("allay", "dancing"), Allay.class)
+            .getter(Allay::isDancing).setter((allay, dancing) -> {
+                if (dancing) allay.startDancing();
+                else allay.stopDancing();
+            }).build();
 
-        public final AttributeType<Enderman, Boolean> STARED_AT = register(
-                "enderman:stared_at", Enderman.class, Boolean.class,
-                Enderman::hasBeenStaredAt, enderman -> false, Enderman::setHasBeenStaredAt
-        );
-    }
+    private static final EntityCodec<?, ?> CAN_DUPLICATE = EntityCodec.booleanCodec(Key.key("allay", "can_duplicate"), Allay.class)
+            .getter(Allay::canDuplicate).setter(Allay::setCanDuplicate).build();
 
-    public static class EntityAttributes {
-        public final AttributeType<Entity, TriState> VISUAL_FIRE = register(
-                "entity:visual_fire", Entity.class, TriState.class,
-                Entity::getVisualFire, entity -> TriState.NOT_SET, Entity::setVisualFire
-        );
+    private static final EntityCodec<?, ?> DUPLICATION_COOLDOWN = EntityCodec.longCodec(Key.key("allay", "duplication_cooldown"), Allay.class)
+            .getter(Allay::getDuplicationCooldown).setter(Allay::setDuplicationCooldown).build();
 
-        public final AttributeType<Entity, Integer> FIRE_TICKS = register(
-                "entity:fire_ticks", Entity.class, int.class,
-                Entity::getFireTicks, entity -> 0, Entity::setFireTicks
-        );
+    private static final EntityCodec<?, ?> COLLAR_COLOR = EntityCodec.enumCodec(Key.key("collar_colorable", "collar_color"), CollarColorable.class, DyeColor.class)
+            .getter(CollarColorable::getCollarColor).setter(CollarColorable::setCollarColor).build();
 
-        public final AttributeType<Entity, Boolean> GLOWING = register(
-                "entity:glowing", Entity.class, boolean.class,
-                Entity::isGlowing, entity -> false, Entity::setGlowing
-        );
+    private static final EntityCodec<?, ?> POWERED = EntityCodec.booleanCodec(Key.key("creeper", "powered"), Creeper.class)
+            .getter(Creeper::isPowered).setter(Creeper::setPowered).build();
 
-        public final AttributeType<Entity, Boolean> GRAVITY = register(
-                "entity:gravity", Entity.class, boolean.class,
-                Entity::hasGravity, entity -> false, Entity::setGravity
-        );
+    private static final EntityCodec<?, ?> MAX_FUSE_TICKS = EntityCodec.intCodec(Key.key("creeper", "max_fuse_ticks"), Creeper.class)
+            .getter(Creeper::getMaxFuseTicks).setter(Creeper::setMaxFuseTicks).build();
 
-        public final AttributeType<Entity, Boolean> INVISIBLE = register(
-                "entity:invisible", Entity.class, boolean.class,
-                Entity::isInvisible, entity -> false, Entity::setInvisible
-        );
+    private static final EntityCodec<?, ?> EXPLOSION_RADIUS = EntityCodec.intCodec(Key.key("creeper", "explosion_radius"), Creeper.class)
+            .getter(Creeper::getExplosionRadius).setter(Creeper::setExplosionRadius).build();
 
-        public final AttributeType<Entity, Boolean> INVULNERABLE = register(
-                "entity:invulnerable", Entity.class, boolean.class,
-                Entity::isInvulnerable, entity -> true, Entity::setInvulnerable
-        );
+    private static final EntityCodec<?, ?> ABSORPTION_AMOUNT = EntityCodec.doubleCodec(Key.key("damageable", "absorption_amount"), Damageable.class)
+            .getter(Damageable::getAbsorptionAmount).setter(Damageable::setAbsorptionAmount).build();
 
-        public final AttributeType<Entity, Boolean> PHYSICS = register(
-                "entity:physics", Entity.class, boolean.class,
-                entity -> !entity.hasNoPhysics(), entity -> false, (entity, physics) -> entity.setNoPhysics(!physics)
-        );
+    private static final EntityCodec<?, ?> SCREAMING = EntityCodec.booleanCodec(Key.key("enderman", "screaming"), Enderman.class)
+            .getter(Enderman::isScreaming).setter(Enderman::setScreaming).build();
 
-        public final AttributeType<Entity, Pose> POSE = register(
-                "entity:pose", Entity.class, Pose.class,
-                Entity::getPose, entity -> Pose.STANDING, (entity, pose) -> entity.setPose(pose, true)
-        );
+    private static final EntityCodec<?, ?> STARED_AT = EntityCodec.booleanCodec(Key.key("enderman", "stared_at"), Enderman.class)
+            .getter(Enderman::hasBeenStaredAt).setter(Enderman::setHasBeenStaredAt).build();
 
-        public final AttributeType<Entity, Boolean> FREEZING = register(
-                "entity:freezing", Entity.class, boolean.class,
-                Entity::isFrozen, entity -> false, (entity, freezing) -> entity.setFreezeTicks(freezing ? entity.getMaxFreezeTicks() : 0)
-        );
+    // todo: convert to codec
+    // private static class EndermanAttributes {
+    //     private static final AttributeType<Enderman, @Nullable BlockData> CARRIED_BLOCK = registerNullable(
+    //             "enderman:carried_block", Enderman.class, BlockData.class,
+    //             Enderman::getCarriedBlock, enderman -> null, Enderman::setCarriedBlock
+    //     );
+    // }
 
-        public final AttributeType<Entity, Boolean> LOCK_FREEZE_TICKS = register(
-                "entity:lock_freeze_ticks", Entity.class, boolean.class,
-                Entity::isFreezeTickingLocked, entity -> true, Entity::lockFreezeTicks
-        );
+    private static final EntityCodec<?, ?> VISUAL_FIRE = EntityCodec.enumCodec(Key.key("entity", "visual_fire"), Entity.class, TriState.class)
+            .getter(Entity::getVisualFire).setter((entity, triState) -> {
+                entity.setVisualFire(triState);
+            }).build();
 
-        public final AttributeType<Entity, Boolean> SILENT = register(
-                "entity:silent", Entity.class, boolean.class,
-                Entity::isSilent, entity -> true, Entity::setSilent
-        );
+    private static final EntityCodec<?, ?> FIRE_TICKS = EntityCodec.intCodec(Key.key("entity", "fire_ticks"), Entity.class)
+            .getter(Entity::getFireTicks).setter(Entity::setFireTicks).build();
 
-        public final AttributeType<Entity, Boolean> SNEAKING = register(
-                "entity:sneaking", Entity.class, boolean.class,
-                Entity::isSneaking, entity -> false, Entity::setSneaking
-        );
-    }
+    private static final EntityCodec<?, ?> GLOWING = EntityCodec.booleanCodec(Key.key("entity", "glowing"), Entity.class)
+            .getter(Entity::isGlowing).setter(Entity::setGlowing).build();
 
-    public static class FoxAttributes {
-        public final AttributeType<Fox, Boolean> CROUCHING = register(
-                "fox:crouching", Fox.class, boolean.class,
-                Fox::isCrouching, fox -> false, Fox::setCrouching
-        );
+    private static final EntityCodec<?, ?> GRAVITY = EntityCodec.booleanCodec(Key.key("entity", "gravity"), Entity.class)
+            .getter(Entity::hasGravity).setter(Entity::setGravity).build();
 
-        public final AttributeType<Fox, Boolean> LEAPING = register(
-                "fox:leaping", Fox.class, boolean.class,
-                Fox::isLeaping, fox -> false, Fox::setLeaping
-        );
+    private static final EntityCodec<?, ?> INVISIBLE = EntityCodec.booleanCodec(Key.key("entity", "invisible"), Entity.class)
+            .getter(Entity::isInvisible).setter(Entity::setInvisible).build();
 
-        public final AttributeType<Fox, Boolean> SLEEPING = register(
-                "fox:sleeping", Fox.class, boolean.class,
-                Fox::isSleeping, fox -> false, Fox::setSleeping
-        );
+    private static final EntityCodec<?, ?> INVULNERABLE = EntityCodec.booleanCodec(Key.key("entity", "invulnerable"), Entity.class)
+            .getter(Entity::isInvulnerable).setter(Entity::setInvulnerable).build();
 
-        public final AttributeType<Fox, Fox.Type> VARIANT = register(
-                "fox:variant", Fox.class, Fox.Type.class,
-                Fox::getFoxType, fox -> Fox.Type.RED, Fox::setFoxType
-        );
-    }
+    private static final EntityCodec<?, ?> NO_PHYSICS = EntityCodec.booleanCodec(Key.key("entity", "no_physics"), Entity.class)
+            .getter(Entity::hasNoPhysics).setter(Entity::setNoPhysics).build();
 
-    public static class FrogAttributes {
-        public final AttributeType<Frog, Frog.Variant> VARIANT = register(
-                "frog:variant", Frog.class, Frog.Variant.class,
-                Frog::getVariant, frog -> Frog.Variant.COLD, Frog::setVariant
-        );
-    }
+    private static final EntityCodec<?, ?> POSE = EntityCodec.enumCodec(Key.key("entity", "pose"), Entity.class, Pose.class)
+            .getter(Entity::getPose).setter((entity, pose) -> {
+                entity.setPose(pose, true);
+            }).build();
 
-    public static class LivingEntityAttributes {
-        public final AttributeType<LivingEntity, Boolean> AI = register(
-                "living_entity:ai", LivingEntity.class, boolean.class,
-                LivingEntity::hasAI, livingEntity -> false, LivingEntity::setAI
-        );
+    private static final EntityCodec<?, ?> FREEZE_TICKS = EntityCodec.intCodec(Key.key("entity", "freeze_ticks"), Entity.class)
+            .getter(Entity::getFreezeTicks).setter(Entity::setFreezeTicks).build();
 
-        public final AttributeType<LivingEntity, Integer> ARROWS_IN_BODY = register(
-                "living_entity:arrows_in_body", LivingEntity.class, int.class,
-                LivingEntity::getArrowsInBody, livingEntity -> 0, LivingEntity::setArrowsInBody
-        );
+    private static final EntityCodec<?, ?> SILENT = EntityCodec.booleanCodec(Key.key("entity", "silent"), Entity.class)
+            .getter(Entity::isSilent).setter(Entity::setSilent).build();
 
-        public final AttributeType<LivingEntity, Integer> BEE_STINGERS_IN_BODY = register(
-                "living_entity:bee_stingers_in_body", LivingEntity.class, int.class,
-                LivingEntity::getBeeStingersInBody, livingEntity -> 0, LivingEntity::setBeeStingersInBody
-        );
+    private static final EntityCodec<?, ?> SNEAKING = EntityCodec.booleanCodec(Key.key("entity", "sneaking"), Entity.class)
+            .getter(Entity::isSneaking).setter(Entity::setSneaking).build();
 
-        public final AttributeType<LivingEntity, Float> BODY_YAW = register(
-                "living_entity:body_yaw", LivingEntity.class, float.class,
-                LivingEntity::getBodyYaw, livingEntity -> 0F, LivingEntity::setBodyYaw
-        );
+    private static final EntityCodec<?, ?> CROUCHING = EntityCodec.booleanCodec(Key.key("fox", "crouching"), Fox.class)
+            .getter(Fox::isCrouching).setter(Fox::setCrouching).build();
 
-        public final AttributeType<LivingEntity, Boolean> COLLIDABLE = register(
-                "living_entity:collidable", LivingEntity.class, boolean.class,
-                LivingEntity::isCollidable, livingEntity -> true, LivingEntity::setCollidable
-        );
-    }
+    private static final EntityCodec<?, ?> LEAPING = EntityCodec.booleanCodec(Key.key("fox", "leaping"), Fox.class)
+            .getter(Fox::isLeaping).setter(Fox::setLeaping).build();
 
-    public static class MobAttributes {
-        public final AttributeType<Mob, Boolean> AGGRESSIVE = register(
-                "mob:aggressive", Mob.class, boolean.class, Mob::isAggressive, mob -> false, Mob::setAggressive
-        );
+    private static final EntityCodec<?, ?> SLEEPING = EntityCodec.booleanCodec(Key.key("fox", "sleeping"), Fox.class)
+            .getter(Fox::isSleeping).setter(Fox::setSleeping).build();
 
-        public final AttributeType<Mob, Boolean> AWARE = register(
-                "mob:aware", Mob.class, boolean.class, Mob::isAware, mob -> true, Mob::setAware
-        );
+    private static final EntityCodec<?, ?> VARIANT = EntityCodec.enumCodec(Key.key("fox", "variant"), Fox.class, Fox.Type.class)
+            .getter(Fox::getFoxType).setter(Fox::setFoxType).build();
 
-        public final AttributeType<Mob, Boolean> LEFT_HANDED = register(
-                "mob:left_handed", Mob.class, boolean.class, Mob::isLeftHanded, mob -> false, Mob::setLeftHanded
-        );
-    }
+    private static final EntityCodec<?, ?> AI = EntityCodec.booleanCodec(Key.key("living_entity", "ai"), LivingEntity.class)
+            .getter(LivingEntity::hasAI).setter(LivingEntity::setAI).build();
 
-    public static class SittableAttributes {
-        public final AttributeType<Sittable, Boolean> SITTING = register(
-                "sittable:sitting", Sittable.class, boolean.class,
-                Sittable::isSitting, sittable -> false, Sittable::setSitting
-        );
-    }
+    private static final EntityCodec<?, ?> ARROWS_IN_BODY = EntityCodec.intCodec(Key.key("living_entity", "arrows_in_body"), LivingEntity.class)
+            .getter(LivingEntity::getArrowsInBody).setter((livingEntity, arrows) -> {
+                livingEntity.setArrowsInBody(arrows, false);
+            }).build();
 
-    public static class SteerableAttributes {
-        public final AttributeType<Steerable, Boolean> SADDLE = register(
-                "steerable:saddled", Steerable.class, boolean.class,
-                Steerable::hasSaddle, steerable -> false, Steerable::setSaddle
-        );
-    }
+    private static final EntityCodec<?, ?> BEE_STINGERS_IN_BODY = EntityCodec.intCodec(Key.key("living_entity", "bee_stingers_in_body"), LivingEntity.class)
+            .getter(LivingEntity::getBeeStingersInBody).setter(LivingEntity::setBeeStingersInBody).build();
 
-    public static class TameableAttributes {
-        public final AttributeType<Tameable, Boolean> TAMED = register(
-                "tameable:tamed", Tameable.class, boolean.class, Tameable::isTamed, tameable -> false, Tameable::setTamed
-        );
-    }
+    private static final EntityCodec<?, ?> BODY_YAW = EntityCodec.floatCodec(Key.key("living_entity", "body_yaw"), LivingEntity.class)
+            .getter(LivingEntity::getBodyYaw).setter(LivingEntity::setBodyYaw).build();
 
-    public static <E, T> AttributeType<E, @Nullable T> registerNullable(
-            @KeyPattern String key, Class<E> entityType, Class<T> dataType,
-            Function<E, @Nullable T> getter, Function<E, @Nullable T> defaultGetter, BiConsumer<E, @Nullable T> setter
-    ) {
-        return register(key, entityType, dataType, getter, defaultGetter, setter);
-    }
+    private static final EntityCodec<?, ?> COLLIDABLE = EntityCodec.booleanCodec(Key.key("living_entity", "collidable"), LivingEntity.class)
+            .getter(LivingEntity::isCollidable).setter(LivingEntity::setCollidable).build();
 
-    public static <E, T> AttributeType<E, T> register(
-            @KeyPattern String key, Class<E> entityType, Class<T> dataType,
-            Function<E, T> getter, Function<E, T> defaultGetter, BiConsumer<E, T> setter
-    ) {
-        var attributeType = new AttributeType<>(Key.key(key), entityType, dataType, getter, defaultGetter, setter);
-        if (attributeTypes.add(attributeType)) return attributeType;
-        throw new IllegalStateException("Cannot register attribute types twice: " + key);
-    }
+    private static final EntityCodec<?, ?> AGGRESSIVE = EntityCodec.booleanCodec(Key.key("mob", "aggressive"), Mob.class)
+            .getter(Mob::isAggressive).setter(Mob::setAggressive).build();
+
+    private static final EntityCodec<?, ?> AWARE = EntityCodec.booleanCodec(Key.key("mob", "aware"), Mob.class)
+            .getter(Mob::isAware).setter(Mob::setAware).build();
+
+    private static final EntityCodec<?, ?> LEFT_HANDED = EntityCodec.booleanCodec(Key.key("mob", "left_handed"), Mob.class)
+            .getter(Mob::isLeftHanded).setter(Mob::setLeftHanded).build();
+
+    private static final EntityCodec<?, ?> SITTING = EntityCodec.booleanCodec(Key.key("sittable", "sitting"), Sittable.class)
+            .getter(Sittable::isSitting).setter(Sittable::setSitting).build();
+
+    private static final EntityCodec<?, ?> SADDLE = EntityCodec.booleanCodec(Key.key("steerable", "saddled"), Steerable.class)
+            .getter(Steerable::hasSaddle).setter(Steerable::setSaddle).build();
+
+    private static final EntityCodec<?, ?> TAMED = EntityCodec.booleanCodec(Key.key("tameable", "tamed"), Tameable.class)
+            .getter(Tameable::isTamed).setter(Tameable::setTamed).build();
 }
