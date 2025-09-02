@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
@@ -39,6 +40,16 @@ public interface EntityCodecRegistry {
     void register(EntityCodec<?, ?> codec) throws IllegalStateException;
 
     /**
+     * Registers all {@link EntityCodec} instances provided in the given collection.
+     * This method allows batch registration of codecs in the registry.
+     *
+     * @param codecs a collection of {@link EntityCodec} instances to register.
+     * @throws IllegalStateException if a codec with the same key is already registered.
+     */
+    @Contract(mutates = "this")
+    void registerAll(Collection<EntityCodec<?, ?>> codecs) throws IllegalStateException;
+
+    /**
      * Unregisters the specified {@link EntityCodec} from the registry.
      *
      * @param codec the codec to be unregistered.
@@ -61,7 +72,7 @@ public interface EntityCodecRegistry {
      *
      * @param key the key representing the codec to be retrieved.
      * @return an {@link Optional} containing the associated {@link EntityCodec},
-     *         or an empty {@link Optional} if no codec is found for the given key.
+     * or an empty {@link Optional} if no codec is found for the given key.
      */
     @Contract(pure = true)
     <E, T> Optional<EntityCodec<E, T>> getCodec(Key key);

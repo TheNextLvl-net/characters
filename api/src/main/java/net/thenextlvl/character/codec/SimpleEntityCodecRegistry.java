@@ -5,6 +5,7 @@ import net.kyori.adventure.key.Key;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -18,6 +19,11 @@ final class SimpleEntityCodecRegistry implements EntityCodecRegistry {
     @Override
     public void register(EntityCodec<?, ?> codec) throws IllegalStateException {
         Preconditions.checkState(codecs.add(codec), "Codec with the same key is already registered: %s", codec.key());
+    }
+
+    @Override
+    public void registerAll(Collection<EntityCodec<?, ?>> codecs) throws IllegalStateException {
+        codecs.forEach(this::register);
     }
 
     @Override
