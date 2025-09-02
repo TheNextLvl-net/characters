@@ -11,17 +11,20 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import core.nbt.serialization.TagAdapter;
 import core.nbt.serialization.adapter.BooleanAdapter;
 import core.nbt.serialization.adapter.DoubleAdapter;
+import core.nbt.serialization.adapter.DurationAdapter;
 import core.nbt.serialization.adapter.EnumAdapter;
 import core.nbt.serialization.adapter.FloatAdapter;
 import core.nbt.serialization.adapter.IntegerAdapter;
 import core.nbt.serialization.adapter.LongAdapter;
 import core.nbt.serialization.adapter.StringAdapter;
+import core.paper.command.argument.DurationArgumentType;
 import core.paper.command.argument.EnumArgumentType;
 import core.paper.command.argument.codec.EnumStringCodec;
 import net.kyori.adventure.key.Key;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
@@ -31,7 +34,7 @@ import java.util.function.Function;
 final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
     private final Key key;
     private final Class<E> entityType;
-    private final Class<T> valueType;
+    private final Class<? super T> valueType;
     private final Function<E, T> getter;
     private final BiPredicate<E, T> setter;
     private final ArgumentType<T> argumentType;
@@ -39,7 +42,7 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
 
     SimpleEntityCodec(Key key,
                       Class<E> entityType,
-                      Class<T> valueType,
+                      Class<? super T> valueType,
                       Function<E, T> getter,
                       BiPredicate<E, T> setter,
                       ArgumentType<T> argumentType,
@@ -65,7 +68,7 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
     }
 
     @Override
-    public Class<T> valueType() {
+    public Class<? super T> valueType() {
         return valueType;
     }
 
@@ -146,6 +149,12 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
                 .adapter(StringAdapter.INSTANCE);
     }
 
+    static <E> Builder<E, Duration> durationCodec(Key key, Class<E> entityType, Duration minimum) {
+        return new Builder<>(key, entityType, Duration.class)
+                .argumentType(DurationArgumentType.duration(minimum))
+                .adapter(DurationAdapter.INSTANCE);
+    }
+
     static <E, T extends Enum<T>> Builder<E, T> enumCodec(Key key, Class<E> entityType, Class<T> enumType) {
         return new Builder<>(key, entityType, enumType)
                 .argumentType(EnumArgumentType.of(enumType, EnumStringCodec.lowerHyphen()))
@@ -155,14 +164,14 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
     static final class Builder<E, T> implements EntityCodec.Builder<E, T> {
         private final Key key;
         private final Class<E> entityType;
-        private final Class<T> valueType;
+        private final Class<? super T> valueType;
 
         private @Nullable Function<E, T> getter;
         private @Nullable BiPredicate<E, T> setter;
         private @Nullable ArgumentType<T> argumentType;
         private @Nullable TagAdapter<T> adapter;
 
-        Builder(Key key, Class<E> entityType, Class<T> valueType) {
+        Builder(Key key, Class<E> entityType, Class<? super T> valueType) {
             this.key = Objects.requireNonNull(key, "key");
             this.entityType = Objects.requireNonNull(entityType, "entityType");
             this.valueType = Objects.requireNonNull(valueType, "valueType");
@@ -174,8 +183,8 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
         }
 
         public Builder<E, T> setter(BiConsumer<E, T> setter) {
-            Preconditions.checkArgument(getter != null, "getter");
             return setter((e, t) -> {
+                Preconditions.checkArgument(getter != null, "getter");
                 var apply = getter.apply(e);
                 setter.accept(e, t);
                 return getter.apply(e) != apply;
