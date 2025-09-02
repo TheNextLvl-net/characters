@@ -4,17 +4,12 @@ import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.util.StringUtil;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
-import net.thenextlvl.character.attribute.AttributeInstance;
-import net.thenextlvl.character.attribute.AttributeType;
-import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.character.attribute.PaperAttribute;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.tag.TagOptions;
 import net.thenextlvl.nbt.NBTOutputStream;
@@ -73,8 +68,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected final Class<? extends E> entityClass;
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
-    // todo: remove, use codecs
-    protected final Set<AttributeInstance<?>> attributes = new HashSet<>();
     protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
@@ -201,30 +194,6 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     @Override
     public @Unmodifiable Set<UUID> getViewers() {
         return Set.copyOf(viewers);
-    }
-
-    @Override
-    public <T> Optional<T> getAttributeValue(AttributeType<?, T> type) {
-        return getAttribute(type).map(AttributeInstance::getValue);
-    }
-
-    @Override
-    public <T> boolean setAttributeValue(AttributeType<?, T> type, T value) {
-        return getAttribute(type).map(attribute -> attribute.setValue(value)).orElse(false);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V, T> Optional<AttributeInstance<T>> getAttribute(AttributeType<V, T> type) {
-        return attributes.stream()
-                .filter(attribute -> attribute.getType().equals(type))
-                .map(attribute -> (AttributeInstance<T>) attribute)
-                .findAny().or(() -> {
-                    if (!type.isApplicable(this)) return Optional.empty();
-                    var attribute = new PaperAttribute<>(type, this, plugin);
-                    attributes.add(attribute);
-                    return Optional.of(attribute);
-                });
     }
 
     @Override
@@ -500,8 +469,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         var attributes = CompoundTag.empty();
         this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().serialize(clickAction)));
         // todo: use codecs in some way
-        this.attributes.stream().filter(attribute -> attribute.getValue() != null).forEach(attribute ->
-                attributes.add(attribute.getType().key().asString(), attribute.serialize()));
+        // this.attributes.stream().filter(attribute -> attribute.getValue() != null).forEach(attribute ->
+        //         attributes.add(attribute.getType().key().asString(), attribute.serialize()));
         if (!actions.isEmpty()) tag.add("clickActions", actions);
         if (!attributes.isEmpty()) tag.add("attributes", attributes);
         return tag;
@@ -511,10 +480,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     public void deserialize(Tag tag) throws ParserException {
         var root = tag.getAsCompound();
         // todo: use codecs in some way
-        root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, t) -> {
-            @SuppressWarnings("PatternValidation") var key = Key.key(name);
-            EntityCodecs.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
-        }));
+        // root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, t) -> {
+        //     @SuppressWarnings("PatternValidation") var key = Key.key(name);
+        //     EntityCodecs.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
+        // }));
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
@@ -547,10 +516,11 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
-        attributes.forEach(attribute -> {
-            @SuppressWarnings("unchecked") var type = (AttributeType<Object, Object>) attribute.getType();
-            type.set(entity, attribute.getValue());
-        });
+        // todo: apply codecs
+        // attributes.forEach(attribute -> {
+        //     @SuppressWarnings("unchecked") var type = (AttributeType<Object, Object>) attribute.getType();
+        //     type.set(entity, attribute.getValue());
+        // });
 
         if (entity instanceof LivingEntity living) {
             if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
@@ -644,8 +614,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     protected void updateTeamOptions(Team team) {
         team.color(teamColor);
-        var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable)
-                .orElse(getAttributeValue(EntityCodecs.LIVING_ENTITY.COLLIDABLE).orElse(false));
+        var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable).orElse(false);
         team.setOption(Team.Option.COLLISION_RULE, collidable ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }

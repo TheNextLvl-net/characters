@@ -5,8 +5,6 @@ import core.nbt.serialization.TagSerializable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
-import net.thenextlvl.character.attribute.AttributeInstance;
-import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.tag.TagOptions;
 import net.thenextlvl.nbt.serialization.TagSerializable;
@@ -76,18 +74,6 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     @Unmodifiable
     Set<UUID> getViewers();
-
-    // todo: use codecs in some way
-    @Deprecated(forRemoval = true)
-    <T> Optional<T> getAttributeValue(AttributeType<?, T> type);
-
-    // todo: use codecs in some way
-    @Deprecated(forRemoval = true)
-    <T> boolean setAttributeValue(AttributeType<?, T> type, @Nullable T value);
-
-    // todo: use codecs in some way
-    @Deprecated(forRemoval = true)
-    <V, T> Optional<AttributeInstance<T>> getAttribute(AttributeType<V, T> type);
 
     @Nullable
     World getWorld();

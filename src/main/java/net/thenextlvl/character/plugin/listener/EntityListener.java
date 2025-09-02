@@ -2,14 +2,12 @@ package net.thenextlvl.character.plugin.listener;
 
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import net.thenextlvl.character.action.ClickType;
-import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.event.player.PlayerClickCharacterEvent;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.GameRule;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
@@ -44,24 +42,9 @@ public class EntityListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onPrePlayerAttackEntityHighest(PrePlayerAttackEntityEvent event) {
-        plugin.characterController().getCharacter(event.getAttacked())
-                .flatMap(character -> character.getAttributeValue(EntityCodecs.ENTITY.INVULNERABLE))
-                .ifPresent(event::setCancelled);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onEntityDamage(EntityDamageEvent event) {
-        plugin.characterController().getCharacter(event.getEntity())
-                .flatMap(character -> character.getAttributeValue(EntityCodecs.ENTITY.INVULNERABLE))
-                .ifPresent(event::setCancelled);
-    }
-
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onHangingBreak(HangingBreakEvent event) {
-        plugin.characterController().getCharacter(event.getEntity())
-                .flatMap(character -> character.getAttributeValue(EntityCodecs.ENTITY.INVULNERABLE))
-                .ifPresent(event::setCancelled);
+        if (!plugin.characterController().isCharacter(event.getEntity())) return;
+        event.setCancelled(event.getEntity().isInvulnerable());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
