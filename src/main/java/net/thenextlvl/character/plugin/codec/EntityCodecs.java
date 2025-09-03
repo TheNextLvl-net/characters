@@ -2,16 +2,24 @@ package net.thenextlvl.character.plugin.codec;
 
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.entity.CollarColorable;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
+import net.thenextlvl.character.plugin.command.argument.BlockDataArgument;
 import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
+import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
+import net.thenextlvl.character.plugin.serialization.RegistryAdapter;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
+import org.bukkit.Keyed;
+import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.AreaEffectCloud;
@@ -28,6 +36,7 @@ import org.bukkit.entity.Pose;
 import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Steerable;
 import org.bukkit.entity.Tameable;
+import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
@@ -41,11 +50,15 @@ public final class EntityCodecs {
     public static void registerAll() {
         EntityCodecRegistry.registry().registerAll(List.of(
                 AGE,
+                BASE_POTION_TYPE,
+                AREA_EFFECT_CLOUD_COLOR,
+                DURATION_ON_USE,
+                DURATION,
                 ATTRIBUTES,
                 RADIUS,
                 REAPPLICATION_DELAY,
                 WAIT_TIME,
-                COLOR,
+                ARROW_COLOR,
                 HEAD_UP,
                 LYING_DOWN,
                 DANCING,
@@ -91,31 +104,34 @@ public final class EntityCodecs {
             .setter(Ageable::setAge)
             .build();
 
-    // private static class AreaEffectCloudAttributes {
-    //     private static final AttributeType<AreaEffectCloud, @Nullable PotionType> BASE_POTION_TYPE = registerNullable(
-    //             "area_effect_cloud:base_potion_type", AreaEffectCloud.class, PotionType.class,
-    //             AreaEffectCloud::getBasePotionType, areaEffectCloud -> null, AreaEffectCloud::setBasePotionType
-    //     );
+    private static final EntityCodec<?, ?> BASE_POTION_TYPE = EntityCodec.enumCodec(Key.key("area_effect_cloud", "base_potion_type"), AreaEffectCloud.class, PotionType.class)
+            .getter(AreaEffectCloud::getBasePotionType)
+            .setter(AreaEffectCloud::setBasePotionType)
+            .build();
 
-    //     private static final AttributeType<AreaEffectCloud, Color> COLOR = registerNullable(
-    //             "area_effect_cloud:color", AreaEffectCloud.class, Color.class,
-    //             AreaEffectCloud::getColor, areaEffectCloud -> null, AreaEffectCloud::setColor
-    //     );
+    private static final EntityCodec<?, ?> AREA_EFFECT_CLOUD_COLOR = EntityCodec.intCodec(Key.key("area_effect_cloud", "color"), AreaEffectCloud.class)
+            .getter(areaEffectCloud -> areaEffectCloud.getColor().asRGB())
+            .setter((areaEffectCloud, integer) -> {
+                areaEffectCloud.setColor(integer != null ? Color.fromARGB(integer) : null);
+            })
+            .build();
 
-    //     private static final AttributeType<AreaEffectCloud, Duration> DURATION_ON_USE = register(
-    //             "area_effect_cloud:duration_on_use", AreaEffectCloud.class, Duration.class,
-    //             cloud -> Tick.of(cloud.getDurationOnUse()), areaEffectCloud -> Duration.ZERO,
-    //             (cloud, duration) -> cloud.setDurationOnUse(Tick.tick().fromDuration(duration))
-    //     );
+    private static final EntityCodec<?, ?> DURATION_ON_USE = EntityCodec.intCodec(Key.key("area_effect_cloud", "duration_on_use"), AreaEffectCloud.class)
+            .getter(AreaEffectCloud::getDurationOnUse)
+            .setter(AreaEffectCloud::setDurationOnUse)
+            .build();
 
-    //     private static final AttributeType<AreaEffectCloud, Particle> PARTICLE = register(
-    //             "area_effect_cloud:particle", AreaEffectCloud.class, Particle.class,
-    //             AreaEffectCloud::getParticle, areaEffectCloud -> Particle.ENTITY_EFFECT, AreaEffectCloud::setParticle
-    //     );
-    // }
+    private static final EntityCodec<?, ?> DURATION = EntityCodec.intCodec(Key.key("area_effect_cloud", "duration"), AreaEffectCloud.class)
+            .getter(AreaEffectCloud::getDuration)
+            .setter(AreaEffectCloud::setDuration)
+            .build();
 
-    // private static final EntityCodec<?, ?> PARTICLE = EntityCodec.floatCodec(Key.key("area_effect_cloud", "particle"), AreaEffectCloud.class)
-    //         .getter(AreaEffectCloud::getParticle).setter(AreaEffectCloud::setParticle).build();
+    private static final EntityCodec<?, ?> PARTICLE = EntityCodec.enumCodec(Key.key("area_effect_cloud", "particle"), AreaEffectCloud.class, Particle.class)
+            .getter(AreaEffectCloud::getParticle)
+            .setter((areaEffectCloud, particle) -> {
+                areaEffectCloud.setParticle(particle);
+            })
+            .build();
 
     private static final EntityCodec<?, ?> RADIUS = EntityCodec.floatCodec(Key.key("area_effect_cloud", "radius"), AreaEffectCloud.class)
             .getter(AreaEffectCloud::getRadius).setter(AreaEffectCloud::setRadius).build();
@@ -128,7 +144,7 @@ public final class EntityCodecs {
             .getter(AreaEffectCloud::getWaitTime).setter(AreaEffectCloud::setWaitTime)
             .argumentType(ArgumentTypes.time()).build();
 
-    private static final EntityCodec<?, ?> COLOR = EntityCodec.intCodec(Key.key("arrow", "color"), Arrow.class)
+    private static final EntityCodec<?, ?> ARROW_COLOR = EntityCodec.intCodec(Key.key("arrow", "color"), Arrow.class)
             .getter(arrow -> {
                 var color = arrow.getColor();
                 return color != null ? color.asARGB() : null;
@@ -160,14 +176,10 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> LYING_DOWN = EntityCodec.booleanCodec(Key.key("cat", "lying_down"), Cat.class)
             .getter(Cat::isLyingDown).setter(Cat::setLyingDown).build();
-
-    // todo: convert to codec
-    // private static class CatAttributes {
-    //     private static final AttributeType<Cat, Cat.Type> VARIANT = register(
-    //             "cat:variant", Cat.class, Cat.Type.class, Cat::getCatType, cat -> Cat.Type.ALL_BLACK, Cat::setCatType
-    //     );
-    // }
-
+    
+    private static final EntityCodec<?, ?> CAT_VARIANT = registryCodec(Key.key("cat", "variant"), Cat.class, Cat.Type.class, RegistryKey.CAT_VARIANT)
+            .getter(Cat::getCatType).setter(Cat::setCatType).build();
+    
     private static final EntityCodec<?, ?> DANCING = EntityCodec.booleanCodec(Key.key("allay", "dancing"), Allay.class)
             .getter(Allay::isDancing).setter((allay, dancing) -> {
                 if (dancing) allay.startDancing();
@@ -201,13 +213,12 @@ public final class EntityCodecs {
     private static final EntityCodec<?, ?> STARED_AT = EntityCodec.booleanCodec(Key.key("enderman", "stared_at"), Enderman.class)
             .getter(Enderman::hasBeenStaredAt).setter(Enderman::setHasBeenStaredAt).build();
 
-    // todo: convert to codec
-    // private static class EndermanAttributes {
-    //     private static final AttributeType<Enderman, @Nullable BlockData> CARRIED_BLOCK = registerNullable(
-    //             "enderman:carried_block", Enderman.class, BlockData.class,
-    //             Enderman::getCarriedBlock, enderman -> null, Enderman::setCarriedBlock
-    //     );
-    // }
+    private static final EntityCodec<?, ?> CARRIED_BLOCK = EntityCodec.builder(Key.key("enderman", "carried_block"), Enderman.class, BlockData.class)
+            .getter(Enderman::getCarriedBlock)
+            .setter(Enderman::setCarriedBlock)
+            .adapter(new BlockDataAdapter(Bukkit.getServer())) // todo: get rid of Bukkit
+            .argumentType(new BlockDataArgument())
+            .build();
 
     private static final EntityCodec<?, ?> VISUAL_FIRE = EntityCodec.enumCodec(Key.key("entity", "visual_fire"), Entity.class, TriState.class)
             .getter(Entity::getVisualFire).setter((entity, triState) -> {
@@ -292,4 +303,10 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> TAMED = EntityCodec.booleanCodec(Key.key("tameable", "tamed"), Tameable.class)
             .getter(Tameable::isTamed).setter(Tameable::setTamed).build();
+
+    private static <E, T extends Keyed> EntityCodec.Builder<E, T> registryCodec(Key key, Class<E> entityType, Class<T> type, RegistryKey<T> registryKey) {
+        return EntityCodec.builder(key, entityType, type)
+                .argumentType(ArgumentTypes.resource(registryKey))
+                .adapter(new RegistryAdapter<>(registryKey));
+    }
 }
