@@ -7,6 +7,7 @@ import net.kyori.adventure.key.Keyed;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.function.BiConsumer;
@@ -175,7 +176,7 @@ public interface EntityCodec<E, T> extends Keyed {
          */
         @NonNull
         @Contract(value = "_ -> this", mutates = "this")
-        Builder<E, T> getter(@NonNull Function<E, T> getter);
+        Builder<E, T> getter(@NonNull Function<E, @Nullable T> getter);
 
         /**
          * Sets the setter function responsible for updating the value of the entity.
