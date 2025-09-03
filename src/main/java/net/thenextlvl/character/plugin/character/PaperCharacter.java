@@ -8,6 +8,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.codec.EntityCodec;
+import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
@@ -453,6 +455,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public CompoundTag serialize() throws ParserException {
         var tag = CompoundTag.empty();
         if (displayName != null) tag.add("displayName", plugin.nbt().serialize(displayName));
@@ -468,9 +471,16 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         var actions = CompoundTag.empty();
         var attributes = CompoundTag.empty();
         this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().serialize(clickAction)));
-        // todo: use codecs in some way
-        // this.attributes.stream().filter(attribute -> attribute.getValue() != null).forEach(attribute ->
-        //         attributes.add(attribute.getType().key().asString(), attribute.serialize()));
+        if (entity != null) {
+            var entityData = new CompoundTag();
+            EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
+                if (!entityCodec.entityType().isInstance(entity)) return;
+                var codec = (EntityCodec<Object, Object>) entityCodec;
+                var object = codec.getter().apply(entity);
+                entityData.add(codec.key().asString(), codec.adapter().serialize(object, null)); // fixme: null context
+            });
+            tag.add("entityData", actions);
+        }
         if (!actions.isEmpty()) tag.add("clickActions", actions);
         if (!attributes.isEmpty()) tag.add("attributes", attributes);
         return tag;
