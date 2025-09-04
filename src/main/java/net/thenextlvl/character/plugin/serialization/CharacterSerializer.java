@@ -1,10 +1,13 @@
 package net.thenextlvl.character.plugin.serialization;
 
+import core.nbt.serialization.ParserException;
+import core.nbt.serialization.TagSerializationContext;
+import core.nbt.serialization.TagSerializer;
+import core.nbt.tag.ByteTag;
+import core.nbt.tag.CompoundTag;
+import core.nbt.tag.ListTag;
+import core.nbt.tag.Tag;
 import net.thenextlvl.character.Character;
-import net.thenextlvl.nbt.serialization.ParserException;
-import net.thenextlvl.nbt.serialization.TagSerializationContext;
-import net.thenextlvl.nbt.serialization.TagSerializer;
-import net.thenextlvl.nbt.tag.Tag;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
@@ -15,7 +18,7 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
     @Override
     public Tag serialize(Character<?> character, TagSerializationContext context) throws ParserException {
         var tag = new CompoundTag();
-        
+
         if (character instanceof PlayerCharacter player) {
             var id = player.getGameProfile().getId();
             if (id != null) tag.add("uuid", context.serialize(id));
@@ -46,7 +49,8 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
                 if (!entityCodec.entityType().isInstance(entity)) return;
                 @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
                 var object = codec.getter().apply(entity);
-                entityData.add(codec.key().asString(), codec.adapter().serialize(object, context));
+                if (object == null) entityData.add(codec.key().asString(), new ByteTag((byte) -1));
+                else entityData.add(codec.key().asString(), codec.adapter().serialize(object, context));
             });
             tag.add("entityData", entityData);
         });

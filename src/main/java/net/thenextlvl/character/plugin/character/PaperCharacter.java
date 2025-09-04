@@ -7,6 +7,7 @@ import core.nbt.NBTOutputStream;
 import core.nbt.serialization.ParserException;
 import core.nbt.serialization.TagDeserializationContext;
 import core.nbt.serialization.TagDeserializer;
+import core.nbt.tag.ByteTag;
 import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
 import core.util.StringUtil;
@@ -468,7 +469,8 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
                 if (!entityCodec.entityType().isInstance(entity)) return;
                 @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
                 entityTag.optional(entityCodec.key().asString())
-                        .map(tag1 -> codec.adapter().deserialize(tag1, context))
+                        .map(tag1 -> tag1 instanceof ByteTag byteTag && byteTag.getAsByte() == -1
+                                ? null : codec.adapter().deserialize(tag1, context))
                         .ifPresent(data -> codec.setter().test(entity, data));
             });
         });
