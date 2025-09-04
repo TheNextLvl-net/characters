@@ -4,6 +4,7 @@ import core.nbt.serialization.ParserException;
 import core.nbt.serialization.TagAdapter;
 import core.nbt.serialization.TagDeserializationContext;
 import core.nbt.serialization.TagSerializationContext;
+import core.nbt.tag.CompoundTag;
 import core.nbt.tag.Tag;
 import net.kyori.adventure.key.Key;
 import org.bukkit.attribute.Attribute;
@@ -21,14 +22,28 @@ import java.util.UUID;
 public class AttributeAdapter implements TagAdapter<Set<AttributeInstance>> {
     @Override
     public Set<AttributeInstance> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        // todo: implement
         return Set.of();
     }
 
     @Override
-    public Tag serialize(Set<AttributeInstance> object, TagSerializationContext context) throws ParserException {
-        // todo: implement
-        return null;
+    public Tag serialize(Set<AttributeInstance> attributes, TagSerializationContext context) throws ParserException {
+        var tag = new CompoundTag();
+        attributes.forEach(instance -> {
+            var attributeTag = new CompoundTag();
+            attributeTag.add("attribute", context.serialize(instance.getAttribute().key()));
+            attributeTag.add("baseValue", instance.getBaseValue());
+            
+            var modifiersTag = new CompoundTag();
+            instance.getModifiers().forEach(modifier -> {
+                modifiersTag.add("key", context.serialize(modifier.key()));
+                modifiersTag.add("operation", context.serialize(modifier.key()));
+                modifiersTag.add("amount", modifier.getAmount());
+                modifiersTag.add("slot", context.serialize(modifier.getSlotGroup()));
+            });
+            
+            attributeTag.add("modifiers", modifiersTag);
+        });
+        return tag;
     }
 
     private static final class SimpleAttributeInstance implements AttributeInstance {

@@ -27,7 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
-public interface Character<E extends Entity> extends TagSerializable {
+public interface Character<E extends Entity> {
     Optional<ClickAction<?>> getAction(String name);
 
     Equipment getEquipment();

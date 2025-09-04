@@ -3,6 +3,12 @@ package net.thenextlvl.character.plugin.character;
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import core.io.IO;
+import core.nbt.NBTOutputStream;
+import core.nbt.serialization.ParserException;
+import core.nbt.serialization.TagDeserializationContext;
+import core.nbt.serialization.TagDeserializer;
+import core.nbt.tag.CompoundTag;
+import core.nbt.tag.Tag;
 import core.util.StringUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -14,10 +20,6 @@ import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.tag.TagOptions;
-import net.thenextlvl.nbt.NBTOutputStream;
-import net.thenextlvl.nbt.serialization.ParserException;
-import net.thenextlvl.nbt.tag.CompoundTag;
-import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -66,7 +68,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static org.bukkit.attribute.Attribute.MAX_HEALTH;
 
 @NullMarked
-public class PaperCharacter<E extends Entity> implements Character<E> {
+public class PaperCharacter<E extends Entity> implements Character<E>, TagDeserializer<Character<E>> {
     protected final Class<? extends E> entityClass;
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
@@ -302,7 +304,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
                     file.outputStream(WRITE, CREATE, TRUNCATE_EXISTING),
                     StandardCharsets.UTF_8
             )) {
-                outputStream.writeTag(getName(), plugin.nbt().serialize(this));
+                outputStream.writeTag(getName(), plugin.nbt().toTag(this));
                 return true;
             }
         } catch (Throwable t) {
@@ -425,6 +427,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         return true;
     }
 
+    public void loadCharacter(Player player) {
+        getEntity().ifPresent(entity -> updateVisibility(entity, player));
+    }
+
     @Override
     public boolean spawn() {
         return spawnLocation != null && spawn(spawnLocation);
@@ -455,60 +461,28 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public CompoundTag serialize() throws ParserException {
-        var tag = CompoundTag.empty();
-        if (displayName != null) tag.add("displayName", plugin.nbt().serialize(displayName));
-        if (spawnLocation != null) tag.add("location", plugin.nbt().serialize(spawnLocation));
-        if (teamColor != null) tag.add("teamColor", plugin.nbt().serialize(teamColor));
-        if (viewPermission != null) tag.add("viewPermission", viewPermission);
-        tag.add("displayNameVisible", displayNameVisible);
-        tag.add("equipment", equipment.serialize());
-        tag.add("pathfinding", pathfinding);
-        tag.add("tagOptions", tagOptions.serialize());
-        tag.add("type", plugin.nbt().serialize(type));
-        tag.add("visibleByDefault", visibleByDefault);
-        var actions = CompoundTag.empty();
-        var attributes = CompoundTag.empty();
-        this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().serialize(clickAction)));
-        if (entity != null) {
-            var entityData = new CompoundTag();
-            EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
-                if (!entityCodec.entityType().isInstance(entity)) return;
-                var codec = (EntityCodec<Object, Object>) entityCodec;
-                var object = codec.getter().apply(entity);
-                entityData.add(codec.key().asString(), codec.adapter().serialize(object, null)); // fixme: null context
-            });
-            tag.add("entityData", actions);
-        }
-        if (!actions.isEmpty()) tag.add("clickActions", actions);
-        if (!attributes.isEmpty()) tag.add("attributes", attributes);
-        return tag;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public void deserialize(Tag tag) throws ParserException {
+    public Character<E> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();
         if (entity != null) root.optional("entityData").map(Tag::getAsCompound).ifPresent(entityTag -> {
             EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
                 if (!entityCodec.entityType().isInstance(entity)) return;
-                var codec = (EntityCodec<Object, Object>) entityCodec;
+                @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
                 entityTag.optional(entityCodec.key().asString())
-                        .map(tag1 -> codec.adapter().deserialize(tag1, null)) // fixme: null context
+                        .map(tag1 -> codec.adapter().deserialize(tag1, context))
                         .ifPresent(data -> codec.setter().test(entity, data));
             });
         });
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
-                addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
-        root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
+                addAction(name, plugin.nbt().<ClickAction<?>>fromTag(action, ClickAction.class))));
+        root.optional("displayName").map(t -> plugin.nbt().fromTag(t, Component.class)).ifPresent(this::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
         root.optional("equipment").ifPresent(equipment::deserialize);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
-        root.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
+        root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
+        return this;
     }
 
     public void updateVisibility(E entity, Player player) {
@@ -691,10 +665,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
         @Override
         public Tag serialize() throws ParserException {
-            var tag = CompoundTag.empty();
+            var tag = new CompoundTag();
             equipment.forEach((slot, item) -> {
                 if (item == null || item.isEmpty()) return;
-                tag.add(slot.name(), plugin.nbt().serialize(item));
+                tag.add(slot.name(), plugin.nbt().toTag(item));
             });
             return tag;
         }
@@ -702,7 +676,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         @Override
         public void deserialize(Tag tag) throws ParserException {
             slots.forEach(slot -> tag.getAsCompound().optional(slot.name())
-                    .map(t -> plugin.nbt().deserialize(t, ItemStack.class))
+                    .map(t -> plugin.nbt().fromTag(t, ItemStack.class))
                     .ifPresent(item -> equipment.put(slot, item)));
         }
     }
@@ -917,17 +891,17 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
         @Override
         public Tag serialize() throws ParserException {
-            var tag = CompoundTag.empty();
+            var tag = new CompoundTag();
             if (backgroundColor != null) tag.add("backgroundColor", backgroundColor.asARGB());
-            if (brightness != null) tag.add("brightness", plugin.nbt().serialize(brightness));
+            if (brightness != null) tag.add("brightness", plugin.nbt().toTag(brightness));
             tag.add("alignment", alignment.name());
             tag.add("billboard", billboard.name());
             tag.add("defaultBackground", defaultBackground);
-            tag.add("leftRotation", plugin.nbt().serialize(leftRotation));
+            tag.add("leftRotation", plugin.nbt().toTag(leftRotation));
             tag.add("lineWidth", lineWidth);
-            tag.add("offset", plugin.nbt().serialize(offset));
-            tag.add("rightRotation", plugin.nbt().serialize(rightRotation));
-            tag.add("scale", plugin.nbt().serialize(scale));
+            tag.add("offset", plugin.nbt().toTag(offset));
+            tag.add("rightRotation", plugin.nbt().toTag(rightRotation));
+            tag.add("scale", plugin.nbt().toTag(scale));
             tag.add("seeThrough", seeThrough);
             tag.add("textOpacity", textOpacity);
             tag.add("textShadow", textShadow);
@@ -940,16 +914,16 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
             root.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
             root.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
             root.optional("defaultBackground").map(Tag::getAsBoolean).ifPresent(this::setDefaultBackground);
-            root.optional("leftRotation").map(t -> plugin.nbt().deserialize(t, Quaternionf.class)).ifPresent(this::setLeftRotation);
+            root.optional("leftRotation").map(t -> plugin.nbt().fromTag(t, Quaternionf.class)).ifPresent(this::setLeftRotation);
             root.optional("lineWidth").map(Tag::getAsInt).ifPresent(this::setLineWidth);
-            root.optional("offset").map(t -> plugin.nbt().deserialize(t, Vector3f.class)).ifPresent(this::setOffset);
-            root.optional("rightRotation").map(t -> plugin.nbt().deserialize(t, Quaternionf.class)).ifPresent(this::setRightRotation);
-            root.optional("scale").map(t -> plugin.nbt().deserialize(t, Vector3f.class)).ifPresent(this::setScale);
+            root.optional("offset").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setOffset);
+            root.optional("rightRotation").map(t -> plugin.nbt().fromTag(t, Quaternionf.class)).ifPresent(this::setRightRotation);
+            root.optional("scale").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setScale);
             root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
             root.optional("textOpacity").map(Tag::getAsFloat).ifPresent(this::setTextOpacity);
             root.optional("textShadow").map(Tag::getAsBoolean).ifPresent(this::setTextShadow);
             setBackgroundColor(root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).orElse(null));
-            setBrightness(root.optional("brightness").map(t -> plugin.nbt().deserialize(t, Brightness.class)).orElse(null));
+            setBrightness(root.optional("brightness").map(t -> plugin.nbt().fromTag(t, Brightness.class)).orElse(null));
         }
     }
 }
