@@ -166,7 +166,6 @@ public final class EntityCodecs {
                     attribute.getModifiers().forEach(attribute::addModifier);
                 });
             })
-            // .argumentType() // todo: implement... somehow? or not? maybe make this optional?
             .adapter(new AttributeAdapter())
             .build();
 
