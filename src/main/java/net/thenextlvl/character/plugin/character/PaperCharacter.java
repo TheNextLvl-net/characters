@@ -487,13 +487,18 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void deserialize(Tag tag) throws ParserException {
         var root = tag.getAsCompound();
-        // todo: use codecs in some way
-        // root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, t) -> {
-        //     @SuppressWarnings("PatternValidation") var key = Key.key(name);
-        //     EntityCodecs.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
-        // }));
+        if (entity != null) root.optional("entityData").map(Tag::getAsCompound).ifPresent(entityTag -> {
+            EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
+                if (!entityCodec.entityType().isInstance(entity)) return;
+                var codec = (EntityCodec<Object, Object>) entityCodec;
+                entityTag.optional(entityCodec.key().asString())
+                        .map(tag1 -> codec.adapter().deserialize(tag1, null)) // fixme: null context
+                        .ifPresent(data -> codec.setter().test(entity, data));
+            });
+        });
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
@@ -526,7 +531,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
-        // todo: apply codecs
+        // todo: apply codecs preSpawn and not only on deserialize
         // attributes.forEach(attribute -> {
         //     @SuppressWarnings("unchecked") var type = (AttributeType<Object, Object>) attribute.getType();
         //     type.set(entity, attribute.getValue());
