@@ -104,8 +104,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public ClickAction<?> getAction(String name) {
-        return actions.get(name);
+    public Optional<ClickAction<?>> getAction(String name) {
+        return Optional.ofNullable(actions.get(name));
     }
 
     @Override
@@ -119,8 +119,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public @Nullable Component getDisplayName() {
-        return displayName;
+    public Optional<Component> getDisplayName() {
+        return Optional.ofNullable(displayName);
     }
 
     @Override
@@ -154,13 +154,13 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public @Nullable NamedTextColor getTeamColor() {
-        return teamColor;
+    public Optional<NamedTextColor> getTeamColor() {
+        return Optional.ofNullable(teamColor);
     }
 
     @Override
-    public @Nullable Location getLocation() {
-        return getEntity().map(Entity::getLocation).orElse(null);
+    public Optional<Location> getLocation() {
+        return getEntity().map(Entity::getLocation);
     }
 
     @Override
@@ -174,13 +174,13 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public @Nullable String getViewPermission() {
-        return viewPermission;
+    public Optional<String> getViewPermission() {
+        return Optional.ofNullable(viewPermission);
     }
 
     @Override
-    public @Nullable Location getSpawnLocation() {
-        return spawnLocation;
+    public Optional<Location> getSpawnLocation() {
+        return Optional.ofNullable(spawnLocation);
     }
 
     @Override
@@ -199,8 +199,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public @Nullable World getWorld() {
-        return getEntity().map(Entity::getWorld).orElse(null);
+    public Optional<World> getWorld() {
+        return getEntity().map(Entity::getWorld);
     }
 
     @Override

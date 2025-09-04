@@ -28,16 +28,14 @@ import java.util.UUID;
 
 @NullMarked
 public interface Character<E extends Entity> extends TagSerializable {
-    @Nullable
-    ClickAction<?> getAction(String name);
+    Optional<ClickAction<?>> getAction(String name);
 
     Equipment getEquipment();
 
     @Unmodifiable
     Map<String, ClickAction<?>> getActions();
 
-    @Nullable
-    Component getDisplayName();
+    Optional<Component> getDisplayName();
 
     @Unmodifiable
     Set<Goal> getGoals();
@@ -52,21 +50,17 @@ public interface Character<E extends Entity> extends TagSerializable {
 
     Class<? extends E> getEntityClass();
 
-    @Nullable
-    NamedTextColor getTeamColor();
+    Optional<NamedTextColor> getTeamColor();
 
-    @Nullable
-    Location getLocation();
+    Optional<Location> getLocation();
 
     String getName();
 
     String getScoreboardName();
 
-    @Nullable
-    String getViewPermission();
+    Optional<String> getViewPermission();
 
-    @Nullable
-    Location getSpawnLocation();
+    Optional<Location> getSpawnLocation();
 
     TagOptions getTagOptions();
 
@@ -75,8 +69,7 @@ public interface Character<E extends Entity> extends TagSerializable {
     @Unmodifiable
     Set<UUID> getViewers();
 
-    @Nullable
-    World getWorld();
+    Optional<World> getWorld();
 
     Optional<Pathfinder> getPathfinder();
 
