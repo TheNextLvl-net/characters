@@ -204,7 +204,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         readAll().forEach(character -> {
             var location = character.getSpawnLocation();
             if (location.map(character::spawn).orElse(false)) return;
-            getComponentLogger().error("Failed to spawn character {}", character.getName());
+            getComponentLogger().warn("Failed to spawn character {}", character.getName());
         });
         registerCommands();
         registerListeners();
