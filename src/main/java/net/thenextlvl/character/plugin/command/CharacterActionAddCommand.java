@@ -206,7 +206,6 @@ class CharacterActionAddCommand {
         return Commands.argument("click-types", EnumArgumentType.of(ClickTypes.class, EnumStringCodec.lowerHyphen()));
     }
 
-    @SuppressWarnings("unchecked")
     private static ArgumentBuilder<CommandSourceStack, ?> entityEffectArgument(CharacterPlugin plugin) {
         return Commands.argument("entity-effect", EnumArgumentType.of(EntityEffect.class, EnumStringCodec.lowerHyphen()));
     }
@@ -233,8 +232,8 @@ class CharacterActionAddCommand {
         var actionName = context.getArgument("action", String.class);
 
         var previous = character.getAction(actionName);
-        var cooldown = previous != null ? previous.getCooldown() : Duration.ZERO;
-        var permission = previous != null ? previous.getPermission() : null;
+        var cooldown = previous.map(ClickAction::getCooldown).orElse(Duration.ZERO);
+        var permission = previous.map(ClickAction::getPermission).orElse(null);
 
         var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input, cooldown, permission);
         var success = character.addAction(actionName, action);
