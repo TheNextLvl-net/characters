@@ -63,8 +63,10 @@ public interface EntityCodec<E, T> extends Keyed {
 
     /**
      * Brigadier argument type that parses command input into {@link T} so it can be fed into {@link #setter()}.
+     *
+     * @return the argument type used for parsing input values, or {@code null} if no argument type is defined
      */
-    @NonNull
+    @Nullable
     @Contract(pure = true)
     ArgumentType<T> argumentType();
 

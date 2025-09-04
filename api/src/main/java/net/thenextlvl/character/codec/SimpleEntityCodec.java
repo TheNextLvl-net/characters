@@ -37,7 +37,7 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
     private final Class<? super T> valueType;
     private final Function<E, T> getter;
     private final BiPredicate<E, T> setter;
-    private final ArgumentType<T> argumentType;
+    private final @Nullable ArgumentType<T> argumentType;
     private final TagAdapter<T> adapter;
 
     SimpleEntityCodec(Key key,
@@ -45,16 +45,16 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
                       Class<? super T> valueType,
                       Function<E, T> getter,
                       BiPredicate<E, T> setter,
-                      ArgumentType<T> argumentType,
+                      @Nullable ArgumentType<T> argumentType,
                       TagAdapter<T> adapter
     ) {
-        this.key = Objects.requireNonNull(key, "key");
-        this.entityType = Objects.requireNonNull(entityType, "entityType");
-        this.valueType = Objects.requireNonNull(valueType, "valueType");
-        this.getter = Objects.requireNonNull(getter, "getter");
-        this.setter = Objects.requireNonNull(setter, "setter");
-        this.argumentType = Objects.requireNonNull(argumentType, "argumentType");
-        this.adapter = Objects.requireNonNull(adapter, "adapter");
+        this.key = key;
+        this.entityType = entityType;
+        this.valueType = valueType;
+        this.getter = getter;
+        this.setter = setter;
+        this.argumentType = argumentType;
+        this.adapter = adapter;
     }
 
     @Override
@@ -83,7 +83,7 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
     }
 
     @Override
-    public ArgumentType<T> argumentType() {
+    public @Nullable ArgumentType<T> argumentType() {
         return argumentType;
     }
 
@@ -210,7 +210,6 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
         public EntityCodec<E, T> build() {
             Preconditions.checkArgument(getter != null, "getter");
             Preconditions.checkArgument(setter != null, "setter");
-            Preconditions.checkArgument(argumentType != null, "argumentType");
             Preconditions.checkArgument(adapter != null, "adapter");
             return new SimpleEntityCodec<>(key, entityType, valueType, getter, setter, argumentType, adapter);
         }
