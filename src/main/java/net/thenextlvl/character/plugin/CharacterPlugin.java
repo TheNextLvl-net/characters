@@ -322,11 +322,11 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
 
     private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
         var uuid = root.optional("uuid").map(tag -> nbt.deserialize(tag, UUID.class)).orElseGet(UUID::randomUUID);
-        return new PaperPlayerCharacter(this, name, uuid).deserialize(root, nbt); // fixme: null context
+        return new PaperPlayerCharacter(this, name, uuid).deserialize(root, nbt);
     }
 
     private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
-        return new PaperCharacter<>(this, name, type).deserialize(root, nbt); // fixme: null context
+        return new PaperCharacter<>(this, name, type).deserialize(root, nbt);
     }
 
     private <T> ActionType<T> register(ActionType<T> actionType) {
