@@ -304,7 +304,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
                     file.outputStream(WRITE, CREATE, TRUNCATE_EXISTING),
                     StandardCharsets.UTF_8
             )) {
-                outputStream.writeTag(getName(), plugin.nbt().toTag(this));
+                outputStream.writeTag(getName(), plugin.nbt().serialize(this));
                 return true;
             }
         } catch (Throwable t) {
@@ -473,13 +473,13 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
             });
         });
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
-                addAction(name, plugin.nbt().<ClickAction<?>>fromTag(action, ClickAction.class))));
-        root.optional("displayName").map(t -> plugin.nbt().fromTag(t, Component.class)).ifPresent(this::setDisplayName);
+                addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
+        root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
         root.optional("equipment").ifPresent(equipment::deserialize);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
-        root.optional("teamColor").map(t -> plugin.nbt().fromTag(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
+        root.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
         return this;
@@ -668,7 +668,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
             var tag = new CompoundTag();
             equipment.forEach((slot, item) -> {
                 if (item == null || item.isEmpty()) return;
-                tag.add(slot.name(), plugin.nbt().toTag(item));
+                tag.add(slot.name(), plugin.nbt().serialize(item));
             });
             return tag;
         }
@@ -676,7 +676,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         @Override
         public void deserialize(Tag tag) throws ParserException {
             slots.forEach(slot -> tag.getAsCompound().optional(slot.name())
-                    .map(t -> plugin.nbt().fromTag(t, ItemStack.class))
+                    .map(t -> plugin.nbt().deserialize(t, ItemStack.class))
                     .ifPresent(item -> equipment.put(slot, item)));
         }
     }
@@ -893,15 +893,15 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         public Tag serialize() throws ParserException {
             var tag = new CompoundTag();
             if (backgroundColor != null) tag.add("backgroundColor", backgroundColor.asARGB());
-            if (brightness != null) tag.add("brightness", plugin.nbt().toTag(brightness));
+            if (brightness != null) tag.add("brightness", plugin.nbt().serialize(brightness));
             tag.add("alignment", alignment.name());
             tag.add("billboard", billboard.name());
             tag.add("defaultBackground", defaultBackground);
-            tag.add("leftRotation", plugin.nbt().toTag(leftRotation));
+            tag.add("leftRotation", plugin.nbt().serialize(leftRotation));
             tag.add("lineWidth", lineWidth);
-            tag.add("offset", plugin.nbt().toTag(offset));
-            tag.add("rightRotation", plugin.nbt().toTag(rightRotation));
-            tag.add("scale", plugin.nbt().toTag(scale));
+            tag.add("offset", plugin.nbt().serialize(offset));
+            tag.add("rightRotation", plugin.nbt().serialize(rightRotation));
+            tag.add("scale", plugin.nbt().serialize(scale));
             tag.add("seeThrough", seeThrough);
             tag.add("textOpacity", textOpacity);
             tag.add("textShadow", textShadow);
@@ -914,16 +914,16 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
             root.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
             root.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
             root.optional("defaultBackground").map(Tag::getAsBoolean).ifPresent(this::setDefaultBackground);
-            root.optional("leftRotation").map(t -> plugin.nbt().fromTag(t, Quaternionf.class)).ifPresent(this::setLeftRotation);
+            root.optional("leftRotation").map(t -> plugin.nbt().deserialize(t, Quaternionf.class)).ifPresent(this::setLeftRotation);
             root.optional("lineWidth").map(Tag::getAsInt).ifPresent(this::setLineWidth);
-            root.optional("offset").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setOffset);
-            root.optional("rightRotation").map(t -> plugin.nbt().fromTag(t, Quaternionf.class)).ifPresent(this::setRightRotation);
-            root.optional("scale").map(t -> plugin.nbt().fromTag(t, Vector3f.class)).ifPresent(this::setScale);
+            root.optional("offset").map(t -> plugin.nbt().deserialize(t, Vector3f.class)).ifPresent(this::setOffset);
+            root.optional("rightRotation").map(t -> plugin.nbt().deserialize(t, Quaternionf.class)).ifPresent(this::setRightRotation);
+            root.optional("scale").map(t -> plugin.nbt().deserialize(t, Vector3f.class)).ifPresent(this::setScale);
             root.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
             root.optional("textOpacity").map(Tag::getAsFloat).ifPresent(this::setTextOpacity);
             root.optional("textShadow").map(Tag::getAsBoolean).ifPresent(this::setTextShadow);
             setBackgroundColor(root.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).orElse(null));
-            setBrightness(root.optional("brightness").map(t -> plugin.nbt().fromTag(t, Brightness.class)).orElse(null));
+            setBrightness(root.optional("brightness").map(t -> plugin.nbt().deserialize(t, Brightness.class)).orElse(null));
         }
     }
 }

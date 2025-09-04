@@ -155,7 +155,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         var root = tag.getAsCompound();
         root.optional("listed").map(Tag::getAsBoolean).ifPresent(this::setListed);
         root.optional("properties").map(Tag::getAsList).map(tags -> tags.stream()
-                .map(t -> plugin.nbt().fromTag(t, ProfileProperty.class))
+                .map(t -> context.deserialize(t, ProfileProperty.class))
                 .toList()
         ).ifPresent(getGameProfile()::setProperties);
         root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(this::setRealPlayer);
