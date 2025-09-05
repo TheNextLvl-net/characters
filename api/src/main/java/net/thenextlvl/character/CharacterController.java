@@ -8,11 +8,10 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @NullMarked
 public interface CharacterController {
@@ -31,13 +30,16 @@ public interface CharacterController {
     Optional<Character<?>> getCharacter(UUID uuid);
 
     @Unmodifiable
-    List<Character<?>> getCharacters();
+    Collection<? extends Character<?>> getCharacters();
 
-    Stream<Character<?>> getCharacters(Player player);
+    @Unmodifiable
+    Collection<? extends Character<?>> getCharacters(Player player);
 
-    Stream<Character<?>> getCharacters(World world);
+    @Unmodifiable
+    Collection<? extends Character<?>> getCharacters(World world);
 
-    Stream<Character<?>> getCharactersNearby(Location location, double radius);
+    @Unmodifiable
+    Collection<? extends Character<?>> getCharactersNearby(Location location, double radius);
 
     Optional<PlayerCharacter> getCharacter(Player player);
 

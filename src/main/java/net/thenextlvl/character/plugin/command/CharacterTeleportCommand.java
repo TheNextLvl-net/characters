@@ -44,8 +44,8 @@ class CharacterTeleportCommand {
 
         var character = (Character<?>) context.getArgument("character", Character.class);
 
-        character.getEntity().map(Entity::getLocation).or(character::getSpawnLocation)
-                .ifPresent(location -> player.teleportAsync(location, COMMAND, RETAIN_PASSENGERS));
+        var location = character.getEntity().map(Entity::getLocation).orElse(character.getSpawnLocation());
+        if (location != null) player.teleportAsync(location, COMMAND, RETAIN_PASSENGERS);
 
         plugin.bundle().sendMessage(sender, "character.teleported.self",
                 Placeholder.unparsed("character", character.getName()));
