@@ -6,7 +6,6 @@ import net.thenextlvl.nbt.serialization.TagAdapter;
 import net.thenextlvl.nbt.serialization.TagDeserializationContext;
 import net.thenextlvl.nbt.serialization.TagSerializationContext;
 import net.thenextlvl.nbt.tag.CompoundTag;
-import net.thenextlvl.nbt.tag.ListTag;
 import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -15,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -23,18 +23,19 @@ import java.util.UUID;
 public class AttributeAdapter implements TagAdapter<Set<AttributeInstance>> {
     @Override
     public Set<AttributeInstance> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+        var root = tag.getAsCompound();
+        var attributes = new HashSet<AttributeInstance>();
         // todo: implement
-        return Set.of();
+        return attributes;
     }
 
     @Override
     public Tag serialize(Set<AttributeInstance> attributes, TagSerializationContext context) throws ParserException {
-        var tag = ListTag.<CompoundTag>of(CompoundTag.ID);
+        var tag = CompoundTag.empty();
         attributes.forEach(instance -> {
             var attributeTag = CompoundTag.empty();
-            attributeTag.add("attribute", context.serialize(instance.getAttribute().key()));
             attributeTag.add("baseValue", instance.getBaseValue());
-            
+
             var modifiersTag = CompoundTag.empty();
             instance.getModifiers().forEach(modifier -> {
                 modifiersTag.add("key", context.serialize(modifier.key()));
@@ -42,9 +43,9 @@ public class AttributeAdapter implements TagAdapter<Set<AttributeInstance>> {
                 modifiersTag.add("amount", modifier.getAmount());
                 modifiersTag.add("slot", context.serialize(modifier.getSlotGroup()));
             });
-            
+
             attributeTag.add("modifiers", modifiersTag);
-            tag.add(attributeTag);
+            tag.add(instance.getAttribute().key().asString(), attributeTag);
         });
         return tag;
     }
@@ -53,7 +54,7 @@ public class AttributeAdapter implements TagAdapter<Set<AttributeInstance>> {
         private final Attribute attribute;
         private final double baseValue;
         private final Collection<AttributeModifier> modifiers;
-        
+
         public SimpleAttributeInstance(Attribute attribute, double baseValue, Collection<AttributeModifier> modifiers) {
             this.attribute = attribute;
             this.baseValue = baseValue;
