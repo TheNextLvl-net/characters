@@ -1,6 +1,5 @@
 package net.thenextlvl.character;
 
-import core.nbt.serialization.TagSerializable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
@@ -8,6 +7,7 @@ import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.tag.TagOptions;
+import net.thenextlvl.nbt.serialization.TagSerializable;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;

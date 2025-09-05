@@ -1,13 +1,13 @@
 package net.thenextlvl.character.plugin.serialization;
 
-import core.nbt.serialization.ParserException;
-import core.nbt.serialization.TagAdapter;
-import core.nbt.serialization.TagDeserializationContext;
-import core.nbt.serialization.TagSerializationContext;
-import core.nbt.tag.Tag;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.serialization.TagAdapter;
+import net.thenextlvl.nbt.serialization.TagDeserializationContext;
+import net.thenextlvl.nbt.serialization.TagSerializationContext;
+import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.entity.Cat;
 import org.jspecify.annotations.NullMarked;
 

@@ -3,11 +3,6 @@ package net.thenextlvl.character.plugin;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import core.i18n.file.ComponentBundle;
 import core.io.IO;
-import core.nbt.NBTInputStream;
-import core.nbt.serialization.NBT;
-import core.nbt.serialization.ParserException;
-import core.nbt.serialization.adapter.EnumAdapter;
-import core.nbt.tag.CompoundTag;
 import core.paper.messenger.PluginMessenger;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
@@ -56,6 +51,11 @@ import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
 import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import net.thenextlvl.character.plugin.version.PluginVersionChecker;
+import net.thenextlvl.nbt.NBTInputStream;
+import net.thenextlvl.nbt.serialization.NBT;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.serialization.adapter.EnumAdapter;
+import net.thenextlvl.nbt.tag.CompoundTag;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -295,10 +295,10 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         var entry = inputStream.readNamedTag();
         var root = entry.getKey().getAsCompound();
         var name = entry.getValue().orElseThrow(() -> new ParserException("Character misses root name"));
-        var type = nbt.fromTag(root.get("type"), EntityType.class);
+        var type = nbt.deserialize(root.get("type"), EntityType.class);
         Location location;
         try {
-            location = root.optional("location").map(tag -> nbt.fromTag(tag, Location.class)).orElse(null);
+            location = root.optional("location").map(tag -> nbt.deserialize(tag, Location.class)).orElse(null);
         } catch (ParserException e) {
             getComponentLogger().warn("Skip loading character '{}': {}", name, e.getMessage());
             return null;
@@ -312,7 +312,7 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     }
 
     private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
-        var uuid = root.optional("uuid").map(tag -> nbt.fromTag(tag, UUID.class)).orElseGet(UUID::randomUUID);
+        var uuid = root.optional("uuid").map(tag -> nbt.deserialize(tag, UUID.class)).orElseGet(UUID::randomUUID);
         var character = new PaperPlayerCharacter(this, name, uuid);
         character.deserialize(root);
         return character;

@@ -5,10 +5,6 @@ import com.destroystokyo.paper.SkinParts;
 import com.destroystokyo.paper.profile.CraftPlayerProfile;
 import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
-import core.nbt.serialization.ParserException;
-import core.nbt.tag.CompoundTag;
-import core.nbt.tag.ListTag;
-import core.nbt.tag.Tag;
 import core.util.StringUtil;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.network.protocol.Packet;
@@ -31,6 +27,10 @@ import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.entity.CraftPlayerCharacter;
 import net.thenextlvl.character.plugin.network.EmptyPacketListener;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.tag.CompoundTag;
+import net.thenextlvl.nbt.tag.ListTag;
+import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -155,9 +155,9 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     public CompoundTag serialize() throws ParserException {
         var tag = super.serialize();
         if (getGameProfile().getId() != null)
-            tag.add("uuid", plugin.nbt().toTag(getGameProfile().getId()));
-        var properties = new ListTag<>(CompoundTag.ID);
-        getGameProfile().getProperties().forEach(property -> properties.add(plugin.nbt().toTag(property)));
+            tag.add("uuid", plugin.nbt().serialize(getGameProfile().getId()));
+        var properties = ListTag.of(CompoundTag.ID);
+        getGameProfile().getProperties().forEach(property -> properties.add(plugin.nbt().serialize(property)));
         tag.add("listed", isListed());
         tag.add("properties", properties);
         tag.add("realPlayer", isRealPlayer());
@@ -170,7 +170,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         var root = tag.getAsCompound();
         root.optional("listed").map(Tag::getAsBoolean).ifPresent(this::setListed);
         root.optional("properties").map(Tag::getAsList).map(tags -> tags.stream()
-                .map(t -> plugin.nbt().fromTag(t, ProfileProperty.class))
+                .map(t -> plugin.nbt().deserialize(t, ProfileProperty.class))
                 .toList()
         ).ifPresent(getGameProfile()::setProperties);
         root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(this::setRealPlayer);

@@ -1,13 +1,13 @@
 package net.thenextlvl.character.plugin.serialization;
 
-import core.nbt.serialization.ParserException;
-import core.nbt.serialization.TagAdapter;
-import core.nbt.serialization.TagDeserializationContext;
-import core.nbt.serialization.TagSerializationContext;
-import core.nbt.tag.CompoundTag;
-import core.nbt.tag.Tag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.serialization.TagAdapter;
+import net.thenextlvl.nbt.serialization.TagDeserializationContext;
+import net.thenextlvl.nbt.serialization.TagSerializationContext;
+import net.thenextlvl.nbt.tag.CompoundTag;
+import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.Optional;
@@ -25,7 +25,7 @@ public class TitleAdapter implements TagAdapter<Title> {
 
     @Override
     public Tag serialize(Title title, TagSerializationContext context) throws ParserException {
-        var tag = new CompoundTag();
+        var tag = CompoundTag.empty();
         tag.add("title", context.serialize(title.title()));
         tag.add("subtitle", context.serialize(title.subtitle()));
         Optional.ofNullable(title.times()).ifPresent(times -> tag.add("times", context.serialize(times)));

@@ -1,6 +1,6 @@
 package net.thenextlvl.character.tag;
 
-import core.nbt.serialization.TagSerializable;
+import net.thenextlvl.nbt.serialization.TagSerializable;
 import org.bukkit.Color;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
