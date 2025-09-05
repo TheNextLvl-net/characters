@@ -28,8 +28,7 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.entity.CraftPlayerCharacter;
 import net.thenextlvl.character.plugin.network.EmptyPacketListener;
 import net.thenextlvl.nbt.serialization.ParserException;
-import net.thenextlvl.nbt.tag.CompoundTag;
-import net.thenextlvl.nbt.tag.ListTag;
+import net.thenextlvl.nbt.serialization.TagDeserializationContext;
 import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
@@ -152,30 +151,16 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
     }
 
     @Override
-    public CompoundTag serialize() throws ParserException {
-        var tag = super.serialize();
-        if (getGameProfile().getId() != null)
-            tag.add("uuid", plugin.nbt().serialize(getGameProfile().getId()));
-        var properties = ListTag.of(CompoundTag.ID);
-        getGameProfile().getProperties().forEach(property -> properties.add(plugin.nbt().serialize(property)));
-        tag.add("listed", isListed());
-        tag.add("properties", properties);
-        tag.add("realPlayer", isRealPlayer());
-        tag.add("skinParts", (byte) getSkinParts().getRaw());
-        return tag;
-    }
-
-    @Override
-    public void deserialize(Tag tag) throws ParserException {
+    public PlayerCharacter deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();
         root.optional("listed").map(Tag::getAsBoolean).ifPresent(this::setListed);
         root.optional("properties").map(Tag::getAsList).map(tags -> tags.stream()
-                .map(t -> plugin.nbt().deserialize(t, ProfileProperty.class))
+                .map(t -> context.deserialize(t, ProfileProperty.class))
                 .toList()
         ).ifPresent(getGameProfile()::setProperties);
         root.optional("realPlayer").map(Tag::getAsBoolean).ifPresent(this::setRealPlayer);
         root.optional("skinParts").map(Tag::getAsByte).map(PaperSkinParts::new).ifPresent(this::setSkinParts);
-        super.deserialize(tag);
+        return (PlayerCharacter) super.deserialize(tag, context);
     }
 
     @Override
@@ -257,6 +242,7 @@ public class PaperPlayerCharacter extends PaperCharacter<Player> implements Play
         return true;
     }
 
+    @Override
     public void loadCharacter(Player player) {
         getEntity(CraftPlayer.class).ifPresent(entity -> {
             if (isVisibleByDefault()) sendPacket(player, new ClientboundBundlePacket(List.of(

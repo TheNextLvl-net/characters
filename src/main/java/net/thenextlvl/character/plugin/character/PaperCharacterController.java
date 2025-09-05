@@ -14,13 +14,13 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @NullMarked
 public class PaperCharacterController implements CharacterController {
@@ -85,33 +85,28 @@ public class PaperCharacterController implements CharacterController {
     }
 
     @Override
-    public @Unmodifiable Collection<? extends Character<?>> getCharacters() {
+    public @Unmodifiable List<Character<?>> getCharacters() {
         return List.copyOf(characters.values());
     }
 
     @Override
-    public @Unmodifiable Collection<? extends Character<?>> getCharacters(Player player) {
-        return characters.values().stream()
-                .filter(character -> character.canSee(player))
-                .toList();
+    public Stream<Character<?>> getCharacters(Player player) {
+        return characters.values().stream().filter(character -> character.canSee(player));
     }
 
     @Override
-    public @Unmodifiable Collection<? extends Character<?>> getCharacters(World world) {
-        return characters.values().stream()
-                .filter(character -> world.equals(character.getWorld()))
-                .toList();
+    public Stream<Character<?>> getCharacters(World world) {
+        return characters.values().stream().filter(character -> character.getWorld().map(world::equals).orElse(false));
     }
 
     @Override
-    public @Unmodifiable Collection<? extends Character<?>> getCharactersNearby(Location location, double radius) {
+    public Stream<Character<?>> getCharactersNearby(Location location, double radius) {
         Preconditions.checkArgument(radius > 0, "Radius must be greater than 0");
         Preconditions.checkNotNull(location.getWorld(), "World cannot be null");
         var radiusSquared = radius * radius;
-        return getCharacters(location.getWorld()).stream()
-                .filter(character -> character.getLocation() != null)
-                .filter(character -> character.getLocation().distanceSquared(location) <= radiusSquared)
-                .toList();
+        return getCharacters(location.getWorld()).filter(character -> character.getLocation()
+                .map(location1 -> location1.distanceSquared(location) <= radiusSquared)
+                .orElse(false));
     }
 
     @Override

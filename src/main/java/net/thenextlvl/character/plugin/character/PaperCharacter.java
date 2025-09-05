@@ -1,30 +1,29 @@
 package net.thenextlvl.character.plugin.character;
 
+import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.util.StringUtil;
-import io.papermc.paper.util.Tick;
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
-import net.thenextlvl.character.attribute.Attribute;
-import net.thenextlvl.character.attribute.AttributeType;
-import net.thenextlvl.character.attribute.AttributeTypes;
+import net.thenextlvl.character.codec.EntityCodec;
+import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.character.attribute.PaperAttribute;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.tag.TagOptions;
 import net.thenextlvl.nbt.NBTOutputStream;
 import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.serialization.TagDeserializationContext;
+import net.thenextlvl.nbt.serialization.TagDeserializer;
+import net.thenextlvl.nbt.tag.ByteTag;
 import net.thenextlvl.nbt.tag.CompoundTag;
 import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
@@ -53,7 +52,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -71,11 +69,10 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static org.bukkit.attribute.Attribute.MAX_HEALTH;
 
 @NullMarked
-public class PaperCharacter<E extends Entity> implements Character<E> {
+public class PaperCharacter<E extends Entity> implements Character<E>, TagDeserializer<Character<E>> {
     protected final Class<? extends E> entityClass;
     protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
-    protected final Set<Attribute<?, ?>> attributes = new HashSet<>();
     protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
     protected final String scoreboardName = StringUtil.random(32);
@@ -90,7 +87,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable String viewPermission = null;
-    protected @Nullable TextDisplay textDisplayName;
+    protected @Nullable TextDisplay textDisplayName = null;
 
     protected Pose pose = Pose.STANDING;
 
@@ -110,8 +107,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public ClickAction<?> getAction(String name) {
-        return actions.get(name);
+    public Optional<ClickAction<?>> getAction(String name) {
+        return Optional.ofNullable(actions.get(name));
     }
 
     @Override
@@ -125,8 +122,8 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public @Nullable Component getDisplayName() {
-        return displayName;
+    public Optional<Component> getDisplayName() {
+        return Optional.ofNullable(displayName);
     }
 
     @Override
@@ -160,13 +157,13 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public @Nullable NamedTextColor getTeamColor() {
-        return teamColor;
+    public Optional<NamedTextColor> getTeamColor() {
+        return Optional.ofNullable(teamColor);
     }
 
     @Override
-    public @Nullable Location getLocation() {
-        return getEntity().map(Entity::getLocation).orElse(null);
+    public Optional<Location> getLocation() {
+        return getEntity().map(Entity::getLocation);
     }
 
     @Override
@@ -180,13 +177,13 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public @Nullable String getViewPermission() {
-        return viewPermission;
+    public Optional<String> getViewPermission() {
+        return Optional.ofNullable(viewPermission);
     }
 
     @Override
-    public @Nullable Location getSpawnLocation() {
-        return spawnLocation;
+    public Optional<Location> getSpawnLocation() {
+        return Optional.ofNullable(spawnLocation);
     }
 
     @Override
@@ -205,32 +202,13 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public <T> Optional<T> getAttributeValue(AttributeType<?, T> type) {
-        return getAttribute(type).map(Attribute::getValue);
+    public Optional<World> getWorld() {
+        return getEntity().map(Entity::getWorld);
     }
 
     @Override
-    public <T> boolean setAttributeValue(AttributeType<?, T> type, T value) {
-        return getAttribute(type).map(attribute -> attribute.setValue(value)).orElse(false);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type) {
-        return attributes.stream()
-                .filter(attribute -> attribute.getType().equals(type))
-                .map(attribute -> (Attribute<V, T>) attribute)
-                .findAny().or(() -> {
-                    if (!type.isApplicable(this)) return Optional.empty();
-                    var attribute = new PaperAttribute<>(type, this, plugin);
-                    attributes.add(attribute);
-                    return Optional.of(attribute);
-                });
-    }
-
-    @Override
-    public @Nullable World getWorld() {
-        return getEntity().map(Entity::getWorld).orElse(null);
+    public Optional<Pathfinder> getPathfinder() {
+        return getEntity(Mob.class).map(Mob::getPathfinder);
     }
 
     @Override
@@ -450,6 +428,10 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         return true;
     }
 
+    public void loadCharacter(Player player) {
+        getEntity().ifPresent(entity -> updateVisibility(entity, player));
+    }
+
     @Override
     public boolean spawn() {
         return spawnLocation != null && spawn(spawnLocation);
@@ -480,35 +462,18 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     }
 
     @Override
-    public CompoundTag serialize() throws ParserException {
-        var tag = CompoundTag.empty();
-        if (displayName != null) tag.add("displayName", plugin.nbt().serialize(displayName));
-        if (spawnLocation != null) tag.add("location", plugin.nbt().serialize(spawnLocation));
-        if (teamColor != null) tag.add("teamColor", plugin.nbt().serialize(teamColor));
-        if (viewPermission != null) tag.add("viewPermission", viewPermission);
-        tag.add("displayNameVisible", displayNameVisible);
-        tag.add("equipment", equipment.serialize());
-        tag.add("pathfinding", pathfinding);
-        tag.add("tagOptions", tagOptions.serialize());
-        tag.add("type", plugin.nbt().serialize(type));
-        tag.add("visibleByDefault", visibleByDefault);
-        var actions = CompoundTag.empty();
-        var attributes = CompoundTag.empty();
-        this.actions.forEach((name, clickAction) -> actions.add(name, plugin.nbt().serialize(clickAction)));
-        this.attributes.stream().filter(attribute -> attribute.getValue() != null).forEach(attribute ->
-                attributes.add(attribute.getType().key().asString(), attribute.serialize()));
-        if (!actions.isEmpty()) tag.add("clickActions", actions);
-        if (!attributes.isEmpty()) tag.add("attributes", attributes);
-        return tag;
-    }
-
-    @Override
-    public void deserialize(Tag tag) throws ParserException {
+    public Character<E> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();
-        root.optional("attributes").map(Tag::getAsCompound).ifPresent(attributes -> attributes.forEach((name, t) -> {
-            @SuppressWarnings("PatternValidation") var key = Key.key(name);
-            AttributeTypes.getByKey(key).flatMap(this::getAttribute).ifPresent(attribute -> attribute.deserialize(t));
-        }));
+        if (entity != null) root.optional("entityData").map(Tag::getAsCompound).ifPresent(entityTag -> {
+            EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
+                if (!entityCodec.entityType().isInstance(entity)) return;
+                @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
+                entityTag.optional(entityCodec.key().asString())
+                        .map(tag1 -> tag1 instanceof ByteTag byteTag && byteTag.getAsByte() == -1
+                                ? null : codec.adapter().deserialize(tag1, context))
+                        .ifPresent(data -> codec.setter().test(entity, data));
+            });
+        });
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
@@ -519,6 +484,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
         root.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
+        return this;
     }
 
     public void updateVisibility(E entity, Player player) {
@@ -538,19 +504,14 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
     protected void preSpawn(E entity) {
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setVisibleByDefault(visibleByDefault);
-        entity.lockFreezeTicks(true);
-        entity.setInvulnerable(true);
-        entity.setPersistent(false);
-        entity.setSilent(true);
 
-        if (entity instanceof LivingEntity living) living.setAI(false);
-        if (entity instanceof AreaEffectCloud cloud) cloud.setDuration(Tick.tick().fromDuration(Duration.ofDays(999)));
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
-        attributes.forEach(attribute -> {
-            @SuppressWarnings("unchecked") var casted = (Attribute<E, Object>) attribute;
-            casted.getType().set(entity, attribute.getValue());
-        });
+        // todo: apply codecs preSpawn and not only on deserialize
+        // attributes.forEach(attribute -> {
+        //     @SuppressWarnings("unchecked") var type = (AttributeType<Object, Object>) attribute.getType();
+        //     type.set(entity, attribute.getValue());
+        // });
 
         if (entity instanceof LivingEntity living) {
             if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
@@ -644,8 +605,7 @@ public class PaperCharacter<E extends Entity> implements Character<E> {
 
     protected void updateTeamOptions(Team team) {
         team.color(teamColor);
-        var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable)
-                .orElse(getAttributeValue(AttributeTypes.LIVING_ENTITY.COLLIDABLE).orElse(false));
+        var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable).orElse(false);
         team.setOption(Team.Option.COLLISION_RULE, collidable ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }

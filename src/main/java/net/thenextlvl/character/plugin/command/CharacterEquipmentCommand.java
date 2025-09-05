@@ -4,13 +4,14 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import core.paper.command.argument.EnumArgumentType;
+import core.paper.command.argument.codec.EnumStringCodec;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
@@ -27,7 +28,7 @@ class CharacterEquipmentCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> equipmentSlotArgument() {
-        return Commands.argument("equipment-slot", new EnumArgument<>(EquipmentSlot.class));
+        return Commands.argument("equipment-slot", EnumArgumentType.of(EquipmentSlot.class, EnumStringCodec.lowerHyphen()));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> itemArgument() {

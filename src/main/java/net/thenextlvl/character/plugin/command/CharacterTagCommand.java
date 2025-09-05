@@ -8,6 +8,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import core.paper.command.argument.EnumArgumentType;
+import core.paper.command.argument.codec.EnumStringCodec;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
@@ -17,7 +19,6 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.ColorArgument;
-import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import org.bukkit.Color;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
@@ -153,7 +154,7 @@ class CharacterTagCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> setAlignment(CharacterPlugin plugin) {
         return Commands.literal("alignment").then(Commands.argument(
-                "alignment", new EnumArgument<>(TextAlignment.class)
+                "alignment", EnumArgumentType.of(TextAlignment.class, EnumStringCodec.lowerHyphen())
         ).executes(context -> {
             var alignment = context.getArgument("alignment", TextAlignment.class);
             return setAlignment(context, alignment, plugin);
@@ -191,7 +192,7 @@ class CharacterTagCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> setBillboard(CharacterPlugin plugin) {
         return Commands.literal("billboard").then(Commands.argument(
-                "billboard", new EnumArgument<>(Billboard.class)
+                "billboard", EnumArgumentType.of(Billboard.class, EnumStringCodec.lowerHyphen())
         ).executes(context -> {
             var billboard = context.getArgument("billboard", Billboard.class);
             return setBillboard(context, billboard, plugin);

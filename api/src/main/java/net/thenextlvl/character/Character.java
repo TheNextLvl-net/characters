@@ -1,10 +1,9 @@
 package net.thenextlvl.character;
 
+import com.destroystokyo.paper.entity.Pathfinder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
-import net.thenextlvl.character.attribute.Attribute;
-import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.tag.TagOptions;
 import net.thenextlvl.nbt.serialization.TagSerializable;
@@ -27,17 +26,15 @@ import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
-public interface Character<E extends Entity> extends TagSerializable {
-    @Nullable
-    ClickAction<?> getAction(String name);
+public interface Character<E extends Entity> {
+    Optional<ClickAction<?>> getAction(String name);
 
     Equipment getEquipment();
 
     @Unmodifiable
     Map<String, ClickAction<?>> getActions();
 
-    @Nullable
-    Component getDisplayName();
+    Optional<Component> getDisplayName();
 
     @Unmodifiable
     Set<Goal> getGoals();
@@ -49,24 +46,20 @@ public interface Character<E extends Entity> extends TagSerializable {
     <T> Optional<T> getEntity(Class<T> type);
 
     Optional<E> getEntity();
-    
+
     Class<? extends E> getEntityClass();
 
-    @Nullable
-    NamedTextColor getTeamColor();
+    Optional<NamedTextColor> getTeamColor();
 
-    @Nullable
-    Location getLocation();
+    Optional<Location> getLocation();
 
     String getName();
 
     String getScoreboardName();
 
-    @Nullable
-    String getViewPermission();
+    Optional<String> getViewPermission();
 
-    @Nullable
-    Location getSpawnLocation();
+    Optional<Location> getSpawnLocation();
 
     TagOptions getTagOptions();
 
@@ -75,14 +68,9 @@ public interface Character<E extends Entity> extends TagSerializable {
     @Unmodifiable
     Set<UUID> getViewers();
 
-    <T> Optional<T> getAttributeValue(AttributeType<?, T> type);
+    Optional<World> getWorld();
 
-    <T> boolean setAttributeValue(AttributeType<?, T> type, T value);
-
-    <V, T> Optional<Attribute<V, T>> getAttribute(AttributeType<V, T> type);
-
-    @Nullable
-    World getWorld();
+    Optional<Pathfinder> getPathfinder();
 
     <T> boolean addAction(String name, ClickAction<T> action);
 

@@ -35,9 +35,9 @@ class CharacterActionPermissionCommand {
 
     private static int get(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
+        var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
-        var action = character.getAction(actionName);
+        var action = character.getAction(actionName).orElse(null);
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
                     Placeholder.parsed("character", character.getName()),
@@ -63,9 +63,9 @@ class CharacterActionPermissionCommand {
 
     private static int set(CommandContext<CommandSourceStack> context, @Nullable String permission, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
+        var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
-        var action = character.getAction(actionName);
+        var action = character.getAction(actionName).orElse(null);
 
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
