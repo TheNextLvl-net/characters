@@ -34,9 +34,9 @@ class CharacterActionCooldownCommand {
 
     private static int get(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
+        var character = context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
-        var action = character.getAction(actionName).orElse(null);
+        var action = character.getAction(actionName);
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
                     Placeholder.parsed("character", character.getName()),
@@ -57,9 +57,9 @@ class CharacterActionCooldownCommand {
 
     private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
         var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
+        var character = context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
-        var action = character.getAction(actionName).orElse(null);
+        var action = character.getAction(actionName);
 
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",

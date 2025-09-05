@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class CharacterActionSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
+public class CharacterActionSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
     @Override
     public CompletableFuture<Suggestions> getSuggestions(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
         var character = (Character<?>) context.getLastChild().getArgument("character", Character.class);

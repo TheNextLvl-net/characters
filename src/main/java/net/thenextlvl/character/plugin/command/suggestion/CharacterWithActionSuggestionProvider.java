@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class CharacterWithActionSuggestionProvider<T> implements SuggestionProvider<T> {
+public class CharacterWithActionSuggestionProvider<T> implements SuggestionProvider<T> {
     private final CharacterPlugin plugin;
 
     public CharacterWithActionSuggestionProvider(CharacterPlugin plugin) {

@@ -1,19 +1,12 @@
 package net.thenextlvl.character.plugin.command.argument;
 
-import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
+import core.paper.command.WrappedArgumentType;
 import org.bukkit.Color;
-import org.jspecify.annotations.NullMarked;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
-@NullMarked
-public final class ColorArgument implements CustomArgumentType.Converted<Color, String> {
+public class ColorArgument extends WrappedArgumentType<String, Color> {
     private static final Map<String, Color> predefined = Map.ofEntries(
             Map.entry("aqua", Color.AQUA),
             Map.entry("black", Color.BLACK),
@@ -34,25 +27,18 @@ public final class ColorArgument implements CustomArgumentType.Converted<Color, 
             Map.entry("yellow", Color.YELLOW)
     );
 
-    @Override
-    public Color convert(String nativeType) {
-        var color = predefined.get(nativeType);
-        if (color != null) return color;
+    public ColorArgument() {
+        super(StringArgumentType.word(), (reader, type) -> {
+            var predefined = ColorArgument.predefined.get(type);
+            if (predefined != null) return predefined;
 
-        var argb = Long.decode("0x" + nativeType);
-        return Color.fromARGB(argb.intValue());
-    }
-
-    @Override
-    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
-        predefined.keySet().stream()
-                .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
-                .forEach(builder::suggest);
-        return builder.buildFuture();
-    }
-
-    @Override
-    public ArgumentType<String> getNativeType() {
-        return StringArgumentType.word();
+            var argb = Long.decode("0x" + type);
+            return Color.fromARGB(argb.intValue());
+        }, (context, builder) -> {
+            ColorArgument.predefined.keySet().stream()
+                    .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
+                    .forEach(builder::suggest);
+            return builder.buildFuture();
+        });
     }
 }

@@ -7,8 +7,6 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import core.paper.command.argument.EnumArgumentType;
-import core.paper.command.argument.codec.EnumStringCodec;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -17,6 +15,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.argument.EnumArgument;
 import net.thenextlvl.character.skin.SkinLayer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -93,7 +92,7 @@ class CharacterSkinCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> layerArgument(CharacterPlugin plugin) {
-        return Commands.argument("layer", EnumArgumentType.of(SkinLayer.class, EnumStringCodec.lowerHyphen()));
+        return Commands.argument("layer", new EnumArgument<>(SkinLayer.class));
     }
 
     private static int layerToggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {

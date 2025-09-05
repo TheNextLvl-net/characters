@@ -25,13 +25,11 @@ import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.action.PaperActionType;
 import net.thenextlvl.character.plugin.character.action.PaperActionTypeProvider;
 import net.thenextlvl.character.plugin.character.goal.PaperGoalFactory;
-import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
-import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
 import net.thenextlvl.character.plugin.serialization.BrightnessAdapter;
 import net.thenextlvl.character.plugin.serialization.CatVariantAdapter;
@@ -40,7 +38,6 @@ import net.thenextlvl.character.plugin.serialization.ClickActionAdapter;
 import net.thenextlvl.character.plugin.serialization.ColorAdapter;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityTypeAdapter;
-import net.thenextlvl.character.plugin.serialization.EquipmentSlotGroupAdapter;
 import net.thenextlvl.character.plugin.serialization.FrogVariantAdapter;
 import net.thenextlvl.character.plugin.serialization.ItemStackAdapter;
 import net.thenextlvl.character.plugin.serialization.KeyAdapter;
@@ -66,7 +63,6 @@ import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Display.Brightness;
@@ -74,7 +70,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Pose;
-import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -112,8 +107,6 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     private final NBT nbt = NBT.builder()
             .registerTypeAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter(this))
-            .registerTypeHierarchyAdapter(AttributeAdapter.class, new AttributeAdapter())
-            .registerTypeHierarchyAdapter(AttributeModifier.Operation.class, new EnumAdapter<>(AttributeModifier.Operation.class))
             .registerTypeHierarchyAdapter(BlockData.class, new BlockDataAdapter(getServer()))
             .registerTypeHierarchyAdapter(Brightness.class, new BrightnessAdapter())
             .registerTypeHierarchyAdapter(Cat.Type.class, new CatVariantAdapter())
@@ -123,7 +116,6 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
             .registerTypeHierarchyAdapter(DyeColor.class, new EnumAdapter<>(DyeColor.class))
             .registerTypeHierarchyAdapter(EntityEffect.class, new EnumAdapter<>(EntityEffect.class))
             .registerTypeHierarchyAdapter(EntityType.class, new EntityTypeAdapter())
-            .registerTypeHierarchyAdapter(EquipmentSlotGroup.class, new EquipmentSlotGroupAdapter())
             .registerTypeHierarchyAdapter(Fox.Type.class, new EnumAdapter<>(Fox.Type.class))
             .registerTypeHierarchyAdapter(Frog.Variant.class, new FrogVariantAdapter())
             .registerTypeHierarchyAdapter(ItemStack.class, new ItemStackAdapter())
@@ -200,11 +192,10 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
 
     @Override
     public void onEnable() {
-        EntityCodecs.registerAll();
         readAll().forEach(character -> {
             var location = character.getSpawnLocation();
-            if (location.map(character::spawn).orElse(true)) return;
-            getComponentLogger().warn("Failed to spawn character {}", character.getName());
+            if (location == null || character.spawn(location)) return;
+            getComponentLogger().error("Failed to spawn character {}", character.getName());
         });
         registerCommands();
         registerListeners();
@@ -322,11 +313,15 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
 
     private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
         var uuid = root.optional("uuid").map(tag -> nbt.deserialize(tag, UUID.class)).orElseGet(UUID::randomUUID);
-        return new PaperPlayerCharacter(this, name, uuid).deserialize(root, nbt);
+        var character = new PaperPlayerCharacter(this, name, uuid);
+        character.deserialize(root);
+        return character;
     }
 
     private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
-        return new PaperCharacter<>(this, name, type).deserialize(root, nbt);
+        var character = new PaperCharacter<>(this, name, type);
+        character.deserialize(root);
+        return character;
     }
 
     private <T> ActionType<T> register(ActionType<T> actionType) {
