@@ -179,10 +179,10 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> LYING_DOWN = EntityCodec.booleanCodec(Key.key("cat", "lying_down"), Cat.class)
             .getter(Cat::isLyingDown).setter(Cat::setLyingDown).build();
-    
+
     private static final EntityCodec<?, ?> CAT_VARIANT = registryCodec(Key.key("cat", "variant"), Cat.class, Cat.Type.class, RegistryKey.CAT_VARIANT)
             .getter(Cat::getCatType).setter(Cat::setCatType).build();
-    
+
     private static final EntityCodec<?, ?> DANCING = EntityCodec.booleanCodec(Key.key("allay", "dancing"), Allay.class)
             .getter(Allay::isDancing).setter((allay, dancing) -> {
                 if (dancing) allay.startDancing();
