@@ -3,13 +3,6 @@ package net.thenextlvl.character.plugin.character;
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import core.io.IO;
-import core.nbt.NBTOutputStream;
-import core.nbt.serialization.ParserException;
-import core.nbt.serialization.TagDeserializationContext;
-import core.nbt.serialization.TagDeserializer;
-import core.nbt.tag.ByteTag;
-import core.nbt.tag.CompoundTag;
-import core.nbt.tag.Tag;
 import core.util.StringUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -21,6 +14,13 @@ import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.tag.TagOptions;
+import net.thenextlvl.nbt.NBTOutputStream;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.serialization.TagDeserializationContext;
+import net.thenextlvl.nbt.serialization.TagDeserializer;
+import net.thenextlvl.nbt.tag.ByteTag;
+import net.thenextlvl.nbt.tag.CompoundTag;
+import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -667,7 +667,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
         @Override
         public Tag serialize() throws ParserException {
-            var tag = new CompoundTag();
+            var tag = CompoundTag.empty();
             equipment.forEach((slot, item) -> {
                 if (item == null || item.isEmpty()) return;
                 tag.add(slot.name(), plugin.nbt().serialize(item));
@@ -893,7 +893,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
         @Override
         public Tag serialize() throws ParserException {
-            var tag = new CompoundTag();
+            var tag = CompoundTag.empty();
             if (backgroundColor != null) tag.add("backgroundColor", backgroundColor.asARGB());
             if (brightness != null) tag.add("brightness", plugin.nbt().serialize(brightness));
             tag.add("alignment", alignment.name());

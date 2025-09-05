@@ -1,7 +1,6 @@
 package net.thenextlvl.character;
 
 import com.destroystokyo.paper.entity.Pathfinder;
-import core.nbt.serialization.TagSerializable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;

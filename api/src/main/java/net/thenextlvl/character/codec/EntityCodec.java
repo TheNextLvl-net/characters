@@ -1,9 +1,9 @@
 package net.thenextlvl.character.codec;
 
 import com.mojang.brigadier.arguments.ArgumentType;
-import core.nbt.serialization.TagAdapter;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.Keyed;
+import net.thenextlvl.nbt.serialization.TagAdapter;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;

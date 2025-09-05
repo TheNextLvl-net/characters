@@ -1,11 +1,11 @@
 package net.thenextlvl.character.plugin.serialization;
 
-import core.nbt.serialization.ParserException;
-import core.nbt.serialization.TagAdapter;
-import core.nbt.serialization.TagDeserializationContext;
-import core.nbt.serialization.TagSerializationContext;
-import core.nbt.tag.StringTag;
-import core.nbt.tag.Tag;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.serialization.TagAdapter;
+import net.thenextlvl.nbt.serialization.TagDeserializationContext;
+import net.thenextlvl.nbt.serialization.TagSerializationContext;
+import net.thenextlvl.nbt.tag.StringTag;
+import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.jspecify.annotations.NullMarked;
 
@@ -37,7 +37,7 @@ public class EquipmentSlotGroupAdapter implements TagAdapter<EquipmentSlotGroup>
         return NAMES.entrySet().stream()
                 .filter(entry -> entry.getValue() == group)
                 .findAny()
-                .map(entry -> new StringTag(entry.getKey()))
+                .map(entry -> StringTag.of(entry.getKey()))
                 .orElseThrow(() -> new ParserException("Unknown equipment slot group: " + group));
     }
 }
