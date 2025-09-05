@@ -10,6 +10,9 @@ import org.jspecify.annotations.NullMarked;
 public class CraftPlayerCharacter extends CraftPlayer {
     private final PaperPlayerCharacter character;
 
+    // todo: knockback & fall damage
+    //  https://www.spigotmc.org/threads/npc-create-autorespawn-pathfinding-knockback-and-falldamage.649605/
+    
     public CraftPlayerCharacter(PaperPlayerCharacter character, CraftServer server, ServerPlayer handle) {
         super(server, handle);
         this.character = character;

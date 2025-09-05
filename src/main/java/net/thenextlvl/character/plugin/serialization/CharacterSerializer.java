@@ -1,10 +1,10 @@
 package net.thenextlvl.character.plugin.serialization;
 
-import core.nbt.serialization.ParserException;
-import core.nbt.serialization.TagSerializationContext;
-import core.nbt.serialization.TagSerializer;
-import core.nbt.tag.Tag;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.serialization.TagSerializationContext;
+import net.thenextlvl.nbt.serialization.TagSerializer;
+import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked

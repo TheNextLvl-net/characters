@@ -1,12 +1,12 @@
 package net.thenextlvl.character.plugin.character.attribute;
 
 import com.google.common.base.Preconditions;
-import core.nbt.serialization.ParserException;
-import core.nbt.tag.Tag;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.attribute.Attribute;
 import net.thenextlvl.character.attribute.AttributeType;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.nbt.serialization.ParserException;
+import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
@@ -49,11 +49,11 @@ public class PaperAttribute<E, T> implements Attribute<@NonNull E, T> {
     @Override
     public @NonNull Tag serialize() throws ParserException {
         Preconditions.checkNotNull(value, "Cannot serialize attribute with null value");
-        return plugin.nbt().toTag(value);
+        return plugin.nbt().serialize(value);
     }
 
     @Override
     public void deserialize(@NonNull Tag tag) throws ParserException {
-        setValue(plugin.nbt().fromTag(tag, type.dataType()));
+        setValue(plugin.nbt().deserialize(tag, type.dataType()));
     }
 }

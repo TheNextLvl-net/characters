@@ -22,9 +22,10 @@ tasks.compileJava {
 
 repositories {
     mavenCentral()
+    maven("https://repo.inventivetalent.org/repository/public/")
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.thenextlvl.net/releases")
-    maven("https://repo.inventivetalent.org/repository/public/")
+    maven("https://repo.thenextlvl.net/snapshots")
 }
 
 dependencies {
