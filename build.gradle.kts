@@ -29,7 +29,7 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.7-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
 
     implementation("net.thenextlvl.core:i18n:3.2.1")
     implementation("net.thenextlvl.core:paper:2.3.0-pre4")
