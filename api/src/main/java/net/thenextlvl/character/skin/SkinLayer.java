@@ -1,6 +1,7 @@
 package net.thenextlvl.character.skin;
 
 import net.kyori.adventure.translation.Translatable;
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -21,11 +22,13 @@ public enum SkinLayer implements Translatable {
         this.translationKey = "options.modelPart." + id;
     }
 
+    @Contract(pure = true)
     public int getMask() {
         return mask;
     }
 
     @Override
+    @Contract(pure = true)
     public String translationKey() {
         return translationKey;
     }

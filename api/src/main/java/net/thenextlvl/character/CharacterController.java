@@ -5,6 +5,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
@@ -16,12 +17,16 @@ import java.util.stream.Stream;
 
 @NullMarked
 public interface CharacterController {
+    @Contract(mutates = "this")
     <T extends Entity> Character<T> createCharacter(String name, Class<T> type);
 
+    @Contract(mutates = "this")
     <T extends Entity> Character<T> createCharacter(String name, EntityType type);
 
+    @Contract(mutates = "this")
     <T extends Entity> Character<T> spawnCharacter(String name, Location location, Class<T> type);
 
+    @Contract(mutates = "this")
     <T extends Entity> Character<T> spawnCharacter(String name, Location location, EntityType type);
 
     <T extends Entity> Optional<Character<T>> getCharacter(T entity);
@@ -41,10 +46,13 @@ public interface CharacterController {
 
     Optional<PlayerCharacter> getCharacter(Player player);
 
+    @Contract(mutates = "this")
     PlayerCharacter createCharacter(String name);
 
+    @Contract(mutates = "this")
     PlayerCharacter createCharacter(String name, UUID uuid);
 
+    @Contract(mutates = "this")
     PlayerCharacter spawnCharacter(String name, Location location);
 
     @Unmodifiable

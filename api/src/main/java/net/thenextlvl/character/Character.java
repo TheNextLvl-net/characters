@@ -14,6 +14,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -72,10 +73,13 @@ public interface Character<E extends Entity> {
 
     Optional<Pathfinder> getPathfinder();
 
+    @Contract(mutates = "this")
     <T> boolean addAction(String name, ClickAction<T> action);
 
+    @Contract(mutates = "this")
     boolean addViewer(UUID player);
 
+    @Contract(mutates = "this")
     boolean addViewers(Collection<UUID> players);
 
     boolean canSee(Player player);
@@ -100,32 +104,44 @@ public interface Character<E extends Entity> {
 
     boolean isVisibleByDefault();
 
+    @Contract(mutates = "io,this")
     boolean persist();
 
+    @Contract(mutates = "this")
     boolean removeAction(String name);
 
+    @Contract(mutates = "this")
     boolean removeViewer(UUID player);
 
+    @Contract(mutates = "this")
     boolean removeViewers(Collection<UUID> players);
 
     boolean respawn();
 
     boolean respawn(Location location);
 
+    @Contract(mutates = "this")
     boolean setDisplayName(@Nullable Component displayName);
 
+    @Contract(mutates = "this")
     boolean setDisplayNameVisible(boolean visible);
 
+    @Contract(mutates = "this")
     boolean setPathfinding(boolean pathfinding);
 
+    @Contract(mutates = "this")
     boolean setPersistent(boolean persistent);
 
+    @Contract(mutates = "this")
     boolean setSpawnLocation(@Nullable Location location);
 
+    @Contract(mutates = "this")
     boolean setTeamColor(@Nullable NamedTextColor color);
 
+    @Contract(mutates = "this")
     boolean setViewPermission(@Nullable String permission);
 
+    @Contract(mutates = "this")
     boolean setVisibleByDefault(boolean visible);
 
     boolean spawn();
@@ -138,6 +154,7 @@ public interface Character<E extends Entity> {
 
     interface Equipment extends TagSerializable {
         @Unmodifiable
+        @Contract(pure = true)
         EnumSet<EquipmentSlot> getSlots();
 
         @Nullable
@@ -148,8 +165,10 @@ public interface Character<E extends Entity> {
 
         boolean clear();
 
+        @Contract(mutates = "this")
         boolean setItem(EquipmentSlot slot, @Nullable ItemStack item);
 
+        @Contract(mutates = "this")
         boolean setItem(EquipmentSlot slot, @Nullable ItemStack item, boolean silent);
     }
 }

@@ -1,6 +1,7 @@
 package net.thenextlvl.character.skin;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
+import org.jetbrains.annotations.Contract;
 
 import java.io.File;
 import java.net.URL;
@@ -11,5 +12,6 @@ public interface SkinFactory {
 
     CompletableFuture<ProfileProperty> skinFromURL(URL url, boolean slim);
 
+    @Contract(value = " -> new", pure = true)
     SkinPartBuilder skinPartBuilder();
 }
