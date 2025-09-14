@@ -8,8 +8,10 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+@NullMarked
 abstract class ActionCommand extends SimpleCommand {
     protected ActionCommand(CharacterPlugin plugin, String name, @Nullable String permission) {
         super(plugin, name, permission);
