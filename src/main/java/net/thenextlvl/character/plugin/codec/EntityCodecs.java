@@ -8,8 +8,10 @@ import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.plugin.command.argument.BlockDataArgument;
+import net.thenextlvl.character.plugin.model.PaperEntityEquipment;
 import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
+import net.thenextlvl.character.plugin.serialization.EntityEquipmentAdapter;
 import net.thenextlvl.character.plugin.serialization.RegistryAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -50,6 +52,7 @@ public final class EntityCodecs {
     public static void registerAll() {
         EntityCodecRegistry.registry().registerAll(List.of(
                 AGE,
+                EQUIPMENT,
                 BASE_POTION_TYPE,
                 AREA_EFFECT_CLOUD_COLOR,
                 DURATION_ON_USE,
@@ -82,7 +85,8 @@ public final class EntityCodecs {
                 INVULNERABLE,
                 NO_PHYSICS,
                 POSE,
-                FREEZE_TICKS,
+                FREEZE_TICKS, 
+                LOCK_FREEZE_TICKS,
                 SILENT,
                 SNEAKING,
                 CROUCHING,
@@ -106,6 +110,14 @@ public final class EntityCodecs {
     private static final EntityCodec<?, ?> AGE = EntityCodec.intCodec(Key.key("ageable", "age"), Ageable.class)
             .getter(Ageable::getAge)
             .setter(Ageable::setAge)
+            .build();
+
+    private static final EntityCodec<?, ?> EQUIPMENT = EntityCodec.builder(Key.key("living_entity", "equipment"), LivingEntity.class, PaperEntityEquipment.class)
+            .getter(PaperEntityEquipment::of)
+            .setter((livingEntity, paperEntityEquipment) -> {
+                paperEntityEquipment.apply(livingEntity);
+            })
+            .adapter(new EntityEquipmentAdapter())
             .build();
 
     private static final EntityCodec<?, ?> BASE_POTION_TYPE = EntityCodec.enumCodec(Key.key("area_effect_cloud", "base_potion_type"), AreaEffectCloud.class, PotionType.class)
@@ -167,7 +179,11 @@ public final class EntityCodecs {
                     var attribute = attributable.getAttribute(attributeInstance.getAttribute());
                     if (attribute == null) return;
                     attribute.setBaseValue(attributeInstance.getBaseValue());
-                    attribute.getModifiers().forEach(attribute::addModifier);
+                    attribute.getModifiers().forEach(attributeModifier -> {
+                        var modifier = attribute.getModifier(attributeModifier.key());
+                        if (modifier != null) attribute.removeModifier(modifier);
+                        attribute.addModifier(attributeModifier);
+                    });
                 });
             })
             .adapter(new AttributeAdapter())
@@ -253,6 +269,9 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> FREEZE_TICKS = EntityCodec.intCodec(Key.key("entity", "freeze_ticks"), Entity.class)
             .getter(Entity::getFreezeTicks).setter(Entity::setFreezeTicks).build();
+
+    private static final EntityCodec<?, ?> LOCK_FREEZE_TICKS = EntityCodec.booleanCodec(Key.key("entity", "lock_freeze_ticks"), Entity.class)
+            .getter(Entity::isFreezeTickingLocked).setter(Entity::lockFreezeTicks).build();
 
     private static final EntityCodec<?, ?> SILENT = EntityCodec.booleanCodec(Key.key("entity", "silent"), Entity.class)
             .getter(Entity::isSilent).setter(Entity::setSilent).build();
