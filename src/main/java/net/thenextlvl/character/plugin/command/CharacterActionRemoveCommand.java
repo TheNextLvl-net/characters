@@ -42,7 +42,7 @@ final class CharacterActionRemoveCommand extends SimpleCommand {
 
         plugin.bundle().sendMessage(sender, "character.action.not_found",
                 Placeholder.parsed("character", character.getName()),
-                Placeholder.unparsed("name", action));
+                Placeholder.unparsed("action", action));
         return 0;
     }
 }
