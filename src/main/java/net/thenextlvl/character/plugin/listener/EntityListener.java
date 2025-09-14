@@ -37,7 +37,7 @@ public class EntityListener implements Listener {
         plugin.characterController().getCharacter(event.getAttacked()).ifPresent(character -> {
             var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
             var characterEvent = new PlayerClickCharacterEvent(character, event.getAttacked(), event.getPlayer(), type);
-            event.setCancelled(!characterEvent.callEvent());
+            event.setCancelled(!characterEvent.callEvent() || event.getAttacked().isInvulnerable());
         });
     }
 
