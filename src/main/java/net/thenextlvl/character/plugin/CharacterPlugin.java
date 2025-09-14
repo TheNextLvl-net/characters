@@ -25,6 +25,7 @@ import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
+import net.thenextlvl.character.plugin.model.MessageMigrator;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
@@ -146,6 +147,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
             .placeholder("prefix", "prefix")
             .resource("messages.properties", Locale.US)
             .resource("messages_german.properties", Locale.GERMANY)
+            .migrator(new MessageMigrator())
             .build();
 
     @Override
