@@ -2,6 +2,7 @@ package net.thenextlvl.character.action;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -10,6 +11,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 @NullMarked
 public class ClickAction<T> {
@@ -18,22 +20,32 @@ public class ClickAction<T> {
     private @Nullable String permission;
     private EnumSet<ClickType> clickTypes;
     private Duration cooldown;
+    private @Range(from = 0, to = 100) int chance;
     private T input;
 
     public ClickAction(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input) {
-        this(actionType, clickTypes, input, Duration.ZERO, null);
+        this(actionType, clickTypes, input, 100, Duration.ZERO, null);
     }
 
-    public ClickAction(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input, Duration cooldown, @Nullable String permission) {
+    public ClickAction(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input, @Range(from = 0, to = 100) int chance, Duration cooldown, @Nullable String permission) {
         this.actionType = actionType;
         this.clickTypes = clickTypes;
         this.cooldown = cooldown;
         this.input = input;
+        this.chance = Math.clamp(chance, 0, 100);
         this.permission = permission;
     }
 
     public boolean canInvoke(Player player) {
         return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
+    }
+
+    public @Range(from = 0, to = 100) int getChance() {
+        return chance;
+    }
+
+    public void setChance(@Range(from = 0, to = 100) int chance) {
+        this.chance = Math.clamp(chance, 0, 100);
     }
 
     public ActionType<T> getActionType() {
@@ -59,6 +71,7 @@ public class ClickAction<T> {
     public boolean invoke(Player player, Entity character) {
         if (!canInvoke(player)) return false;
         if (cooldown.isPositive()) cooldowns.put(player, System.currentTimeMillis());
+        if (ThreadLocalRandom.current().nextInt(100) > chance) return false;
         actionType.action().invoke(player, character, input);
         return true;
     }

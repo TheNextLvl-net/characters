@@ -234,8 +234,9 @@ class CharacterActionAddCommand {
         var previous = character.getAction(actionName);
         var cooldown = previous.map(ClickAction::getCooldown).orElse(Duration.ZERO);
         var permission = previous.map(ClickAction::getPermission).orElse(null);
+        var chance = previous.map(ClickAction::getChance).orElse(100);
 
-        var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input, cooldown, permission);
+        var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input, chance, cooldown, permission);
         var success = character.addAction(actionName, action);
 
         var message = success ? "character.action.added" : "nothing.changed";
