@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.command;
+package net.thenextlvl.character.plugin.command.action;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -10,36 +10,39 @@ import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
+import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
-final class CharacterActionListCommand extends SimpleCommand {
-    private CharacterActionListCommand(CharacterPlugin plugin) {
-        super(plugin, "list", "characters.command.action.list");
+final class CharacterActionRemoveCommand extends SimpleCommand {
+    private CharacterActionRemoveCommand(CharacterPlugin plugin) {
+        super(plugin, "remove", "characters.command.action.remove");
     }
 
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterActionListCommand(plugin);
+        var command = new CharacterActionRemoveCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                .executes(command));
+                .then(actionArgument(plugin).executes(command)));
     }
 
     @Override
     public int run(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
-        if (character.getActions().isEmpty()) {
-            plugin.bundle().sendMessage(sender, "character.action.list.empty",
+        var character = context.getArgument("character", Character.class);
+
+        var action = context.getArgument("action", String.class);
+
+        if (character.removeAction(action)) {
+            plugin.bundle().sendMessage(sender, "character.action.removed",
+                    Placeholder.unparsed("action", action),
                     Placeholder.unparsed("character", character.getName()));
-            return 0;
+            return SINGLE_SUCCESS;
         }
-        plugin.bundle().sendMessage(sender, "character.action.list.header",
-                Placeholder.parsed("character", character.getName()));
-        character.getActions().forEach((name, action) -> plugin.bundle().sendMessage(sender, "character.action.list",
-                Placeholder.parsed("action_type", action.getActionType().name()),
+
+        plugin.bundle().sendMessage(sender, "character.action.not_found",
                 Placeholder.parsed("character", character.getName()),
-                Placeholder.parsed("action", name)));
-        return SINGLE_SUCCESS;
+                Placeholder.unparsed("action", action));
+        return 0;
     }
 }

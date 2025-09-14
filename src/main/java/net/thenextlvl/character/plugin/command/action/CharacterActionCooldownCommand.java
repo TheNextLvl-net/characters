@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.command;
+package net.thenextlvl.character.plugin.command.action;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -18,7 +18,7 @@ import org.jspecify.annotations.NullMarked;
 
 import java.util.Objects;
 
-import static net.thenextlvl.character.plugin.command.CharacterActionCommand.actionArgument;
+import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked

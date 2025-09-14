@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.command;
+package net.thenextlvl.character.plugin.command.action;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -11,7 +11,7 @@ import net.thenextlvl.character.plugin.command.suggestion.CharacterActionSuggest
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-final class CharacterActionCommand extends BrigadierCommand {
+public final class CharacterActionCommand extends BrigadierCommand {
     private CharacterActionCommand(CharacterPlugin plugin) {
         super(plugin, "action", "characters.command.action");
     }

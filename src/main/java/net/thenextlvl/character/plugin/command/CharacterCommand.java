@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.action.CharacterActionCommand;
 import net.thenextlvl.character.plugin.command.argument.CharacterArgument;
 import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgument;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
