@@ -1,7 +1,6 @@
 package net.thenextlvl.character.plugin.command;
 
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -12,14 +11,15 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
-import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.Objects;
 
 import static net.thenextlvl.character.plugin.command.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
+import static net.thenextlvl.character.plugin.command.CharacterCommand.permissionArgument;
 
+// todo: rework syntax
 @NullMarked
 final class CharacterActionPermissionCommand extends BrigadierCommand {
     private CharacterActionPermissionCommand(CharacterPlugin plugin) {
@@ -31,22 +31,17 @@ final class CharacterActionPermissionCommand extends BrigadierCommand {
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
                 .then(actionArgument(plugin)
-                        .then(command.remove(plugin))
-                        .then(command.set(plugin))
+                        .then(command.remove())
+                        .then(command.set())
                         .executes(command::get)));
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> permissionArgument() {
-        return Commands.argument("permission", StringArgumentType.string())
-                .suggests(new PermissionSuggestionProvider<>(plugin));
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> remove() {
         return Commands.literal("remove").executes(this::set);
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(permissionArgument().executes(this::set));
+    private ArgumentBuilder<CommandSourceStack, ?> set() {
+        return Commands.literal("set").then(permissionArgument(plugin).executes(this::set));
     }
 
     private int get(CommandContext<CommandSourceStack> context) {
