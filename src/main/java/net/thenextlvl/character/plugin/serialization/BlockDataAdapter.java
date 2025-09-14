@@ -11,7 +11,7 @@ import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class BlockDataAdapter implements TagAdapter<BlockData> {
+public final class BlockDataAdapter implements TagAdapter<BlockData> {
     private final Server server;
 
     public BlockDataAdapter(Server server) {

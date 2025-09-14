@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.Arrays;
 
 @NullMarked
-public class EntityTypeAdapter implements TagAdapter<EntityType> {
+public final class EntityTypeAdapter implements TagAdapter<EntityType> {
     @Override
     public EntityType deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var key = context.deserialize(tag, Key.class);

@@ -10,7 +10,7 @@ import org.bukkit.entity.Display.Brightness;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class BrightnessAdapter implements TagAdapter<Brightness> {
+public final class BrightnessAdapter implements TagAdapter<Brightness> {
     @Override
     public Brightness deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

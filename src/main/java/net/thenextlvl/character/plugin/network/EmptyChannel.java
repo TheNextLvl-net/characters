@@ -6,10 +6,13 @@ import io.netty.channel.ChannelMetadata;
 import io.netty.channel.ChannelOutboundBuffer;
 import io.netty.channel.DefaultChannelConfig;
 import io.netty.channel.EventLoop;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.net.SocketAddress;
 
-class EmptyChannel extends AbstractChannel {
+@NullMarked
+final class EmptyChannel extends AbstractChannel {
     private final ChannelConfig config = new DefaultChannelConfig(this);
 
     public EmptyChannel() {
@@ -38,7 +41,7 @@ class EmptyChannel extends AbstractChannel {
     }
 
     @Override
-    protected AbstractUnsafe newUnsafe() {
+    protected @Nullable AbstractUnsafe newUnsafe() {
         return null;
     }
 
@@ -48,12 +51,12 @@ class EmptyChannel extends AbstractChannel {
     }
 
     @Override
-    protected SocketAddress localAddress0() {
+    protected @Nullable SocketAddress localAddress0() {
         return null;
     }
 
     @Override
-    protected SocketAddress remoteAddress0() {
+    protected @Nullable SocketAddress remoteAddress0() {
         return null;
     }
 

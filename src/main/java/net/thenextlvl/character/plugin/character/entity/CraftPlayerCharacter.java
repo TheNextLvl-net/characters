@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftPlayerCharacter extends CraftPlayer {
+public final class CraftPlayerCharacter extends CraftPlayer {
     private final PaperPlayerCharacter character;
 
     // todo: knockback & fall damage

@@ -103,7 +103,7 @@ import static java.nio.file.StandardOpenOption.READ;
 import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 
 @NullMarked
-public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
+public final class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new";
     private final Metrics metrics = new Metrics(this, 24223);
     private final File savesFolder = new File(getDataFolder(), "saves");

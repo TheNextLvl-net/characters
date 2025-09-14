@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.Map;
 
 @NullMarked
-public class EquipmentSlotGroupAdapter implements TagAdapter<EquipmentSlotGroup> {
+public final class EquipmentSlotGroupAdapter implements TagAdapter<EquipmentSlotGroup> {
     private static final Map<String, EquipmentSlotGroup> NAMES = Map.ofEntries(
             Map.entry("any", EquipmentSlotGroup.ANY),
             Map.entry("mainhand", EquipmentSlotGroup.MAINHAND),

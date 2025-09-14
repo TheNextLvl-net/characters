@@ -12,7 +12,7 @@ import org.bukkit.entity.Frog;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class FrogVariantAdapter implements TagAdapter<Frog.Variant> {
+public final class FrogVariantAdapter implements TagAdapter<Frog.Variant> {
     @Override
     public Frog.Variant deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT)

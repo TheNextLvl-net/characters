@@ -11,7 +11,7 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class SoundAdapter implements TagAdapter<Sound> {
+public final class SoundAdapter implements TagAdapter<Sound> {
     @Override
     public Sound deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

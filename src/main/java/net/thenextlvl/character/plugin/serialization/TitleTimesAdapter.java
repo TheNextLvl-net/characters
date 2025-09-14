@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
 import java.time.Duration;
 
 @NullMarked
-public class TitleTimesAdapter implements TagAdapter<Title.Times> {
+public final class TitleTimesAdapter implements TagAdapter<Title.Times> {
     @Override
     public Title.Times deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

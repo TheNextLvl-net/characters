@@ -15,7 +15,7 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CharacterSerializer implements TagSerializer<Character<?>> {
+public final class CharacterSerializer implements TagSerializer<Character<?>> {
     @Override
     public Tag serialize(Character<?> character, TagSerializationContext context) throws ParserException {
         var tag = CompoundTag.empty();

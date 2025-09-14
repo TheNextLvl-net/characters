@@ -10,7 +10,7 @@ import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class Vector3fAdapter implements TagAdapter<Vector3f> {
+public final class Vector3fAdapter implements TagAdapter<Vector3f> {
     @Override
     public Vector3f deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

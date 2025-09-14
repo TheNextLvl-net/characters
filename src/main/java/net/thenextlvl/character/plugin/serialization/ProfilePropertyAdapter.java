@@ -10,7 +10,7 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class ProfilePropertyAdapter implements TagAdapter<ProfileProperty> {
+public final class ProfilePropertyAdapter implements TagAdapter<ProfileProperty> {
     @Override
     public ProfileProperty deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

@@ -10,7 +10,7 @@ import org.bukkit.Color;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class ColorAdapter implements TagAdapter<Color> {
+public final class ColorAdapter implements TagAdapter<Color> {
     @Override
     public Color deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         return Color.fromARGB(tag.getAsInt());

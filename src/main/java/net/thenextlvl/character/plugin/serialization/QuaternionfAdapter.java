@@ -10,7 +10,7 @@ import org.joml.Quaternionf;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class QuaternionfAdapter implements TagAdapter<Quaternionf> {
+public final class QuaternionfAdapter implements TagAdapter<Quaternionf> {
     @Override
     public Quaternionf deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

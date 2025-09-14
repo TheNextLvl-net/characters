@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Random;
 
 @NullMarked
-public class EmptyLootTable implements LootTable {
+public final class EmptyLootTable implements LootTable {
     public static final LootTable INSTANCE = new EmptyLootTable();
 
     private EmptyLootTable() {

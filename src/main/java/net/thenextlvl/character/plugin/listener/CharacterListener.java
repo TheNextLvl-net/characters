@@ -4,8 +4,10 @@ import net.thenextlvl.character.event.player.PlayerClickCharacterEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.jspecify.annotations.NullMarked;
 
-public class CharacterListener implements Listener {
+@NullMarked
+public final class CharacterListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerCharacterClick(PlayerClickCharacterEvent event) {
         // todo: remove, this is just for testing

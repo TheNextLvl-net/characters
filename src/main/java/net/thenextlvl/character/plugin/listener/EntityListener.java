@@ -13,8 +13,10 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.jspecify.annotations.NullMarked;
 
-public class EntityListener implements Listener {
+@NullMarked
+public final class EntityListener implements Listener {
     private final CharacterPlugin plugin;
 
     public EntityListener(CharacterPlugin plugin) {

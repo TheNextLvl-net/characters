@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @NullMarked
-public class PaperActionTypeProvider implements ActionTypeProvider {
+public final class PaperActionTypeProvider implements ActionTypeProvider {
     private final Set<ActionType<?>> actionTypes = new HashSet<>();
 
     @Override

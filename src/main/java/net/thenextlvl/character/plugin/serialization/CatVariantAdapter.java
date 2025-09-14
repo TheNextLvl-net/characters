@@ -12,7 +12,7 @@ import org.bukkit.entity.Cat;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CatVariantAdapter implements TagAdapter<Cat.Type> {
+public final class CatVariantAdapter implements TagAdapter<Cat.Type> {
     @Override
     public Cat.Type deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT)

@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.Optional;
 
 @NullMarked
-public class TitleAdapter implements TagAdapter<Title> {
+public final class TitleAdapter implements TagAdapter<Title> {
     @Override
     public Title deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

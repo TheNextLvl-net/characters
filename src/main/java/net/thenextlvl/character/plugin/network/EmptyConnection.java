@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 import java.net.SocketAddress;
 
 @NullMarked
-class EmptyConnection extends Connection {
+final class EmptyConnection extends Connection {
     public EmptyConnection() {
         super(PacketFlow.CLIENTBOUND);
         this.channel = new EmptyChannel();

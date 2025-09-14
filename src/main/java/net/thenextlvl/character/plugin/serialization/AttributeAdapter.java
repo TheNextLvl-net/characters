@@ -24,7 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @NullMarked
-public class AttributeAdapter implements TagAdapter<Set<AttributeInstance>> {
+public final class AttributeAdapter implements TagAdapter<Set<AttributeInstance>> {
     @Override
     @SuppressWarnings("PatternValidation")
     public Set<AttributeInstance> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {

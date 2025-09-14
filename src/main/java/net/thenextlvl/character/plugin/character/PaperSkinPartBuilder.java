@@ -7,7 +7,7 @@ import net.thenextlvl.character.skin.SkinPartBuilder;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class PaperSkinPartBuilder implements SkinPartBuilder {
+public final class PaperSkinPartBuilder implements SkinPartBuilder {
     private static final int ALL_ENABLED = (1 << SkinLayer.values().length) - 1;
     private int raw;
 

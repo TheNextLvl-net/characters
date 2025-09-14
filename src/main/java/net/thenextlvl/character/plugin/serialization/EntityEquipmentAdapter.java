@@ -11,7 +11,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class EntityEquipmentAdapter implements TagAdapter<PaperEntityEquipment> {
+public final class EntityEquipmentAdapter implements TagAdapter<PaperEntityEquipment> {
     @Override
     public PaperEntityEquipment deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();

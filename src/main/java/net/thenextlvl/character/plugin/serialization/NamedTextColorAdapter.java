@@ -10,7 +10,7 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class NamedTextColorAdapter implements TagAdapter<NamedTextColor> {
+public final class NamedTextColorAdapter implements TagAdapter<NamedTextColor> {
     @Override
     public NamedTextColor deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         return NamedTextColor.NAMES.valueOrThrow(tag.getAsString());

@@ -11,7 +11,7 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class ActionTypeAdapter implements TagAdapter<ActionType<?>> {
+public final class ActionTypeAdapter implements TagAdapter<ActionType<?>> {
     private final CharacterPlugin plugin;
 
     public ActionTypeAdapter(CharacterPlugin plugin) {

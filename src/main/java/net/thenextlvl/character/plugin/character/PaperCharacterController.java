@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 @NullMarked
-public class PaperCharacterController implements CharacterController {
+public final class PaperCharacterController implements CharacterController {
     private final CharacterPlugin plugin;
     public final Map<String, Character<?>> characters = new HashMap<>();
 

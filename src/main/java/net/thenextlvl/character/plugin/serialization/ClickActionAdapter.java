@@ -18,7 +18,7 @@ import java.util.EnumSet;
 import java.util.stream.Collectors;
 
 @NullMarked
-public class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
+public final class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
     @Override
     @SuppressWarnings("unchecked")
     public ClickAction<?> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {

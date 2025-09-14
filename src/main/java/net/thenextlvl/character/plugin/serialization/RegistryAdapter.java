@@ -12,7 +12,7 @@ import org.bukkit.Keyed;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class RegistryAdapter<T extends Keyed> implements TagAdapter<T> {
+public final class RegistryAdapter<T extends Keyed> implements TagAdapter<T> {
     private final RegistryKey<T> registryKey;
 
     public RegistryAdapter(RegistryKey<T> registryKey) {

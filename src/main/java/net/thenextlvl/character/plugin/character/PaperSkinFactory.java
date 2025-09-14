@@ -4,6 +4,7 @@ import com.destroystokyo.paper.profile.ProfileProperty;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.skin.SkinFactory;
 import net.thenextlvl.character.skin.SkinPartBuilder;
+import org.jspecify.annotations.NullMarked;
 import org.mineskin.Java11RequestHandler;
 import org.mineskin.MineSkinClient;
 import org.mineskin.data.Variant;
@@ -14,7 +15,8 @@ import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 
 // https://docs.mineskin.org/docs/category/mineskin-api
-public class PaperSkinFactory implements SkinFactory {
+@NullMarked
+public final class PaperSkinFactory implements SkinFactory {
     private final MineSkinClient client;
 
     public PaperSkinFactory(CharacterPlugin plugin) {

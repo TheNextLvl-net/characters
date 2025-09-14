@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.Base64;
 
 @NullMarked
-public class ItemStackAdapter implements TagAdapter<ItemStack> {
+public final class ItemStackAdapter implements TagAdapter<ItemStack> {
     @Override
     public ItemStack deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         return ItemStack.deserializeBytes(Base64.getDecoder().decode(tag.getAsString()));

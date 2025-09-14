@@ -11,7 +11,7 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class ComponentAdapter implements TagAdapter<Component> {
+public final class ComponentAdapter implements TagAdapter<Component> {
     @Override
     public Component deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         return MiniMessage.miniMessage().deserialize(tag.getAsString());

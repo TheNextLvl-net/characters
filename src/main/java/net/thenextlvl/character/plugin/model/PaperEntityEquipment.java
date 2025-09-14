@@ -9,7 +9,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public class PaperEntityEquipment {
+public final class PaperEntityEquipment {
     public final @Nullable ItemStack itemInMainHand;
     public final @Nullable ItemStack itemInOffHand;
     public final @Nullable ItemStack helmet;

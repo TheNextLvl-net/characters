@@ -50,7 +50,7 @@ import static net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMIS
 import static net.minecraft.world.entity.player.Player.DEFAULT_MAIN_HAND;
 
 @NullMarked
-public class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
+public final class PaperPlayerCharacter extends PaperCharacter<Player> implements PlayerCharacter {
     private final CraftPlayerProfile profile;
 
     private SkinParts skinParts = new PaperSkinPartBuilder().build();
