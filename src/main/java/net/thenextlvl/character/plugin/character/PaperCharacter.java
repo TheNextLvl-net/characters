@@ -6,6 +6,7 @@ import core.io.IO;
 import core.util.StringUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.codec.EntityCodec;
@@ -24,6 +25,8 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.attribute.Attributable;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
@@ -35,9 +38,6 @@ import org.bukkit.entity.Pose;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.TextDisplay.TextAlignment;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Transformation;
@@ -53,8 +53,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -71,7 +69,6 @@ import static org.bukkit.attribute.Attribute.MAX_HEALTH;
 @NullMarked
 public class PaperCharacter<E extends Entity> implements Character<E>, TagDeserializer<Character<E>> {
     protected final Class<? extends E> entityClass;
-    protected final Equipment equipment = new PaperEquipment();
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
@@ -88,6 +85,8 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable String viewPermission = null;
     protected @Nullable TextDisplay textDisplayName = null;
+
+    public @Nullable CompoundTag entityData = null;
 
     protected Pose pose = Pose.STANDING;
 
@@ -109,11 +108,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     @Override
     public Optional<ClickAction<?>> getAction(String name) {
         return Optional.ofNullable(actions.get(name));
-    }
-
-    @Override
-    public Equipment getEquipment() {
-        return equipment;
     }
 
     @Override
@@ -478,7 +472,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
                 addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
-        root.optional("equipment").ifPresent(equipment::deserialize);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
         root.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
@@ -514,8 +507,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         // });
 
         if (entity instanceof LivingEntity living) {
-            if (living.getEquipment() != null) equipment.getItems().forEach((slot, item) ->
-                    living.getEquipment().setItem(slot, item, true));
+            living.setAI(false);
             living.setCanPickupItems(false);
             var instance = living.getAttribute(MAX_HEALTH);
             if (instance != null) living.setHealth(instance.getValue());
@@ -616,71 +608,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
     private File file() {
         return new File(plugin.savesFolder(), this.name + ".dat");
-    }
-
-    private class PaperEquipment implements Equipment {
-        private final EnumSet<EquipmentSlot> slots = EnumSet.allOf(EquipmentSlot.class);
-        private final Map<EquipmentSlot, @Nullable ItemStack> equipment = new HashMap<>();
-
-        @Override
-        public @Unmodifiable EnumSet<EquipmentSlot> getSlots() {
-            return EnumSet.copyOf(slots);
-        }
-
-        @Override
-        public @Nullable ItemStack getItem(EquipmentSlot slot) {
-            return equipment.get(slot);
-        }
-
-        @Override
-        public @Unmodifiable Map<EquipmentSlot, @Nullable ItemStack> getItems() {
-            return Map.copyOf(equipment);
-        }
-
-        @Override
-        public boolean clear() {
-            if (equipment.isEmpty()) return false;
-            getItems().forEach((slot, item) -> equipment.put(slot, null));
-            getEntity(LivingEntity.class).map(LivingEntity::getEquipment)
-                    .ifPresent(EntityEquipment::clear);
-            getEntity(Player.class).ifPresent(player -> player.getTrackedBy().forEach(all ->
-                    all.sendEquipmentChange(player, equipment)));
-            return true;
-        }
-
-        @Override
-        public boolean setItem(EquipmentSlot slot, @Nullable ItemStack item) {
-            return setItem(slot, item, false);
-        }
-
-        @Override
-        public boolean setItem(EquipmentSlot slot, @Nullable ItemStack item, boolean silent) {
-            Preconditions.checkArgument(slots.contains(slot), "Unsupported slot %s", slot.name());
-            var itemStack = item != null && !item.isEmpty() ? item : null;
-            if (Objects.equals(itemStack, equipment.put(slot, itemStack))) return false;
-            getEntity(LivingEntity.class).map(LivingEntity::getEquipment).
-                    ifPresent(equipment -> equipment.setItem(slot, itemStack, silent));
-            getEntity(Player.class).ifPresent(player -> player.getTrackedBy().forEach(all ->
-                    all.sendEquipmentChange(player, slot, itemStack)));
-            return true;
-        }
-
-        @Override
-        public Tag serialize() throws ParserException {
-            var tag = CompoundTag.empty();
-            equipment.forEach((slot, item) -> {
-                if (item == null || item.isEmpty()) return;
-                tag.add(slot.name(), plugin.nbt().serialize(item));
-            });
-            return tag;
-        }
-
-        @Override
-        public void deserialize(Tag tag) throws ParserException {
-            slots.forEach(slot -> tag.getAsCompound().optional(slot.name())
-                    .map(t -> plugin.nbt().deserialize(t, ItemStack.class))
-                    .ifPresent(item -> equipment.put(slot, item)));
-        }
     }
 
     private class PaperTagOptions implements TagOptions {

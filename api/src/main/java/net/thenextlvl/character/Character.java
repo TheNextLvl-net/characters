@@ -6,21 +6,17 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.tag.TagOptions;
-import net.thenextlvl.nbt.serialization.TagSerializable;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,8 +25,6 @@ import java.util.UUID;
 @NullMarked
 public interface Character<E extends Entity> {
     Optional<ClickAction<?>> getAction(String name);
-
-    Equipment getEquipment();
 
     @Unmodifiable
     Map<String, ClickAction<?>> getActions();
@@ -151,24 +145,4 @@ public interface Character<E extends Entity> {
     void delete();
 
     void remove();
-
-    interface Equipment extends TagSerializable {
-        @Unmodifiable
-        @Contract(pure = true)
-        EnumSet<EquipmentSlot> getSlots();
-
-        @Nullable
-        ItemStack getItem(EquipmentSlot slot);
-
-        @Unmodifiable
-        Map<EquipmentSlot, @Nullable ItemStack> getItems();
-
-        boolean clear();
-
-        @Contract(mutates = "this")
-        boolean setItem(EquipmentSlot slot, @Nullable ItemStack item);
-
-        @Contract(mutates = "this")
-        boolean setItem(EquipmentSlot slot, @Nullable ItemStack item, boolean silent);
-    }
 }

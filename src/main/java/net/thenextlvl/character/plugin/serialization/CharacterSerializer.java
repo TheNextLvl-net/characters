@@ -35,7 +35,6 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
         character.getTeamColor().ifPresent(teamColor -> tag.add("teamColor", context.serialize(teamColor)));
         character.getViewPermission().ifPresent(viewPermission -> tag.add("viewPermission", viewPermission));
         tag.add("displayNameVisible", character.isDisplayNameVisible());
-        tag.add("equipment", character.getEquipment().serialize());
         tag.add("pathfinding", character.isPathfinding());
         tag.add("tagOptions", character.getTagOptions().serialize());
         tag.add("type", context.serialize(character.getType()));

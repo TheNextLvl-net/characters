@@ -12,6 +12,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
@@ -49,8 +50,11 @@ class CharacterEquipmentCommand {
     }
 
     private static int clearEquipment(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var character = context.getArgument("character", Character.class);
-        var success = character.getEquipment().clear();
+        var character = (Character<?>) context.getArgument("character", Character.class);
+        var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
+            equipment.clear();
+            return true;
+        }).orElse(false);
         var message = success ? "character.equipment.cleared" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()));
@@ -58,9 +62,12 @@ class CharacterEquipmentCommand {
     }
 
     private static int clearSlot(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var character = context.getArgument("character", Character.class);
+        var character = (Character<?>) context.getArgument("character", Character.class);
         var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
-        var success = character.getEquipment().setItem(slot, null, false);
+        var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
+            equipment.setItem(slot, null, true);
+            return true;
+        }).orElse(false);
         var message = success ? "character.equipment.slot.cleared" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
@@ -69,10 +76,13 @@ class CharacterEquipmentCommand {
     }
 
     private static int setSlot(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var character = context.getArgument("character", Character.class);
+        var character = (Character<?>) context.getArgument("character", Character.class);
         var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         var item = context.getArgument("item", ItemStack.class);
-        var success = character.getEquipment().setItem(slot, item, true);
+        var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
+            equipment.setItem(slot, item, true);
+            return true;
+        }).orElse(false);
         var message = !success ? "nothing.changed" : item.isEmpty()
                 ? "character.equipment.slot.cleared" : "character.equipment.slot";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
