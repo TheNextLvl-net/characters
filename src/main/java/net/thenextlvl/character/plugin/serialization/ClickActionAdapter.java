@@ -31,7 +31,8 @@ public class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
                 .map(ClickType::valueOf)
                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClickType.class)));
         var input = context.deserialize(root.get("input"), actionType.type());
-        return new ClickAction<>(actionType, clickTypes, input, cooldown, permission);
+        var chance = root.optional("chance").map(Tag::getAsInt).orElse(100);
+        return new ClickAction<>(actionType, clickTypes, input, chance, cooldown, permission);
     }
 
     @Override
@@ -44,6 +45,7 @@ public class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
         for (var type : action.getClickTypes()) types.add(StringTag.of(type.name()));
         tag.add("clickTypes", types);
         tag.add("input", context.serialize(action.getInput()));
+        tag.add("chance", action.getChance());
         return tag;
     }
 }

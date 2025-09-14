@@ -71,6 +71,7 @@ paper {
             children = listOf(
                 "characters.command.action",
                 "characters.command.action.add",
+                "characters.command.action.chance",
                 "characters.command.action.cooldown",
                 "characters.command.action.list",
                 "characters.command.action.permission",
