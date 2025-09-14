@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class NamedTextColorArgument implements CustomArgumentType.Converted<NamedTextColor, String> {
+public final class NamedTextColorArgumentType implements CustomArgumentType.Converted<NamedTextColor, String> {
     @Override
     public NamedTextColor convert(String nativeType) {
         return NamedTextColor.NAMES.valueOrThrow(nativeType);

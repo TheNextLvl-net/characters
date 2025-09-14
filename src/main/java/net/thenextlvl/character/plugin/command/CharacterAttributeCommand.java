@@ -14,7 +14,7 @@ import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.command.argument.NamedTextColorArgument;
+import net.thenextlvl.character.plugin.command.argument.NamedTextColorArgumentType;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -140,7 +140,7 @@ final class CharacterAttributeCommand extends BrigadierCommand {
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> setTeamColor() {
-        return Commands.literal("character:team-color").then(Commands.argument("color", new NamedTextColorArgument())
+        return Commands.literal("character:team-color").then(Commands.argument("color", new NamedTextColorArgumentType())
                 .executes(context -> {
                     var color = context.getArgument("color", NamedTextColor.class);
                     var success = set(context, "team-color",

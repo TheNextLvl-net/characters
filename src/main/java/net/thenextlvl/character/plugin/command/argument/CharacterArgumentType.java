@@ -13,10 +13,10 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class CharacterArgument implements CustomArgumentType.Converted<Character<?>, String> {
+public final class CharacterArgumentType implements CustomArgumentType.Converted<Character<?>, String> {
     private final CharacterPlugin plugin;
 
-    public CharacterArgument(CharacterPlugin plugin) {
+    public CharacterArgumentType(CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 

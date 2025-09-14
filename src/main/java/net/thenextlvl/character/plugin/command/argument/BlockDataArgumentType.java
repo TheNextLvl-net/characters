@@ -8,7 +8,7 @@ import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public final class BlockDataArgument implements CustomArgumentType.Converted<BlockData, BlockState> {
+public final class BlockDataArgumentType implements CustomArgumentType.Converted<BlockData, BlockState> {
     @Override
     public BlockData convert(BlockState nativeType) {
         return nativeType.getBlockData();

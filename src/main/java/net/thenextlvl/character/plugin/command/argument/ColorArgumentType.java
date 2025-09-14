@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class ColorArgument implements CustomArgumentType.Converted<Color, String> {
+public final class ColorArgumentType implements CustomArgumentType.Converted<Color, String> {
     private static final Map<String, Color> predefined = Map.ofEntries(
             Map.entry("aqua", Color.AQUA),
             Map.entry("black", Color.BLACK),

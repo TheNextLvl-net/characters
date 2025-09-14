@@ -7,10 +7,11 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.action.CharacterActionCommand;
-import net.thenextlvl.character.plugin.command.argument.CharacterArgument;
-import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgument;
+import net.thenextlvl.character.plugin.command.argument.CharacterArgumentType;
+import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgumentType;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
+import net.thenextlvl.character.plugin.command.tag.CharacterTagCommand;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -42,11 +43,11 @@ public final class CharacterCommand extends BrigadierCommand {
     }
     
     public static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
-        return Commands.argument("character", new CharacterArgument(plugin));
+        return Commands.argument("character", new CharacterArgumentType(plugin));
     }
 
     public static RequiredArgumentBuilder<CommandSourceStack, ?> playerCharacterArgument(CharacterPlugin plugin) {
-        return Commands.argument("character", new PlayerCharacterArgument(plugin));
+        return Commands.argument("character", new PlayerCharacterArgumentType(plugin));
     }
 
     public static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {

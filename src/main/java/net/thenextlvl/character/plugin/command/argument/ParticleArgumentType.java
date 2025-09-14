@@ -15,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class ParticleArgument implements CustomArgumentType.Converted<Particle, Particle> {
+public final class ParticleArgumentType implements CustomArgumentType.Converted<Particle, Particle> {
     @Override
     public Particle convert(Particle nativeType) {
         if (nativeType.getDataType().equals(Void.class)) return nativeType;
