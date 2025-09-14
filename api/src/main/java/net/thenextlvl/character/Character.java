@@ -142,6 +142,7 @@ public interface Character<E extends Entity> {
 
     boolean spawn(Location location);
 
+    // todo: return boolean and add delete event
     void delete();
 
     void remove();

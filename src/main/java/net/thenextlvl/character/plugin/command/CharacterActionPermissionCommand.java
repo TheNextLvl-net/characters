@@ -10,10 +10,10 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -21,19 +21,35 @@ import static net.thenextlvl.character.plugin.command.CharacterActionCommand.act
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
-class CharacterActionPermissionCommand {
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("permission")
-                .requires(source -> source.getSender().hasPermission("characters.command.action.permission"))
-                .then(characterArgument(plugin)
-                        .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                        .then(actionArgument(plugin)
-                                .then(remove(plugin))
-                                .then(set(plugin))
-                                .executes(context -> get(context, plugin))));
+final class CharacterActionPermissionCommand extends BrigadierCommand {
+    private CharacterActionPermissionCommand(CharacterPlugin plugin) {
+        super(plugin, "permission", "characters.command.action.permission");
     }
 
-    private static int get(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+        var command = new CharacterActionPermissionCommand(plugin);
+        return command.create().then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin)
+                        .then(command.remove(plugin))
+                        .then(command.set(plugin))
+                        .executes(command::get)));
+    }
+
+    private ArgumentBuilder<CommandSourceStack, ?> permissionArgument() {
+        return Commands.argument("permission", StringArgumentType.string())
+                .suggests(new PermissionSuggestionProvider<>(plugin));
+    }
+
+    private ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
+        return Commands.literal("remove").executes(this::set);
+    }
+
+    private ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
+        return Commands.literal("set").then(permissionArgument().executes(this::set));
+    }
+
+    private int get(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
@@ -41,7 +57,7 @@ class CharacterActionPermissionCommand {
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
                     Placeholder.parsed("character", character.getName()),
-                    Placeholder.unparsed("name", actionName));
+                    Placeholder.unparsed("action", actionName));
             return 0;
         }
         var message = action.getPermission() != null ? "character.action.permission" : "character.action.permission.none";
@@ -52,25 +68,17 @@ class CharacterActionPermissionCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
-        return Commands.literal("remove").executes(context -> set(context, null, plugin));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
-        return Commands.literal("set").then(permissionArgument(plugin)
-                .executes(context -> set(context, plugin)));
-    }
-
-    private static int set(CommandContext<CommandSourceStack> context, @Nullable String permission, CharacterPlugin plugin) {
+    private int set(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
         var action = character.getAction(actionName).orElse(null);
+        var permission = tryGetArgument(context, "permission", String.class).orElse(null);
 
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
                     Placeholder.parsed("character", character.getName()),
-                    Placeholder.unparsed("name", actionName));
+                    Placeholder.unparsed("action", actionName));
             return 0;
         }
 
@@ -85,15 +93,5 @@ class CharacterActionPermissionCommand {
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("permission", String.valueOf(permission)));
         return success ? Command.SINGLE_SUCCESS : 0;
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> permissionArgument(CharacterPlugin plugin) {
-        return Commands.argument("permission", StringArgumentType.string())
-                .suggests(new PermissionSuggestionProvider<>(plugin));
-    }
-
-    private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var permission = context.getArgument("permission", String.class);
-        return set(context, permission, plugin);
     }
 }

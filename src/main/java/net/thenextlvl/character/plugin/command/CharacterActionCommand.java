@@ -6,14 +6,18 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-class CharacterActionCommand {
+final class CharacterActionCommand extends BrigadierCommand {
+    private CharacterActionCommand(CharacterPlugin plugin) {
+        super(plugin, "action", "characters.command.action");
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("action")
-                .requires(source -> source.getSender().hasPermission("characters.command.action"))
+        return new CharacterActionCommand(plugin).create()
                 .then(CharacterActionAddCommand.create(plugin))
                 .then(CharacterActionChanceCommand.create(plugin))
                 .then(CharacterActionCooldownCommand.create(plugin))

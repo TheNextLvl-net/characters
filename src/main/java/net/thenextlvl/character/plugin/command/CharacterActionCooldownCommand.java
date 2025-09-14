@@ -12,6 +12,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
@@ -21,18 +22,25 @@ import static net.thenextlvl.character.plugin.command.CharacterActionCommand.act
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
-class CharacterActionCooldownCommand {
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("cooldown")
-                .requires(source -> source.getSender().hasPermission("characters.command.action.cooldown"))
-                .then(characterArgument(plugin)
-                        .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                        .then(actionArgument(plugin)
-                                .then(cooldownArgument(plugin))
-                                .executes(context -> get(context, plugin))));
+final class CharacterActionCooldownCommand extends BrigadierCommand {
+    private CharacterActionCooldownCommand(CharacterPlugin plugin) {
+        super(plugin, "cooldown", "characters.command.action.cooldown");
     }
 
-    private static int get(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+        var command = new CharacterActionCooldownCommand(plugin);
+        return command.create().then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin)
+                        .then(command.cooldownArgument().executes(command::set))
+                        .executes(command::get)));
+    }
+
+    private ArgumentBuilder<CommandSourceStack, ?> cooldownArgument() {
+        return Commands.argument("cooldown", ArgumentTypes.time());
+    }
+
+    private int get(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
@@ -40,7 +48,7 @@ class CharacterActionCooldownCommand {
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
                     Placeholder.parsed("character", character.getName()),
-                    Placeholder.unparsed("name", actionName));
+                    Placeholder.unparsed("action", actionName));
             return 0;
         }
         plugin.bundle().sendMessage(sender, "character.action.cooldown",
@@ -50,12 +58,7 @@ class CharacterActionCooldownCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> cooldownArgument(CharacterPlugin plugin) {
-        return Commands.argument("cooldown", ArgumentTypes.time())
-                .executes(context -> set(context, plugin));
-    }
-
-    private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private int set(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
         var actionName = context.getArgument("action", String.class);
@@ -64,7 +67,7 @@ class CharacterActionCooldownCommand {
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
                     Placeholder.parsed("character", character.getName()),
-                    Placeholder.unparsed("name", actionName));
+                    Placeholder.unparsed("action", actionName));
             return 0;
         }
 

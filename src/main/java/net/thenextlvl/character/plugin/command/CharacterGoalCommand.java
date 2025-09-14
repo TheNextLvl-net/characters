@@ -5,25 +5,31 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
+// todo: split up into multiple commands
 @NullMarked
-public class CharacterGoalCommand {
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("goal")
-                .requires(source -> source.getSender().hasPermission("characters.command.goal"))
-                .then(add(plugin))
-                .then(remove(plugin));
+final class CharacterGoalCommand extends BrigadierCommand {
+    private CharacterGoalCommand(CharacterPlugin plugin) {
+        super(plugin, "goal", "characters.command.goal");
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> add(CharacterPlugin plugin) {
+    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+        var command = new CharacterGoalCommand(plugin);
+        return command.create()
+                .then(command.add())
+                .then(command.remove());
+    }
+
+    private ArgumentBuilder<CommandSourceStack, ?> add() {
         // todo: implement
         return Commands.literal("add").then(characterArgument(plugin));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> remove() {
         // todo: implement
         return Commands.literal("remove").then(characterArgument(plugin));
     }

@@ -11,46 +11,52 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
+// todo: split up into multiple commands
 @NullMarked
-class CharacterViewPermissionCommand {
+final class CharacterViewPermissionCommand extends BrigadierCommand {
+    private CharacterViewPermissionCommand(CharacterPlugin plugin) {
+        super(plugin, "view-permission", "characters.command.view-permission");
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("view-permission")
-                .requires(source -> source.getSender().hasPermission("characters.command.view-permission"))
-                .then(remove(plugin))
-                .then(set(plugin));
+        var command = new CharacterViewPermissionCommand(plugin);
+        return command.create()
+                .then(command.remove())
+                .then(command.set());
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> remove(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> remove() {
         return Commands.literal("remove").then(characterArgument(plugin)
-                .executes(context -> remove(context, plugin)));
+                .executes(this::remove));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> set() {
         return Commands.literal("set").then(characterArgument(plugin).then(permissionArgument()
-                .executes(context -> set(context, plugin))));
+                .executes(this::set)));
     }
 
-    private static RequiredArgumentBuilder<CommandSourceStack, String> permissionArgument() {
+    private RequiredArgumentBuilder<CommandSourceStack, String> permissionArgument() {
         return Commands.argument("permission", StringArgumentType.string());
     }
 
-    private static int remove(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
-        var success = set(context, null, plugin);
+    private int remove(CommandContext<CommandSourceStack> context) {
+        var success = set(context, null);
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static int set(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private int set(CommandContext<CommandSourceStack> context) {
         var permission = context.getArgument("permission", String.class);
-        var success = set(context, permission, plugin);
+        var success = set(context, permission);
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static boolean set(CommandContext<CommandSourceStack> context, @Nullable String viewPermission, CharacterPlugin plugin) {
+    private boolean set(CommandContext<CommandSourceStack> context, @Nullable String viewPermission) {
         var character = context.getArgument("character", Character.class);
         var success = character.setViewPermission(viewPermission);
         var message = !success ? "nothing.changed" : viewPermission != null

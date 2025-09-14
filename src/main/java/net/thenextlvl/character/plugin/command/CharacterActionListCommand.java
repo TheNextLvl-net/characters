@@ -1,29 +1,32 @@
 package net.thenextlvl.character.plugin.command;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
-class CharacterActionListCommand {
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("list")
-                .requires(source -> source.getSender().hasPermission("characters.command.action.list"))
-                .then(characterArgument(plugin)
-                        .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                        .executes(context -> list(context, plugin)));
+final class CharacterActionListCommand extends SimpleCommand {
+    private CharacterActionListCommand(CharacterPlugin plugin) {
+        super(plugin, "list", "characters.command.action.list");
     }
 
-    private static int list(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+        var command = new CharacterActionListCommand(plugin);
+        return command.create().then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .executes(command));
+    }
+
+    @Override
+    public int run(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
         if (character.getActions().isEmpty()) {
@@ -37,6 +40,6 @@ class CharacterActionListCommand {
                 Placeholder.parsed("action_type", action.getActionType().name()),
                 Placeholder.parsed("character", character.getName()),
                 Placeholder.parsed("action", name)));
-        return Command.SINGLE_SUCCESS;
+        return SINGLE_SUCCESS;
     }
 }

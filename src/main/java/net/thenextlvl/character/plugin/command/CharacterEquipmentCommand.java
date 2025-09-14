@@ -12,6 +12,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -19,13 +20,18 @@ import org.jspecify.annotations.NullMarked;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
+// todo: split up into multiple commands
 @NullMarked
-class CharacterEquipmentCommand {
+final class CharacterEquipmentCommand extends BrigadierCommand {
+    private CharacterEquipmentCommand(CharacterPlugin plugin) {
+        super(plugin, "equipment", "characters.command.equipment");
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("equipment")
-                .requires(source -> source.getSender().hasPermission("characters.command.equipment"))
-                .then(clear(plugin))
-                .then(set(plugin));
+        var command = new CharacterEquipmentCommand(plugin);
+        return command.create()
+                .then(command.clear())
+                .then(command.set());
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> equipmentSlotArgument() {
@@ -36,20 +42,19 @@ class CharacterEquipmentCommand {
         return Commands.argument("item", ArgumentTypes.itemStack());
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> clear(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> clear() {
         return Commands.literal("clear").then(characterArgument(plugin)
-                .executes(context -> clearEquipment(context, plugin))
-                .then(equipmentSlotArgument().executes(context ->
-                        clearSlot(context, plugin))));
+                .executes(this::clearEquipment)
+                .then(equipmentSlotArgument().executes(this::clearSlot)));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> set() {
         return Commands.literal("set").then(characterArgument(plugin)
                 .then(equipmentSlotArgument().then(itemArgument()
-                        .executes(context -> setSlot(context, plugin)))));
+                        .executes(this::setSlot))));
     }
 
-    private static int clearEquipment(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private int clearEquipment(CommandContext<CommandSourceStack> context) {
         var character = (Character<?>) context.getArgument("character", Character.class);
         var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
             equipment.clear();
@@ -61,7 +66,7 @@ class CharacterEquipmentCommand {
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static int clearSlot(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private int clearSlot(CommandContext<CommandSourceStack> context) {
         var character = (Character<?>) context.getArgument("character", Character.class);
         var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
@@ -75,7 +80,7 @@ class CharacterEquipmentCommand {
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static int setSlot(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private int setSlot(CommandContext<CommandSourceStack> context) {
         var character = (Character<?>) context.getArgument("character", Character.class);
         var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         var item = context.getArgument("item", ItemStack.class);

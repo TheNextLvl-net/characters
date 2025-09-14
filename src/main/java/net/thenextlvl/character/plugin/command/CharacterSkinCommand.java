@@ -17,6 +17,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.skin.SkinLayer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -28,40 +29,45 @@ import java.net.URISyntaxException;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.playerCharacterArgument;
 
+// todo: split up into multiple commands
 @NullMarked
-class CharacterSkinCommand {
+final class CharacterSkinCommand extends BrigadierCommand {
+    private CharacterSkinCommand(CharacterPlugin plugin) {
+        super(plugin, "skin", "characters.command.skin");
+    }
+
     static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("skin")
-                .requires(source -> source.getSender().hasPermission("characters.command.skin"))
-                .then(layer(plugin))
-                .then(reset(plugin))
-                .then(set(plugin));
+        var command = new CharacterSkinCommand(plugin);
+        return command.create()
+                .then(command.layer())
+                .then(command.reset())
+                .then(command.set());
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> layer(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> layer() {
         return Commands.literal("layer")
-                .then(layer("hide", plugin, false))
-                .then(layer("show", plugin, true));
+                .then(layer("hide", false))
+                .then(layer("show", true));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> reset(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> reset() {
         return Commands.literal("reset").then(playerCharacterArgument(plugin)
-                .executes(context -> setSkin(context, null, plugin)));
+                .executes(context -> setSkin(context, null)));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> set(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> set() {
         return Commands.literal("set").then(playerCharacterArgument(plugin)
-                .then(fileSkinArgument(plugin))
-                .then(playerSkinArgument(plugin))
-                .then(urlSkinArgument(plugin)));
+                .then(fileSkinArgument())
+                .then(playerSkinArgument())
+                .then(urlSkinArgument()));
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> layer(String name, CharacterPlugin plugin, boolean visible) {
-        return Commands.literal(name).then(layerArgument(plugin).then(playerCharacterArgument(plugin)
-                .executes(context -> layerToggle(context, plugin, visible))));
+    private LiteralArgumentBuilder<CommandSourceStack> layer(String name, boolean visible) {
+        return Commands.literal(name).then(layerArgument().then(playerCharacterArgument(plugin)
+                .executes(context -> layerToggle(context, visible))));
     }
 
-    private static int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures, CharacterPlugin plugin) {
+    private int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", PlayerCharacter.class);
 
@@ -72,31 +78,31 @@ class CharacterSkinCommand {
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> fileSkinArgument(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> fileSkinArgument() {
         return Commands.literal("file").then(Commands.argument("file", StringArgumentType.string())
-                .then(Commands.literal("slim").executes(context -> setFileSkin(context, true, plugin)))
-                .executes(context -> setFileSkin(context, false, plugin)));
+                .then(Commands.literal("slim").executes(context -> setFileSkin(context, true)))
+                .executes(context -> setFileSkin(context, false)));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> playerSkinArgument(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> playerSkinArgument() {
         return Commands.literal("player")
                 .then(Commands.argument("offline-player", StringArgumentType.word())
-                        .executes(context -> setOfflinePlayerSkin(context, plugin)))
+                        .executes(this::setOfflinePlayerSkin))
                 .then(Commands.argument("player", ArgumentTypes.player())
-                        .executes(context -> setPlayerSkin(context, plugin)));
+                        .executes(this::setPlayerSkin));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> urlSkinArgument(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> urlSkinArgument() {
         return Commands.literal("url").then(Commands.argument("url", StringArgumentType.string())
-                .then(Commands.literal("slim").executes(context -> setUrlSkin(context, true, plugin)))
-                .executes(context -> setUrlSkin(context, false, plugin)));
+                .then(Commands.literal("slim").executes(context -> setUrlSkin(context, true)))
+                .executes(context -> setUrlSkin(context, false)));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> layerArgument(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> layerArgument() {
         return Commands.argument("layer", EnumArgumentType.of(SkinLayer.class, EnumStringCodec.lowerHyphen()));
     }
 
-    private static int layerToggle(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, boolean visible) {
+    private int layerToggle(CommandContext<CommandSourceStack> context, boolean visible) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", PlayerCharacter.class);
 
@@ -114,7 +120,7 @@ class CharacterSkinCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int setFileSkin(CommandContext<CommandSourceStack> context, boolean slim, CharacterPlugin plugin) {
+    private int setFileSkin(CommandContext<CommandSourceStack> context, boolean slim) {
         var sender = context.getSource().getSender();
         var file = new File(context.getArgument("file", String.class));
         if (!file.isFile() || !file.getName().endsWith(".png")) {
@@ -123,7 +129,7 @@ class CharacterSkinCommand {
         }
         plugin.bundle().sendMessage(sender, "character.skin.generating");
         plugin.skinFactory().skinFromFile(file, slim)
-                .thenAccept(textures -> setSkin(context, textures, plugin))
+                .thenAccept(textures -> setSkin(context, textures))
                 .exceptionally(throwable -> {
                     plugin.bundle().sendMessage(sender, "character.skin.image");
                     return null;
@@ -131,13 +137,13 @@ class CharacterSkinCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int setOfflinePlayerSkin(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    private int setOfflinePlayerSkin(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var name = context.getArgument("offline-player", String.class);
         if (name.length() <= 16) {
             plugin.getServer().createProfile(name).update().thenAccept(profile -> profile.getProperties().stream()
                     .filter(property -> property.getName().equals("textures")).findAny()
-                    .ifPresentOrElse(textures -> setSkin(context, textures, plugin), () -> {
+                    .ifPresentOrElse(textures -> setSkin(context, textures), () -> {
                         if (profile.getName() == null) plugin.bundle().sendMessage(sender, "player.not_found",
                                 Placeholder.unparsed("name", name));
                         else plugin.bundle().sendMessage(sender, "character.skin.not_found",
@@ -150,25 +156,25 @@ class CharacterSkinCommand {
         }
     }
 
-    private static int setPlayerSkin(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
+    private int setPlayerSkin(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var resolver = context.getArgument("player", PlayerSelectorArgumentResolver.class);
         var player = resolver.resolve(context.getSource()).getFirst();
         var textures = player.getPlayerProfile().getProperties().stream()
                 .filter(property -> property.getName().equals("textures"))
                 .findAny().orElse(null);
-        if (textures != null) return setSkin(context, textures, plugin);
+        if (textures != null) return setSkin(context, textures);
         plugin.bundle().sendMessage(player, "character.skin.not_found",
                 Placeholder.unparsed("player", player.getName()));
         return 0;
     }
 
-    private static int setUrlSkin(CommandContext<CommandSourceStack> context, boolean slim, CharacterPlugin plugin) {
+    private int setUrlSkin(CommandContext<CommandSourceStack> context, boolean slim) {
         try {
             var path = context.getArgument("url", String.class);
             var url = new URI(!path.startsWith("http") ? "https://" + path : path).toURL();
             plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.generating");
             plugin.skinFactory().skinFromURL(url, slim)
-                    .thenAccept(textures -> setSkin(context, textures, plugin))
+                    .thenAccept(textures -> setSkin(context, textures))
                     .exceptionally(throwable -> {
                         plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.image");
                         return null;

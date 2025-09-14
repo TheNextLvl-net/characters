@@ -14,6 +14,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -24,17 +25,20 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND;
 
 @NullMarked
-class CharacterTeleportCommand {
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var teleport = characterArgument(plugin).executes(context -> teleportSelf(context, plugin))
-                .then(positionArgument(plugin).executes(context -> teleportPosition(context, plugin)))
-                .then(entityArgument(plugin).executes(context -> teleportEntity(context, plugin)));
-        return Commands.literal("teleport")
-                .requires(source -> source.getSender().hasPermission("characters.command.teleport"))
-                .then(teleport);
+final class CharacterTeleportCommand extends BrigadierCommand {
+    private CharacterTeleportCommand(CharacterPlugin plugin) {
+        super(plugin, "teleport", "characters.command.teleport");
     }
 
-    private static int teleportSelf(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+        var command = new CharacterTeleportCommand(plugin);
+        var teleport = characterArgument(plugin).executes(command::teleportSelf)
+                .then(command.positionArgument().executes(command::teleportPosition))
+                .then(command.entityArgument().executes(command::teleportEntity));
+        return command.create().then(teleport);
+    }
+
+    private int teleportSelf(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
 
         if (!(sender instanceof Player player)) {
@@ -52,27 +56,27 @@ class CharacterTeleportCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> positionArgument(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> positionArgument() {
         return Commands.argument("position", ArgumentTypes.finePosition(true));
     }
 
-    private static int teleportPosition(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
+    private int teleportPosition(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var resolver = context.getArgument("position", FinePositionResolver.class);
         var position = resolver.resolve(context.getSource()).toLocation(context.getSource().getLocation().getWorld());
-        return teleport(context, plugin, position);
+        return teleport(context, position);
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> entityArgument(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> entityArgument() {
         return Commands.argument("entity", ArgumentTypes.entity());
     }
 
-    private static int teleportEntity(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) throws CommandSyntaxException {
+    private int teleportEntity(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var selector = context.getArgument("entity", EntitySelectorArgumentResolver.class);
         var entity = selector.resolve(context.getSource()).getFirst();
-        return teleport(context, plugin, entity.getLocation());
+        return teleport(context, entity.getLocation());
     }
 
-    private static int teleport(CommandContext<CommandSourceStack> context, CharacterPlugin plugin, Location location) {
+    private int teleport(CommandContext<CommandSourceStack> context, Location location) {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
 

@@ -8,13 +8,17 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.CharacterArgument;
 import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgument;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CharacterCommand {
+public final class CharacterCommand extends BrigadierCommand {
+    private CharacterCommand(CharacterPlugin plugin) {
+        super(plugin, "character", "characters.command");
+    }
+
     public static LiteralCommandNode<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("character")
-                .requires(source -> source.getSender().hasPermission("characters.command"))
+        return new CharacterCommand(plugin).create()
                 .then(CharacterActionCommand.create(plugin))
                 .then(CharacterAttributeCommand.create(plugin))
                 .then(CharacterCreateCommand.create(plugin))

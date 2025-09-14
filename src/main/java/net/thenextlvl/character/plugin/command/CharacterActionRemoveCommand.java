@@ -1,13 +1,12 @@
 package net.thenextlvl.character.plugin.command;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
@@ -15,16 +14,20 @@ import static net.thenextlvl.character.plugin.command.CharacterActionCommand.act
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
-class CharacterActionRemoveCommand {
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("remove")
-                .requires(source -> source.getSender().hasPermission("characters.command.action.remove"))
-                .then(characterArgument(plugin)
-                        .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
-                        .then(actionArgument(plugin).executes(context -> remove(context, plugin))));
+final class CharacterActionRemoveCommand extends SimpleCommand {
+    private CharacterActionRemoveCommand(CharacterPlugin plugin) {
+        super(plugin, "remove", "characters.command.action.remove");
     }
 
-    private static int remove(CommandContext<CommandSourceStack> context, CharacterPlugin plugin) {
+    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+        var command = new CharacterActionRemoveCommand(plugin);
+        return command.create().then(characterArgument(plugin)
+                .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
+                .then(actionArgument(plugin).executes(command)));
+    }
+
+    @Override
+    public int run(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
 
@@ -34,7 +37,7 @@ class CharacterActionRemoveCommand {
             plugin.bundle().sendMessage(sender, "character.action.removed",
                     Placeholder.unparsed("action", action),
                     Placeholder.unparsed("character", character.getName()));
-            return Command.SINGLE_SUCCESS;
+            return SINGLE_SUCCESS;
         }
 
         plugin.bundle().sendMessage(sender, "character.action.not_found",
