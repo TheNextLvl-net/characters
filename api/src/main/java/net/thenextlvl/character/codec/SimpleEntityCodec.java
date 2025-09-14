@@ -68,8 +68,9 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
     }
 
     @Override
-    public Class<? super T> valueType() {
-        return valueType;
+    @SuppressWarnings("unchecked")
+    public Class<T> valueType() {
+        return (Class<T>) valueType;
     }
 
     @Override

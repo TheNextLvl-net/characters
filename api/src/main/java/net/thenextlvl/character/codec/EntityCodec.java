@@ -41,7 +41,7 @@ public interface EntityCodec<E, T> extends Keyed {
      */
     @NonNull
     @Contract(pure = true)
-    Class<? super T> valueType();
+    Class<T> valueType();
 
     /**
      * Returns the getter used to read the current value from the entity.
