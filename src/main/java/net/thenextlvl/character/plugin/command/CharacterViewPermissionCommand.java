@@ -22,8 +22,8 @@ final class CharacterViewPermissionCommand extends SimpleCommand {
     public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterViewPermissionCommand(plugin);
         return command.create().then(characterArgument(plugin)
-                .then(permissionArgument(plugin).executes(command::set))
                 .then(Commands.literal("remove").executes(command::set))
+                .then(permissionArgument(plugin).executes(command::set))
                 .executes(command));
     }
 
