@@ -41,6 +41,8 @@ import java.time.Duration;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
+
+// todo: split up into multiple commands
 @NullMarked
 final class CharacterActionAddCommand extends BrigadierCommand {
     private CharacterActionAddCommand(CharacterPlugin plugin) {
