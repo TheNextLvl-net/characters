@@ -300,6 +300,8 @@ public class CharacterPlugin extends JavaPlugin implements CharacterProvider {
         return new NBTInputStream(file.inputStream(READ), StandardCharsets.UTF_8);
     }
 
+    // todo: move deserialization part to own adapter
+    //  move name from root to own value tag
     private @Nullable Character<?> read(NBTInputStream inputStream) throws IOException {
         var entry = inputStream.readNamedTag();
         var root = entry.getKey().getAsCompound();

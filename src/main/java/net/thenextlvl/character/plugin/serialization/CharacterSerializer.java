@@ -4,6 +4,7 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
+import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.serialization.TagSerializationContext;
 import net.thenextlvl.nbt.serialization.TagSerializer;
@@ -42,7 +43,7 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
         var actions = CompoundTag.empty();
         var attributes = CompoundTag.empty();
         character.getActions().forEach((name, clickAction) -> actions.add(name, context.serialize(clickAction)));
-        character.getEntity().ifPresent(entity -> {
+        var data = character.getEntity().map(entity -> {
             var entityData = CompoundTag.empty();
             EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
                 if (!entityCodec.entityType().isInstance(entity)) return;
@@ -51,8 +52,9 @@ public class CharacterSerializer implements TagSerializer<Character<?>> {
                 if (object == null) entityData.add(codec.key().asString(), ByteTag.of((byte) -1));
                 else entityData.add(codec.key().asString(), codec.adapter().serialize(object, context));
             });
-            tag.add("entityData", entityData);
-        });
+            return entityData;
+        }).orElseGet(() -> ((PaperCharacter<?>) character).entityData);
+        if (data != null) tag.add("entityData", data);
         if (!actions.isEmpty()) tag.add("clickActions", actions);
         if (!attributes.isEmpty()) tag.add("attributes", attributes);
         return tag;
