@@ -31,7 +31,7 @@ final class CharacterAttributeCommand extends BrigadierCommand {
         super(plugin, "attribute", "characters.command.attribute");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterAttributeCommand(plugin);
         return command.create()
                 .then(command.reset())

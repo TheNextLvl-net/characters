@@ -30,7 +30,7 @@ final class CharacterTeleportCommand extends BrigadierCommand {
         super(plugin, "teleport", "characters.command.teleport");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterTeleportCommand(plugin);
         var teleport = characterArgument(plugin).executes(command::teleportSelf)
                 .then(command.positionArgument().executes(command::teleportPosition))

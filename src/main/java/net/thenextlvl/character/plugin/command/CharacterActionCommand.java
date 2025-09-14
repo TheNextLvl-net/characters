@@ -16,7 +16,7 @@ final class CharacterActionCommand extends BrigadierCommand {
         super(plugin, "action", "characters.command.action");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         return new CharacterActionCommand(plugin).create()
                 .then(CharacterActionAddCommand.create(plugin))
                 .then(CharacterActionChanceCommand.create(plugin))

@@ -38,7 +38,7 @@ final class CharacterTagCommand extends BrigadierCommand {
         super(plugin, "tag", "characters.command.tag");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterTagCommand(plugin);
         return command.create()
                 .then(command.reset())

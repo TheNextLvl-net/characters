@@ -17,7 +17,7 @@ final class CharacterDeleteCommand extends SimpleCommand {
         super(plugin, "delete", "characters.command.delete");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterDeleteCommand(plugin);
         return command.create().then(characterArgument(plugin).executes(command));
     }

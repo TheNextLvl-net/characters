@@ -17,7 +17,7 @@ final class CharacterGoalCommand extends BrigadierCommand {
         super(plugin, "goal", "characters.command.goal");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterGoalCommand(plugin);
         return command.create()
                 .then(command.add())

@@ -14,7 +14,7 @@ final class CharacterListCommand extends SimpleCommand {
         super(plugin, "list", "characters.command.list");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterListCommand(plugin);
         return command.create().executes(command);
     }

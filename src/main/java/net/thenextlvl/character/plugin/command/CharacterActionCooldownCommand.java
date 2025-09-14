@@ -32,11 +32,11 @@ final class CharacterActionCooldownCommand extends BrigadierCommand {
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
                 .then(actionArgument(plugin)
-                        .then(command.cooldownArgument().executes(command::set))
+                        .then(cooldownArgument().executes(command::set))
                         .executes(command::get)));
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> cooldownArgument() {
+    private static ArgumentBuilder<CommandSourceStack, ?> cooldownArgument() {
         return Commands.argument("cooldown", ArgumentTypes.time());
     }
 

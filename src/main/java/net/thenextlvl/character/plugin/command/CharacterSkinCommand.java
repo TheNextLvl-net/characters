@@ -36,7 +36,7 @@ final class CharacterSkinCommand extends BrigadierCommand {
         super(plugin, "skin", "characters.command.skin");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterSkinCommand(plugin);
         return command.create()
                 .then(command.layer())

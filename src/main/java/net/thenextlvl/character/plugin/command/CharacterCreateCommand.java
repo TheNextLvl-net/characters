@@ -21,7 +21,7 @@ final class CharacterCreateCommand extends SimpleCommand {
         super(plugin, "create", "characters.command.create");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterCreateCommand(plugin);
         return command.create().then(nameArgument(plugin)
                 .then(typeArgument(plugin).executes(command))
