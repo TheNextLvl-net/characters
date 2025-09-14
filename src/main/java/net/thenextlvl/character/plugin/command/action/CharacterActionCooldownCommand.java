@@ -10,8 +10,8 @@ import io.papermc.paper.util.Tick;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
@@ -21,7 +21,7 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 
 @NullMarked
-final class CharacterActionCooldownCommand extends SimpleCommand {
+final class CharacterActionCooldownCommand extends ActionCommand {
     private CharacterActionCooldownCommand(CharacterPlugin plugin) {
         super(plugin, "cooldown", "characters.command.action.cooldown");
     }
@@ -40,19 +40,7 @@ final class CharacterActionCooldownCommand extends SimpleCommand {
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
-        var actionName = context.getArgument("action", String.class);
-        var action = character.getAction(actionName).orElse(null);
-
-        if (action == null) {
-            plugin.bundle().sendMessage(sender, "character.action.not_found",
-                    Placeholder.parsed("character", character.getName()),
-                    Placeholder.unparsed("action", actionName));
-            return 0;
-        }
-
+    public int run(CommandContext<CommandSourceStack> context, Character<?> character, ClickAction<?> action, String actionName) {
         var cooldown = tryGetArgument(context, "cooldown", int.class).map(Tick::of).orElse(null);
 
         var success = cooldown != null && !Objects.equals(action.getCooldown(), cooldown);
@@ -62,7 +50,7 @@ final class CharacterActionCooldownCommand extends SimpleCommand {
                 : success ? cooldown.isZero() ? "character.action.cooldown.removed"
                 : "character.action.cooldown.set"
                 : "nothing.changed";
-        plugin.bundle().sendMessage(sender, message,
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("action", actionName),
                 Placeholder.unparsed("character", character.getName()),
                 Formatter.number("cooldown", (cooldown != null ? cooldown : action.getCooldown()).toMillis() / 1000d));
