@@ -349,7 +349,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     public boolean setDisplayName(@Nullable Component displayName) {
         if (Objects.equals(displayName, this.displayName)) return false;
         this.displayName = displayName;
-        textDisplayName().ifPresent(this::updateTextDisplayNameText);
+        getEntity().ifPresent(this::updateTextDisplayName);
         return true;
     }
 
