@@ -438,7 +438,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         this.spawnLocation = location;
         Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type %s", type);
         this.entity = location.getWorld().spawn(location, (Class<E>) type.getEntityClass(), this::preSpawn);
-        return true;
+        return entity.isValid();
     }
 
     @Override
@@ -458,16 +458,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     @Override
     public Character<E> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();
-        if (entity != null) root.optional("entityData").map(Tag::getAsCompound).ifPresent(entityTag -> {
-            EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
-                if (!entityCodec.entityType().isInstance(entity)) return;
-                @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
-                entityTag.optional(entityCodec.key().asString())
-                        .map(tag1 -> tag1 instanceof ByteTag byteTag && byteTag.getAsByte() == -1
-                                ? null : codec.adapter().deserialize(tag1, context))
-                        .ifPresent(data -> codec.setter().test(entity, data));
-            });
-        });
+        root.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> this.entityData = entityData);
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
@@ -495,16 +486,23 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     protected void preSpawn(E entity) {
+        try {
+            internalPreSpawn(entity);
+        } catch (Exception t) {
+            plugin.getComponentLogger().error("Failed to spawn character {}", getName(), t);
+            if (entity.isValid()) entity.remove();
+            this.entity = null;
+        }
+    }
+
+    protected void internalPreSpawn(E entity) {
         entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setVisibleByDefault(visibleByDefault);
+        entity.setGravity(false);
+        entity.setInvulnerable(true);
+        entity.setNoPhysics(true);
 
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
-
-        // todo: apply codecs preSpawn and not only on deserialize
-        // attributes.forEach(attribute -> {
-        //     @SuppressWarnings("unchecked") var type = (AttributeType<Object, Object>) attribute.getType();
-        //     type.set(entity, attribute.getValue());
-        // });
 
         if (entity instanceof LivingEntity living) {
             living.setAI(false);
@@ -515,8 +513,25 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
+            mob.setDespawnInPeacefulOverride(TriState.FALSE);
             updatePathfinderGoals(mob);
+            mob.setAware(false);
         }
+
+        if (entity instanceof Attributable attributable) {
+            var attribute = attributable.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE);
+            if (attribute != null) attribute.setBaseValue(0);
+        }
+
+        if (entityData != null) EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
+            if (!entityCodec.entityType().isInstance(entity)) return;
+            @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
+            entityData.optional(entityCodec.key().asString())
+                    .map(tag1 -> tag1 instanceof ByteTag byteTag && byteTag.getAsByte() == -1
+                            ? null : codec.adapter().deserialize(tag1, plugin.nbt()))
+                    .ifPresent(data -> codec.setter().test(entity, data));
+        });
+        entityData = null;
 
         if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers()
                 .forEach(player -> updateVisibility(entity, player));
