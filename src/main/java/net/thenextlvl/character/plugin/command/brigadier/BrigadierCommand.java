@@ -15,7 +15,7 @@ public abstract class BrigadierCommand {
     protected final CharacterPlugin plugin;
 
     private final @Nullable String permission;
-    private final String name;
+    protected final String name; // todo: temp?
 
     protected BrigadierCommand(CharacterPlugin plugin, String name, @Nullable String permission) {
         this.plugin = plugin;
