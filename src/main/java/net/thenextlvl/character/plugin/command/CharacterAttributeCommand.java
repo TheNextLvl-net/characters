@@ -11,6 +11,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.PlayerCharacter;
+import net.thenextlvl.character.codec.EntityCodec;
+import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.NamedTextColorArgument;
 import org.jspecify.annotations.NullMarked;
@@ -44,8 +46,10 @@ class CharacterAttributeCommand {
                 .then(setListed(plugin))
                 .then(setPathfinding(plugin))
                 .then(setTeamColor(plugin));
-        // fixme
-        //  EntityCodecs.types().forEach(type -> tree.then(setAttribute(type, plugin)));
+        EntityCodecRegistry.registry().codecs().forEach(codec -> {
+            var argument = setAttribute(codec, plugin);
+            if (argument != null) tree.then(argument);
+        });
         return Commands.literal("set").then(tree);
     }
 
@@ -62,21 +66,22 @@ class CharacterAttributeCommand {
     //     });
     // }
 
-    // private static <E, T> ArgumentBuilder<CommandSourceStack, ?> setAttribute(AttributeType<E, T> attribute, CharacterPlugin plugin) {
-    //     var argument = Commands.argument("value", getArgumentType(attribute.dataType()));
-    //     return Commands.literal(attribute.key().asString()).then(argument.executes(context -> {
-    //         var value = context.getArgument("value", attribute.dataType());
-    //         var character = (Character<?>) context.getArgument("character", Character.class);
-    //         var success = character.setAttributeValue(attribute, value);
-    //         var message = success ? "character.attribute" : "nothing.changed";
-    //         var split = context.getInput().split(" ", 6); // trickery to display the unparsed value
-    //         plugin.bundle().sendMessage(context.getSource().getSender(), message,
-    //                 Placeholder.unparsed("attribute", attribute.key().asString()),
-    //                 Placeholder.unparsed("character", character.getName()),
-    //                 Placeholder.unparsed("value", split[split.length - 1]));
-    //         return success ? Command.SINGLE_SUCCESS : 0;
-    //     }));
-    // }
+    private static <E, T> @Nullable ArgumentBuilder<CommandSourceStack, ?> setAttribute(EntityCodec<E, T> codec, CharacterPlugin plugin) {
+        if (codec.argumentType() == null) return null;
+        var argument = Commands.argument("value", codec.argumentType());
+        return Commands.literal(codec.key().asString()).then(argument.executes(context -> {
+            var value = context.getArgument("value", codec.valueType());
+            var character = (Character<?>) context.getArgument("character", Character.class);
+            var success = character.getEntity(codec.entityType()).map(entity -> codec.setter().test(entity, value)).orElse(false);
+            var message = success ? "character.attribute" : "nothing.changed";
+            var split = context.getInput().split(" ", 6); // trickery to display the unparsed value
+            plugin.bundle().sendMessage(context.getSource().getSender(), message,
+                    Placeholder.unparsed("attribute", codec.key().asString()),
+                    Placeholder.unparsed("character", character.getName()),
+                    Placeholder.unparsed("value", split[split.length - 1]));
+            return success ? Command.SINGLE_SUCCESS : 0;
+        }));
+    }
 
     private static ArgumentBuilder<CommandSourceStack, ?> attribute(String attribute, BiFunction<Character<?>, Boolean, Boolean> setter, CharacterPlugin plugin) {
         return Commands.literal(attribute).then(Commands.argument("enabled", BoolArgumentType.bool()).executes(context -> {
