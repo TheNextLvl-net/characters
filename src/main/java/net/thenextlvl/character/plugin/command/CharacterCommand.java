@@ -9,6 +9,7 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.CharacterArgument;
 import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgument;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
+import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -34,15 +35,20 @@ public final class CharacterCommand extends BrigadierCommand {
                 .build();
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, String> permissionArgument(CharacterPlugin plugin) {
+        return Commands.argument("permission", StringArgumentType.string())
+                .suggests(new PermissionSuggestionProvider<>(plugin));
+    }
+    
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
         return Commands.argument("character", new CharacterArgument(plugin));
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, ?> playerCharacterArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> playerCharacterArgument(CharacterPlugin plugin) {
         return Commands.argument("character", new PlayerCharacterArgument(plugin));
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {
         return Commands.argument("name", StringArgumentType.word());
     }
 }
