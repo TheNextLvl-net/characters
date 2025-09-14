@@ -33,9 +33,17 @@ final class CharacterTeleportCommand extends BrigadierCommand {
     public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterTeleportCommand(plugin);
         var teleport = characterArgument(plugin).executes(command::teleportSelf)
-                .then(command.positionArgument().executes(command::teleportPosition))
-                .then(command.entityArgument().executes(command::teleportEntity));
+                .then(positionArgument().executes(command::teleportPosition))
+                .then(entityArgument().executes(command::teleportEntity));
         return command.create().then(teleport);
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> entityArgument() {
+        return Commands.argument("entity", ArgumentTypes.entity());
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> positionArgument() {
+        return Commands.argument("position", ArgumentTypes.finePosition(true));
     }
 
     private int teleportSelf(CommandContext<CommandSourceStack> context) {
@@ -56,18 +64,10 @@ final class CharacterTeleportCommand extends BrigadierCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> positionArgument() {
-        return Commands.argument("position", ArgumentTypes.finePosition(true));
-    }
-
     private int teleportPosition(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var resolver = context.getArgument("position", FinePositionResolver.class);
         var position = resolver.resolve(context.getSource()).toLocation(context.getSource().getLocation().getWorld());
         return teleport(context, position);
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> entityArgument() {
-        return Commands.argument("entity", ArgumentTypes.entity());
     }
 
     private int teleportEntity(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
