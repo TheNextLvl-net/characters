@@ -34,6 +34,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Steerable;
@@ -85,7 +86,7 @@ public final class EntityCodecs {
                 INVULNERABLE,
                 NO_PHYSICS,
                 POSE,
-                FREEZE_TICKS, 
+                FREEZE_TICKS,
                 LOCK_FREEZE_TICKS,
                 SILENT,
                 SNEAKING,
@@ -93,6 +94,7 @@ public final class EntityCodecs {
                 LEAPING,
                 SLEEPING,
                 VARIANT,
+                GLIDING,
                 AI,
                 ARROWS_IN_BODY,
                 BEE_STINGERS_IN_BODY,
@@ -290,6 +292,9 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> VARIANT = EntityCodec.enumCodec(Key.key("fox", "variant"), Fox.class, Fox.Type.class)
             .getter(Fox::getFoxType).setter(Fox::setFoxType).build();
+
+    private static final EntityCodec<?, ?> GLIDING = EntityCodec.booleanCodec(Key.key("player", "gliding"), Player.class)
+            .getter(Player::isGliding).setter(Player::setGliding).build();
 
     private static final EntityCodec<?, ?> AI = EntityCodec.booleanCodec(Key.key("living_entity", "ai"), LivingEntity.class)
             .getter(LivingEntity::hasAI).setter(LivingEntity::setAI).build();
