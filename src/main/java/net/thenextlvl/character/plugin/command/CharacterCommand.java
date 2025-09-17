@@ -11,7 +11,6 @@ import net.thenextlvl.character.plugin.command.argument.CharacterArgumentType;
 import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgumentType;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
-import net.thenextlvl.character.plugin.command.tag.CharacterTagCommand;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -41,7 +40,7 @@ public final class CharacterCommand extends BrigadierCommand {
         return Commands.argument("permission", StringArgumentType.string())
                 .suggests(new PermissionSuggestionProvider<>(plugin));
     }
-    
+
     public static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
         return Commands.argument("character", new CharacterArgumentType(plugin));
     }
