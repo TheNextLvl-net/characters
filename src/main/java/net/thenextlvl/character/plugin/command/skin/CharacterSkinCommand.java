@@ -25,7 +25,6 @@ import java.net.URISyntaxException;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.playerCharacterArgument;
 
-// todo: split up into multiple commands
 @NullMarked
 public final class CharacterSkinCommand extends BrigadierCommand {
     private CharacterSkinCommand(CharacterPlugin plugin) {
