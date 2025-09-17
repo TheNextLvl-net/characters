@@ -10,6 +10,7 @@ import net.thenextlvl.character.plugin.command.action.CharacterActionCommand;
 import net.thenextlvl.character.plugin.command.argument.CharacterArgumentType;
 import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgumentType;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
+import net.thenextlvl.character.plugin.command.skin.CharacterSkinCommand;
 import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 

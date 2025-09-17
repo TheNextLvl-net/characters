@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.command;
+package net.thenextlvl.character.plugin.command.skin;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.mojang.brigadier.Command;
@@ -7,18 +7,14 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import core.paper.command.argument.EnumArgumentType;
-import core.paper.command.argument.codec.EnumStringCodec;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
-import net.thenextlvl.character.skin.SkinLayer;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -31,7 +27,7 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.playerCha
 
 // todo: split up into multiple commands
 @NullMarked
-final class CharacterSkinCommand extends BrigadierCommand {
+public final class CharacterSkinCommand extends BrigadierCommand {
     private CharacterSkinCommand(CharacterPlugin plugin) {
         super(plugin, "skin", "characters.command.skin");
     }
@@ -39,15 +35,9 @@ final class CharacterSkinCommand extends BrigadierCommand {
     public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterSkinCommand(plugin);
         return command.create()
-                .then(command.layer())
+                .then(CharacterSkinLayerCommand.create(plugin))
                 .then(command.reset())
                 .then(command.set());
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> layer() {
-        return Commands.literal("layer")
-                .then(layer("hide", false))
-                .then(layer("show", true));
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> reset() {
@@ -60,11 +50,6 @@ final class CharacterSkinCommand extends BrigadierCommand {
                 .then(fileSkinArgument())
                 .then(playerSkinArgument())
                 .then(urlSkinArgument()));
-    }
-
-    private LiteralArgumentBuilder<CommandSourceStack> layer(String name, boolean visible) {
-        return Commands.literal(name).then(layerArgument().then(playerCharacterArgument(plugin)
-                .executes(context -> layerToggle(context, visible))));
     }
 
     private int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures) {
@@ -96,28 +81,6 @@ final class CharacterSkinCommand extends BrigadierCommand {
         return Commands.literal("url").then(Commands.argument("url", StringArgumentType.string())
                 .then(Commands.literal("slim").executes(context -> setUrlSkin(context, true)))
                 .executes(context -> setUrlSkin(context, false)));
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> layerArgument() {
-        return Commands.argument("layer", EnumArgumentType.of(SkinLayer.class, EnumStringCodec.lowerHyphen()));
-    }
-
-    private int layerToggle(CommandContext<CommandSourceStack> context, boolean visible) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", PlayerCharacter.class);
-
-        var layer = context.getArgument("layer", SkinLayer.class);
-        var skinParts = plugin.skinFactory().skinPartBuilder()
-                .parts(character.getSkinParts())
-                .toggle(layer, visible).build();
-
-        var success = character.setSkinParts(skinParts);
-        var message = !success ? "nothing.changed" : visible
-                ? "character.skin_layer.shown" : "character.skin_layer.hidden";
-        plugin.bundle().sendMessage(sender, message,
-                Placeholder.component("layer", Component.translatable(layer)),
-                Placeholder.unparsed("character", character.getName()));
-        return Command.SINGLE_SUCCESS;
     }
 
     private int setFileSkin(CommandContext<CommandSourceStack> context, boolean slim) {
