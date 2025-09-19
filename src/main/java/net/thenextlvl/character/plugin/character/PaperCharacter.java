@@ -489,6 +489,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         entity.setVisibleByDefault(visibleByDefault);
         entity.setGravity(false);
         entity.setInvulnerable(true);
+        entity.setSilent(true);
 
         if (entity instanceof Mannequin mannequin) {
             mannequin.setProfile(ResolvableProfile.resolvableProfile().name(name).build());
