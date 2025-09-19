@@ -11,7 +11,18 @@ import java.util.Set;
 final class SimpleActionTypeRegistry implements ActionTypeRegistry {
     public static final ActionTypeRegistry INSTANCE = new SimpleActionTypeRegistry();
 
-    private final Set<ActionType<?>> actionTypes = new HashSet<>();
+    private final Set<ActionType<?>> actionTypes = new HashSet<>(Set.of(
+            ActionTypes.types().sendActionbar(),
+            ActionTypes.types().sendMessage(),
+            ActionTypes.types().sendEntityEffect(),
+            ActionTypes.types().transfer(),
+            ActionTypes.types().teleport(),
+            ActionTypes.types().playSound(),
+            ActionTypes.types().runConsoleCommand(),
+            ActionTypes.types().runCommand(),
+            ActionTypes.types().sendTitle(),
+            ActionTypes.types().connect()
+    ));
 
     @Override
     public boolean register(ActionType<?> type) {

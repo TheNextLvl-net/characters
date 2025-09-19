@@ -21,56 +21,56 @@ final class SimpleActionTypes implements ActionTypes {
 
     private final PluginMessenger messenger = new PluginMessenger(JavaPlugin.getProvidingPlugin(SimpleActionTypes.class));
 
-    private final ActionType<String> sendActionbar = register(ActionType.builder("send_actionbar", String.class)
+    private final ActionType<String> sendActionbar = ActionType.builder("send_actionbar", String.class)
             .action((player, character, input) -> {
                 var placeholder = Placeholder.parsed("player", player.getName());
                 var message = MiniMessage.miniMessage().deserialize(input, placeholder);
                 player.sendActionBar(message);
             })
-            .build());
+            .build();
 
-    private final ActionType<String> sendMessage = register(ActionType.builder("send_message", String.class)
+    private final ActionType<String> sendMessage = ActionType.builder("send_message", String.class)
             .action((player, character, input) -> {
                 var placeholder = Placeholder.parsed("player", player.getName());
                 player.sendMessage(MiniMessage.miniMessage().deserialize(input, placeholder));
             })
-            .build());
+            .build();
 
-    private final ActionType<EntityEffect> sendEntityEffect = register(ActionType.builder("send_entity_effect", EntityEffect.class)
+    private final ActionType<EntityEffect> sendEntityEffect = ActionType.builder("send_entity_effect", EntityEffect.class)
             .action((player, character, effect) -> player.sendEntityEffect(effect, character))
             .applicable((effect, character) -> effect.isApplicableTo(character.getEntityClass()) && !isDeprecated(effect))
-            .build());
+            .build();
 
-    private final ActionType<InetSocketAddress> transfer = register(ActionType.builder("transfer", InetSocketAddress.class)
+    private final ActionType<InetSocketAddress> transfer = ActionType.builder("transfer", InetSocketAddress.class)
             .action((player, character, address) -> player.transfer(address.getHostName(), address.getPort()))
-            .build());
+            .build();
 
-    private final ActionType<Location> teleport = register(ActionType.builder("teleport", Location.class)
+    private final ActionType<Location> teleport = ActionType.builder("teleport", Location.class)
             .action((player, character, location) -> player.teleportAsync(location, PLUGIN, RETAIN_PASSENGERS))
-            .build());
+            .build();
 
-    private final ActionType<Sound> playSound = register(ActionType.builder("play_sound", Sound.class)
+    private final ActionType<Sound> playSound = ActionType.builder("play_sound", Sound.class)
             .action((player, character, sound) -> player.playSound(sound))
-            .build());
+            .build();
 
-    private final ActionType<String> runConsoleCommand = register(ActionType.builder("run_console_command", String.class)
+    private final ActionType<String> runConsoleCommand = ActionType.builder("run_console_command", String.class)
             .action((player, character, input) -> {
                 var command = input.replace("<player>", player.getName());
                 player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command);
             })
-            .build());
+            .build();
 
-    private final ActionType<String> runCommand = register(ActionType.builder("run_command", String.class)
+    private final ActionType<String> runCommand = ActionType.builder("run_command", String.class)
             .action((player, character, input) -> player.performCommand(input.replace("<player>", player.getName())))
-            .build());
+            .build();
 
-    private final ActionType<Title> sendTitle = register(ActionType.builder("send_title", Title.class)
+    private final ActionType<Title> sendTitle = ActionType.builder("send_title", Title.class)
             .action((player, character, title) -> player.showTitle(title))
-            .build());
+            .build();
 
-    private final ActionType<String> connect = register(ActionType.builder("connect", String.class)
+    private final ActionType<String> connect = ActionType.builder("connect", String.class)
             .action((player, character, server) -> messenger.connect(player, server))
-            .build());
+            .build();
 
     @Override
     public ActionType<String> sendActionbar() {
@@ -128,10 +128,5 @@ final class SimpleActionTypes implements ActionTypes {
         } catch (NoSuchFieldException e) {
             return false;
         }
-    }
-
-    private <T> ActionType<T> register(ActionType<T> actionType) {
-        ActionTypeRegistry.registry().register(actionType);
-        return actionType;
     }
 }
