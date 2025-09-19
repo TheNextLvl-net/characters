@@ -113,7 +113,7 @@ public final class CharacterSkinCommand extends BrigadierCommand {
                     }));
             return Command.SINGLE_SUCCESS;
         } else {
-            plugin.bundle().sendMessage(sender, "character.name.too-long");
+            plugin.bundle().sendMessage(sender, "player.not_found", Placeholder.unparsed("name", name));
             return 0;
         }
     }

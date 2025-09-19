@@ -36,10 +36,7 @@ final class CharacterCreateCommand extends SimpleCommand {
     public int run(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var name = context.getArgument("name", String.class);
-        if (name.length() > 16) {
-            plugin.bundle().sendMessage(sender, "character.name.too-long");
-            return 0;
-        } else if (plugin.characterController().characterExists(name)) {
+        if (plugin.characterController().characterExists(name)) {
             plugin.bundle().sendMessage(sender, "character.exists", Placeholder.unparsed("name", name));
             return 0;
         } else {
