@@ -37,10 +37,7 @@ public final class PaperCharacterController implements CharacterController {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends Entity> Character<T> createCharacter(String name, EntityType type) {
-        if (type.equals(EntityType.MANNEQUIN) || type.equals(EntityType.PLAYER))
-            return (Character<T>) createCharacter(name);
         Preconditions.checkArgument(!characterExists(name), "Character named %s already exists", name);
         var character = new PaperCharacter<T>(plugin, name, type);
         characters.put(name, character);
