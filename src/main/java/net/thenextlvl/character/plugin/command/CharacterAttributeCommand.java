@@ -10,7 +10,6 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
-import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -40,7 +39,6 @@ final class CharacterAttributeCommand extends BrigadierCommand {
 
     private LiteralArgumentBuilder<CommandSourceStack> reset() {
         var tree = characterArgument(plugin)
-                .then(resetListed())
                 .then(resetPathfinding())
                 .then(resetTeamColor());
         // fixme
@@ -50,7 +48,6 @@ final class CharacterAttributeCommand extends BrigadierCommand {
 
     private LiteralArgumentBuilder<CommandSourceStack> set() {
         var tree = characterArgument(plugin)
-                .then(setListed())
                 .then(setPathfinding())
                 .then(setTeamColor());
         EntityCodecRegistry.registry().codecs().forEach(codec -> {
@@ -118,21 +115,12 @@ final class CharacterAttributeCommand extends BrigadierCommand {
         return success;
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> resetListed() {
-        return reset("character:listed", character -> character instanceof PlayerCharacter p && p.setListed(false),
-                character -> character instanceof PlayerCharacter p && p.isListed());
-    }
-
     private ArgumentBuilder<CommandSourceStack, ?> resetPathfinding() {
         return reset("character:pathfinding", character -> character.setPathfinding(false), Character::isPathfinding);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetTeamColor() {
         return reset("character:team-color", character -> character.setTeamColor(null), Character::getTeamColor);
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> setListed() {
-        return attribute("character:listed", (c, b) -> c instanceof PlayerCharacter p && p.setListed(b));
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> setPathfinding() {
