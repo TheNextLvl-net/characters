@@ -28,8 +28,8 @@ import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ActionTypes;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.character.action.ClickTypes;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
+import net.thenextlvl.character.plugin.model.ClickTypes;
 import org.bukkit.EntityEffect;
 import org.bukkit.Registry;
 import org.bukkit.World;
@@ -40,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.time.Duration;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
+import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 
 // todo: split up into multiple commands
 @NullMarked
@@ -64,7 +65,7 @@ final class CharacterActionAddCommand extends BrigadierCommand {
                     .then(command.teleport(clickTypes))
                     .then(command.title(clickTypes))
                     .then(command.transfer(clickTypes));
-            tree.then(characterArgument(plugin).then(CharacterActionCommand.actionArgument(plugin).then(chain)));
+            tree.then(characterArgument(plugin).then(actionArgument(plugin).then(chain)));
         }
         return tree;
     }

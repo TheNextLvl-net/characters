@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.character.action;
+package net.thenextlvl.character.plugin.model;
 
 import net.thenextlvl.character.action.ClickType;
 import org.jspecify.annotations.NullMarked;
