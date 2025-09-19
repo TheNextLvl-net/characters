@@ -63,7 +63,7 @@ tasks.shadowJar {
 paper {
     name = "Characters"
     main = "net.thenextlvl.character.plugin.CharacterPlugin"
-    apiVersion = "1.21.7"
+    apiVersion = "1.21.9"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
     // foliaSupported = true
