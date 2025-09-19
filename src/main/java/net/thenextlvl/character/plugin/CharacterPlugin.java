@@ -102,7 +102,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     private final Path translations = getDataPath().resolve("translations");
 
     private final NBT nbt = NBT.builder()
-            .registerTypeAdapter(ClickAction.class, new ClickActionAdapter())
+            .registerTypeHierarchyAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter())
             .registerTypeHierarchyAdapter(AttributeAdapter.class, new AttributeAdapter())
             .registerTypeHierarchyAdapter(AttributeModifier.Operation.class, new EnumAdapter<>(AttributeModifier.Operation.class))

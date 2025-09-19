@@ -44,6 +44,7 @@ import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -456,11 +457,12 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Character<E> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
         var root = tag.getAsCompound();
         root.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> this.entityData = entityData);
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
-                addAction(name, plugin.nbt().<ClickAction<?>>deserialize(action, ClickAction.class))));
+                addAction(name, (ClickAction<@NonNull Object>) plugin.nbt().deserialize(action, ClickAction.class))));
         root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
         root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
