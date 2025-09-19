@@ -34,7 +34,6 @@ import net.thenextlvl.character.plugin.model.ClickTypes;
 import org.bukkit.EntityEffect;
 import org.bukkit.World;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.net.InetSocketAddress;
 import java.time.Duration;
@@ -63,8 +62,34 @@ final class CharacterActionAddCommand extends BrigadierCommand {
                 .then(command.teleport())
                 .then(command.title())
                 .then(command.transfer());
-        tree.then(characterArgument(plugin).then(actionArgument(plugin).then(chain)));
-        return tree;
+        return tree.then(characterArgument(plugin).then(actionArgument(plugin).then(chain)));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> clickTypesArgument() {
+        return Commands.argument("click-types", EnumArgumentType.of(ClickTypes.class, EnumStringCodec.lowerHyphen()));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> entityEffectArgument() {
+        return Commands.argument("entity-effect", EnumArgumentType.of(EntityEffect.class, EnumStringCodec.lowerHyphen()));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> positionArgument() {
+        return Commands.argument("position", ArgumentTypes.finePosition());
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> soundArgument() {
+        return Commands.argument("sound", ArgumentTypes.resourceKey(RegistryKey.SOUND_EVENT));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> soundSourceArgument() {
+        return Commands.argument("sound-source", EnumArgumentType.of(Sound.Source.class, EnumStringCodec.lowerHyphen()));
+    }
+
+    private ArgumentBuilder<CommandSourceStack, ?> stringArgument(String name, ActionType<String> actionType) {
+        return Commands.argument(name, StringArgumentType.greedyString()).executes(context -> {
+            var string = context.getArgument(name, String.class);
+            return addAction(context, actionType, string);
+        });
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> title() {
@@ -72,12 +97,8 @@ final class CharacterActionAddCommand extends BrigadierCommand {
                 .then(Commands.argument("title", StringArgumentType.string())
                         .then(Commands.argument("subtitle", StringArgumentType.string())
                                 .then(titleTimesArgument())
-                                .executes(context -> {
-                                    var subtitle = MiniMessage.miniMessage().deserialize(
-                                            context.getArgument("subtitle", String.class));
-                                    return title(context, subtitle, null);
-                                }))
-                        .executes(context -> title(context, Component.empty(), null)));
+                                .executes(this::title))
+                        .executes(this::title));
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> titleTimesArgument() {
@@ -94,7 +115,7 @@ final class CharacterActionAddCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> playSound() {
         return Commands.literal("play-sound").then(soundArgument()
                 .then(soundSourceArgument()
-                        .then(Commands.argument("volume", FloatArgumentType.floatArg(0))
+                        .then(Commands.argument("volume", FloatArgumentType.floatArg(0, 1))
                                 .then(Commands.argument("pitch", FloatArgumentType.floatArg(0, 2))
                                         .executes(this::playSound))
                                 .executes(this::playSound))
@@ -137,19 +158,8 @@ final class CharacterActionAddCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> transfer() {
         return Commands.literal("transfer").then(Commands.argument("hostname", StringArgumentType.string())
                 .then(Commands.argument("port", IntegerArgumentType.integer(1, 65535))
-                        .executes(context -> {
-                            var port = context.getArgument("port", int.class);
-                            return transfer(context, port);
-                        }))
-                .executes(context -> transfer(context, 25565)));
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> stringArgument(String name, ActionType<String> actionType) {
-        return Commands.argument(name, StringArgumentType.greedyString())
-                .executes(context -> {
-                    var string = context.getArgument(name, String.class);
-                    return addAction(context, actionType, string);
-                });
+                        .executes(this::transfer))
+                .executes(this::transfer));
     }
 
     private int teleport(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -164,44 +174,22 @@ final class CharacterActionAddCommand extends BrigadierCommand {
     }
 
     private int title(CommandContext<CommandSourceStack> context) {
-        var subtitle = MiniMessage.miniMessage().deserialize(
-                context.getArgument("subtitle", String.class));
-        var fadeIn = Ticks.duration(context.getArgument("fade-in", int.class));
-        var stay = Ticks.duration(context.getArgument("stay", int.class));
-        var fadeOut = Ticks.duration(context.getArgument("fade-out", int.class));
-        var times = Title.Times.times(fadeIn, stay, fadeOut);
-        return title(context, subtitle, times);
-    }
-
-    private int title(CommandContext<CommandSourceStack> context, Component subtitle, Title.@Nullable Times times) {
         var title = MiniMessage.miniMessage().deserialize(context.getArgument("title", String.class));
+        var subtitle = tryGetArgument(context, "subtitle", String.class)
+                .map(MiniMessage.miniMessage()::deserialize)
+                .orElse(Component.empty());
+        var fadeIn = tryGetArgument(context, "fade-in", int.class).map(Ticks::duration).orElse(null);
+        var stay = tryGetArgument(context, "stay", int.class).map(Ticks::duration).orElse(null);
+        var fadeOut = tryGetArgument(context, "fade-out", int.class).map(Ticks::duration).orElse(null);
+        var times = fadeIn != null && stay != null && fadeOut != null ? Title.Times.times(fadeIn, stay, fadeOut) : null;
         return addAction(context, ActionTypes.types().sendTitle(), Title.title(title, subtitle, times));
     }
 
-    private int transfer(CommandContext<CommandSourceStack> context, int port) {
+    private int transfer(CommandContext<CommandSourceStack> context) {
         var hostname = context.getArgument("hostname", String.class);
+        var port = tryGetArgument(context, "port", int.class).orElse(25565);
         var address = new InetSocketAddress(hostname, port);
         return addAction(context, ActionTypes.types().transfer(), address);
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> clickTypesArgument() {
-        return Commands.argument("click-types", EnumArgumentType.of(ClickTypes.class, EnumStringCodec.lowerHyphen()));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> entityEffectArgument() {
-        return Commands.argument("entity-effect", EnumArgumentType.of(EntityEffect.class, EnumStringCodec.lowerHyphen()));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> positionArgument() {
-        return Commands.argument("position", ArgumentTypes.finePosition());
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> soundArgument() {
-        return Commands.argument("sound", ArgumentTypes.resourceKey(RegistryKey.SOUND_EVENT));
-    }
-
-    private static ArgumentBuilder<CommandSourceStack, ?> soundSourceArgument() {
-        return Commands.argument("sound-source", EnumArgumentType.of(Sound.Source.class, EnumStringCodec.lowerHyphen()));
     }
 
     private int playSound(CommandContext<CommandSourceStack> context) {
