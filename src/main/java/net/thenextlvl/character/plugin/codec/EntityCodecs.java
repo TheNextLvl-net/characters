@@ -42,6 +42,7 @@ import org.bukkit.entity.Pose;
 import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Steerable;
 import org.bukkit.entity.Tameable;
+import org.bukkit.inventory.MainHand;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
@@ -57,7 +58,7 @@ public final class EntityCodecs {
 
     public static void registerAll() {
         EntityCodecRegistry.registry().registerAll(List.of(
-                SKIN_PARTS, RESOLVABLE_PROFILE,
+                SKIN_PARTS, RESOLVABLE_PROFILE, IMMOVABLE, MAIN_HAND,
                 BASE_PLATE, VISIBLE, ARMS, SMALL, MARKER, CAN_MOVE, CAN_TICK,
                 AGE,
                 BASE_POTION_TYPE, AREA_EFFECT_CLOUD_COLOR, DURATION_ON_USE, DURATION, PARTICLE, ATTRIBUTES, RADIUS, REAPPLICATION_DELAY, WAIT_TIME,
@@ -91,6 +92,16 @@ public final class EntityCodecs {
             .getter(Mannequin::getProfile)
             .setter(Mannequin::setProfile)
             .adapter(new ResolvableProfileAdapter())
+            .build();
+
+    private static final EntityCodec<?, ?> IMMOVABLE = EntityCodec.booleanCodec(Key.key("mannequin", "immovable"), Mannequin.class)
+            .getter(Mannequin::isImmovable)
+            .setter(Mannequin::setImmovable)
+            .build();
+
+    private static final EntityCodec<?, ?> MAIN_HAND = EntityCodec.enumCodec(Key.key("mannequin", "main_hand"), Mannequin.class, MainHand.class)
+            .getter(Mannequin::getMainHand)
+            .setter(Mannequin::setMainHand)
             .build();
 
     private static final EntityCodec<?, ?> BASE_PLATE = EntityCodec.booleanCodec(Key.key("armor_stand", "base_plate"), ArmorStand.class)
