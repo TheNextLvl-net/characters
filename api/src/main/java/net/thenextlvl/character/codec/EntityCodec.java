@@ -77,7 +77,7 @@ public interface EntityCodec<E, T> extends Keyed {
      */
     @NonNull
     @Contract(pure = true)
-    TagAdapter<T> adapter();
+    TagAdapter<@NonNull T> adapter();
 
     /**
      * Creates a new {@link Builder} instance for constructing {@link EntityCodec} objects.
@@ -227,7 +227,7 @@ public interface EntityCodec<E, T> extends Keyed {
          */
         @NonNull
         @Contract(value = "_ -> this", mutates = "this")
-        Builder<E, T> adapter(@NonNull TagAdapter<T> adapter);
+        Builder<E, T> adapter(@NonNull TagAdapter<@NonNull T> adapter);
 
         /**
          * Constructs a new {@link EntityCodec} instance based on the configurations
