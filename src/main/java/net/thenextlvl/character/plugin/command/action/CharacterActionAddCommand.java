@@ -115,7 +115,7 @@ final class CharacterActionAddCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> playSound() {
         return Commands.literal("play-sound").then(soundArgument()
                 .then(soundSourceArgument()
-                        .then(Commands.argument("volume", FloatArgumentType.floatArg(0, 1))
+                        .then(Commands.argument("volume", FloatArgumentType.floatArg(0))
                                 .then(Commands.argument("pitch", FloatArgumentType.floatArg(0, 2))
                                         .executes(this::playSound))
                                 .executes(this::playSound))
