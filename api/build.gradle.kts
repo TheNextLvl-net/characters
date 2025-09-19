@@ -31,9 +31,22 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
 }
 
-tasks.javadoc {
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(listOf("--add-reads", "net.thenextlvl.characters=ALL-UNNAMED"))
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("--add-reads", "net.thenextlvl.characters=ALL-UNNAMED")
+}
+
+tasks.withType<JavaExec>().configureEach {
+    jvmArgs("--add-reads", "net.thenextlvl.characters=ALL-UNNAMED")
+}
+
+tasks.withType<Javadoc>().configureEach {
     val options = options as StandardJavadocDocletOptions
     options.tags("apiNote:a:API Note:", "implSpec:a:Implementation Requirements:")
+    options.addStringOption("-add-reads", "net.thenextlvl.characters=ALL-UNNAMED")
 }
 
 publishing {
