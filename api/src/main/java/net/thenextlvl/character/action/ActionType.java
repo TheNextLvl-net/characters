@@ -1,20 +1,13 @@
 package net.thenextlvl.character.action;
 
-import com.mojang.brigadier.builder.ArgumentBuilder;
-import com.mojang.brigadier.context.CommandContext;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.key.KeyPattern;
 import net.thenextlvl.character.Character;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 @NullMarked
 public sealed interface ActionType<T> permits SimpleActionType {
@@ -27,20 +20,6 @@ public sealed interface ActionType<T> permits SimpleActionType {
 
     @Contract(pure = true)
     Action<T> action();
-
-    /**
-     * @since 0.5.0
-     */
-    @ApiStatus.Internal
-    @Contract(pure = true)
-    Supplier<ArgumentBuilder<CommandSourceStack, ?>> argumentTree();
-
-    /**
-     * @since 0.5.0
-     */
-    @ApiStatus.Internal
-    @Contract(pure = true)
-    Function<CommandContext<CommandSourceStack>, T> parser();
 
     @Contract(pure = true)
     boolean isApplicable(T input, Character<?> character);
@@ -67,12 +46,6 @@ public sealed interface ActionType<T> permits SimpleActionType {
 
         @Contract(mutates = "this")
         Builder<T> applicable(BiPredicate<T, Character<?>> applicable);
-
-        @Contract(mutates = "this")
-        Builder<T> argumentTree(@Nullable Supplier<ArgumentBuilder<CommandSourceStack, ?>> argumentTree);
-
-        @Contract(mutates = "this")
-        Builder<T> parser(@Nullable Function<CommandContext<CommandSourceStack>, T> parser);
 
         @Contract(value = " -> new", pure = true)
         ActionType<T> build() throws IllegalArgumentException;
