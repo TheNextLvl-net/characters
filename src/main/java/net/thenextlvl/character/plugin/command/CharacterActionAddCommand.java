@@ -25,6 +25,7 @@ import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.Ticks;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ActionType;
+import net.thenextlvl.character.action.ActionTypes;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.action.ClickTypes;
@@ -37,7 +38,6 @@ import org.jspecify.annotations.Nullable;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 
-import static net.thenextlvl.character.plugin.command.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 @NullMarked
@@ -58,7 +58,7 @@ class CharacterActionAddCommand {
                     .then(teleport(clickTypes, plugin))
                     .then(title(clickTypes, plugin))
                     .then(transfer(clickTypes, plugin));
-            command.then(characterArgument(plugin).then(actionArgument(plugin).then(chain)));
+            command.then(characterArgument(plugin).then(CharacterActionCommand.actionArgument(plugin).then(chain)));
         }
         return command;
     }
@@ -84,7 +84,7 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> connect(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("connect").then(stringArgument("server", plugin.connect, clickTypes, plugin));
+        return Commands.literal("connect").then(stringArgument("server", ActionTypes.types().connect(), clickTypes, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> playSound(ClickTypes clickTypes, CharacterPlugin plugin) {
@@ -106,26 +106,26 @@ class CharacterActionAddCommand {
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> runConsoleCommand(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("run-console-command").then(stringArgument("command", plugin.runConsoleCommand, clickTypes, plugin));
+        return Commands.literal("run-console-command").then(stringArgument("command", ActionTypes.types().runConsoleCommand(), clickTypes, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> runPlayerCommand(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("run-command").then(stringArgument("command", plugin.runCommand, clickTypes, plugin));
+        return Commands.literal("run-command").then(stringArgument("command", ActionTypes.types().runCommand(), clickTypes, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendActionBar(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("send-actionbar").then(stringArgument("message", plugin.sendActionbar, clickTypes, plugin));
+        return Commands.literal("send-actionbar").then(stringArgument("message", ActionTypes.types().sendActionbar(), clickTypes, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendEntityEffect(ClickTypes clickTypes, CharacterPlugin plugin) {
         return Commands.literal("send-entity-effect").then(entityEffectArgument(plugin).executes(context -> {
             var entityEffect = context.getArgument("entity-effect", EntityEffect.class);
-            return addAction(context, plugin.sendEntityEffect, entityEffect, clickTypes, plugin);
+            return addAction(context, ActionTypes.types().sendEntityEffect(), entityEffect, clickTypes, plugin);
         }));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> sendMessage(ClickTypes clickTypes, CharacterPlugin plugin) {
-        return Commands.literal("send-message").then(stringArgument("message", plugin.sendMessage, clickTypes, plugin));
+        return Commands.literal("send-message").then(stringArgument("message", ActionTypes.types().sendMessage(), clickTypes, plugin));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> teleport(ClickTypes clickTypes, CharacterPlugin plugin) {
@@ -171,14 +171,14 @@ class CharacterActionAddCommand {
         var sound = context.getArgument("sound", org.bukkit.Sound.class);
         var key = Registry.SOUNDS.getKey(sound);
         if (key == null) throw new NullPointerException("Unknown sound");
-        return addAction(context, plugin.playSound, Sound.sound(key, source, volume, pitch), clickTypes, plugin);
+        return addAction(context, ActionTypes.types().playSound(), Sound.sound(key, source, volume, pitch), clickTypes, plugin);
     }
 
     private static int teleport(CommandContext<CommandSourceStack> context, Rotation rotation, World world, ClickTypes clickTypes, CharacterPlugin plugin) throws CommandSyntaxException {
         var resolver = context.getArgument("position", FinePositionResolver.class);
         var position = resolver.resolve(context.getSource());
         var location = position.toLocation(world).setRotation(rotation);
-        return addAction(context, plugin.teleport, location, clickTypes, plugin);
+        return addAction(context, ActionTypes.types().teleport(), location, clickTypes, plugin);
     }
 
     private static int title(CommandContext<CommandSourceStack> context, ClickTypes clickTypes, CharacterPlugin plugin) {
@@ -193,13 +193,13 @@ class CharacterActionAddCommand {
 
     private static int title(CommandContext<CommandSourceStack> context, Component subtitle, Title.@Nullable Times times, ClickTypes clickTypes, CharacterPlugin plugin) {
         var title = MiniMessage.miniMessage().deserialize(context.getArgument("title", String.class));
-        return addAction(context, plugin.sendTitle, Title.title(title, subtitle, times), clickTypes, plugin);
+        return addAction(context, ActionTypes.types().sendTitle(), Title.title(title, subtitle, times), clickTypes, plugin);
     }
 
     private static int transfer(CommandContext<CommandSourceStack> context, int port, ClickTypes clickTypes, CharacterPlugin plugin) {
         var hostname = context.getArgument("hostname", String.class);
         var address = new InetSocketAddress(hostname, port);
-        return addAction(context, plugin.transfer, address, clickTypes, plugin);
+        return addAction(context, ActionTypes.types().transfer(), address, clickTypes, plugin);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> clickTypesArgument(CharacterPlugin plugin) {

@@ -1,7 +1,7 @@
 package net.thenextlvl.character.plugin.serialization;
 
 import net.thenextlvl.character.action.ActionType;
-import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.action.ActionTypeRegistry;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.serialization.TagAdapter;
 import net.thenextlvl.nbt.serialization.TagDeserializationContext;
@@ -12,15 +12,9 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class ActionTypeAdapter implements TagAdapter<ActionType<?>> {
-    private final CharacterPlugin plugin;
-
-    public ActionTypeAdapter(CharacterPlugin plugin) {
-        this.plugin = plugin;
-    }
-
     @Override
     public ActionType<?> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        return plugin.actionTypeProvider().getByName(tag.getAsString()).orElseThrow();
+        return ActionTypeRegistry.registry().getByName(tag.getAsString()).orElseThrow();
     }
 
     @Override
