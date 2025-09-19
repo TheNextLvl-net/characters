@@ -236,8 +236,11 @@ class CharacterActionAddCommand {
         var permission = previous.map(ClickAction::getPermission).orElse(null);
         var chance = previous.map(ClickAction::getChance).orElse(100);
 
-        var action = new ClickAction<>(actionType, clickTypes.getClickTypes(), input, chance, cooldown, permission);
-        var success = character.addAction(actionName, action);
+        var success = character.addAction(actionName, ClickAction.create(actionType, clickTypes.getClickTypes(), input, action -> {
+            action.setChance(chance);
+            action.setCooldown(cooldown);
+            action.setPermission(permission);
+        }));
 
         var message = success ? "character.action.added" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message,

@@ -11,6 +11,7 @@ import net.thenextlvl.nbt.tag.CompoundTag;
 import net.thenextlvl.nbt.tag.ListTag;
 import net.thenextlvl.nbt.tag.StringTag;
 import net.thenextlvl.nbt.tag.Tag;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 
 import java.time.Duration;
@@ -25,14 +26,18 @@ public final class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
         var root = tag.getAsCompound();
         var permission = root.optional("permission").map(Tag::getAsString).orElse(null);
         var cooldown = root.optional("cooldown").map(Tag::getAsLong).map(Duration::ofMillis).orElse(Duration.ZERO);
-        var actionType = (ActionType<Object>) context.deserialize(root.get("actionType"), ActionType.class);
+        var actionType = (ActionType<@NonNull Object>) context.deserialize(root.get("actionType"), ActionType.class);
         var clickTypes = root.<StringTag>getAsList("clickTypes").stream()
                 .map(StringTag::getAsString)
                 .map(ClickType::valueOf)
                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClickType.class)));
         var input = context.deserialize(root.get("input"), actionType.type());
         var chance = root.optional("chance").map(Tag::getAsInt).orElse(100);
-        return new ClickAction<>(actionType, clickTypes, input, chance, cooldown, permission);
+        var action = ClickAction.create(actionType, clickTypes, input);
+        action.setChance(chance);
+        action.setCooldown(cooldown);
+        action.setPermission(permission);
+        return action;
     }
 
     @Override
