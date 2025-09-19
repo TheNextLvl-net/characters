@@ -14,7 +14,8 @@ import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.command.argument.NamedTextColorArgument;
+import net.thenextlvl.character.plugin.command.argument.NamedTextColorArgumentType;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -23,37 +24,43 @@ import java.util.function.Function;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
+// todo: split up into multiple commands
 @NullMarked
-class CharacterAttributeCommand {
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("attribute")
-                .requires(source -> source.getSender().hasPermission("characters.command.attribute"))
-                .then(reset(plugin)).then(set(plugin));
+final class CharacterAttributeCommand extends BrigadierCommand {
+    private CharacterAttributeCommand(CharacterPlugin plugin) {
+        super(plugin, "attribute", "characters.command.attribute");
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+        var command = new CharacterAttributeCommand(plugin);
+        return command.create()
+                .then(command.reset())
+                .then(command.set());
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> reset() {
         var tree = characterArgument(plugin)
-                .then(resetListed(plugin))
-                .then(resetPathfinding(plugin))
-                .then(resetTeamColor(plugin));
+                .then(resetListed())
+                .then(resetPathfinding())
+                .then(resetTeamColor());
         // fixme
         //  EntityCodecs.types().forEach(type -> tree.then(resetAttribute(type, plugin)));
         return Commands.literal("reset").then(tree);
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
+    private LiteralArgumentBuilder<CommandSourceStack> set() {
         var tree = characterArgument(plugin)
-                .then(setListed(plugin))
-                .then(setPathfinding(plugin))
-                .then(setTeamColor(plugin));
+                .then(setListed())
+                .then(setPathfinding())
+                .then(setTeamColor());
         EntityCodecRegistry.registry().codecs().forEach(codec -> {
-            var argument = setAttribute(codec, plugin);
+            var argument = setAttribute(codec);
             if (argument != null) tree.then(argument);
         });
         return Commands.literal("set").then(tree);
     }
 
-    // private static <E, T> ArgumentBuilder<CommandSourceStack, ?> resetAttribute(AttributeType<E, T> attribute, CharacterPlugin plugin) {
+    // private <E, T> ArgumentBuilder<CommandSourceStack, ?> resetAttribute(AttributeType<E, T> attribute) {
     //     return Commands.literal(attribute.key().asString()).executes(context -> {
     //         var character = (Character<?>) context.getArgument("character", Character.class);
     //         var success = character.setAttributeValue(attribute, null);
@@ -66,7 +73,7 @@ class CharacterAttributeCommand {
     //     });
     // }
 
-    private static <E, T> @Nullable ArgumentBuilder<CommandSourceStack, ?> setAttribute(EntityCodec<E, T> codec, CharacterPlugin plugin) {
+    private <E, T> @Nullable ArgumentBuilder<CommandSourceStack, ?> setAttribute(EntityCodec<E, T> codec) {
         if (codec.argumentType() == null) return null;
         var argument = Commands.argument("value", codec.argumentType());
         return Commands.literal(codec.key().asString()).then(argument.executes(context -> {
@@ -83,24 +90,24 @@ class CharacterAttributeCommand {
         }));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> attribute(String attribute, BiFunction<Character<?>, Boolean, Boolean> setter, CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> attribute(String attribute, BiFunction<Character<?>, Boolean, Boolean> setter) {
         return Commands.literal(attribute).then(Commands.argument("enabled", BoolArgumentType.bool()).executes(context -> {
             var enabled = context.getArgument("enabled", boolean.class);
             var success = set(context, attribute,
                     character -> setter.apply(character, enabled),
-                    ignored -> enabled, plugin);
+                    ignored -> enabled);
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> reset(String attribute, Function<Character<?>, Boolean> setter, Function<Character<?>, @Nullable Object> getter, CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> reset(String attribute, Function<Character<?>, Boolean> setter, Function<Character<?>, @Nullable Object> getter) {
         return Commands.literal(attribute).executes(context -> {
-            var success = set(context, attribute, setter, getter, plugin);
+            var success = set(context, attribute, setter, getter);
             return success ? Command.SINGLE_SUCCESS : 0;
         });
     }
 
-    private static boolean set(CommandContext<CommandSourceStack> context, String attribute, Function<Character<?>, Boolean> setter, Function<Character<?>, @Nullable Object> getter, CharacterPlugin plugin) {
+    private boolean set(CommandContext<CommandSourceStack> context, String attribute, Function<Character<?>, Boolean> setter, Function<Character<?>, @Nullable Object> getter) {
         var character = context.getArgument("character", Character.class);
         var success = setter.apply(character);
         var message = success ? "character.attribute" : "nothing.changed";
@@ -111,34 +118,34 @@ class CharacterAttributeCommand {
         return success;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> resetListed(CharacterPlugin plugin) {
+    private ArgumentBuilder<CommandSourceStack, ?> resetListed() {
         return reset("character:listed", character -> character instanceof PlayerCharacter p && p.setListed(false),
-                character -> character instanceof PlayerCharacter p && p.isListed(), plugin);
+                character -> character instanceof PlayerCharacter p && p.isListed());
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> resetPathfinding(CharacterPlugin plugin) {
-        return reset("character:pathfinding", character -> character.setPathfinding(false), Character::isPathfinding, plugin);
+    private ArgumentBuilder<CommandSourceStack, ?> resetPathfinding() {
+        return reset("character:pathfinding", character -> character.setPathfinding(false), Character::isPathfinding);
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> resetTeamColor(CharacterPlugin plugin) {
-        return reset("character:team-color", character -> character.setTeamColor(null), Character::getTeamColor, plugin);
+    private ArgumentBuilder<CommandSourceStack, ?> resetTeamColor() {
+        return reset("character:team-color", character -> character.setTeamColor(null), Character::getTeamColor);
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> setListed(CharacterPlugin plugin) {
-        return attribute("character:listed", (c, b) -> c instanceof PlayerCharacter p && p.setListed(b), plugin);
+    private ArgumentBuilder<CommandSourceStack, ?> setListed() {
+        return attribute("character:listed", (c, b) -> c instanceof PlayerCharacter p && p.setListed(b));
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> setPathfinding(CharacterPlugin plugin) {
-        return attribute("character:pathfinding", Character::setPathfinding, plugin);
+    private ArgumentBuilder<CommandSourceStack, ?> setPathfinding() {
+        return attribute("character:pathfinding", Character::setPathfinding);
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> setTeamColor(CharacterPlugin plugin) {
-        return Commands.literal("character:team-color").then(Commands.argument("color", new NamedTextColorArgument())
+    private ArgumentBuilder<CommandSourceStack, ?> setTeamColor() {
+        return Commands.literal("character:team-color").then(Commands.argument("color", new NamedTextColorArgumentType())
                 .executes(context -> {
                     var color = context.getArgument("color", NamedTextColor.class);
                     var success = set(context, "team-color",
                             character -> character.setTeamColor(color),
-                            character -> color, plugin);
+                            character -> color);
                     return success ? Command.SINGLE_SUCCESS : 0;
                 }));
     }

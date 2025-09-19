@@ -7,7 +7,7 @@ import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
-import net.thenextlvl.character.plugin.command.argument.BlockDataArgument;
+import net.thenextlvl.character.plugin.command.argument.BlockDataArgumentType;
 import net.thenextlvl.character.plugin.model.PaperEntityEquipment;
 import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
@@ -230,7 +230,7 @@ public final class EntityCodecs {
             .getter(Enderman::getCarriedBlock)
             .setter(Enderman::setCarriedBlock)
             .adapter(new BlockDataAdapter(Bukkit.getServer())) // todo: get rid of Bukkit
-            .argumentType(new BlockDataArgument())
+            .argumentType(new BlockDataArgumentType())
             .build();
 
     private static final EntityCodec<?, ?> VISUAL_FIRE = EntityCodec.enumCodec(Key.key("entity", "visual_fire"), Entity.class, TriState.class)

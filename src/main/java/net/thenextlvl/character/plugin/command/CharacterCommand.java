@@ -6,15 +6,24 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
-import net.thenextlvl.character.plugin.command.argument.CharacterArgument;
-import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgument;
+import net.thenextlvl.character.plugin.command.action.CharacterActionCommand;
+import net.thenextlvl.character.plugin.command.argument.CharacterArgumentType;
+import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgumentType;
+import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
+import net.thenextlvl.character.plugin.command.equipment.CharacterEquipmentCommand;
+import net.thenextlvl.character.plugin.command.skin.CharacterSkinCommand;
+import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
+import net.thenextlvl.character.plugin.command.tag.CharacterTagCommand;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CharacterCommand {
+public final class CharacterCommand extends BrigadierCommand {
+    private CharacterCommand(CharacterPlugin plugin) {
+        super(plugin, "character", "characters.command");
+    }
+
     public static LiteralCommandNode<CommandSourceStack> create(CharacterPlugin plugin) {
-        return Commands.literal("character")
-                .requires(source -> source.getSender().hasPermission("characters.command"))
+        return new CharacterCommand(plugin).create()
                 .then(CharacterActionCommand.create(plugin))
                 .then(CharacterAttributeCommand.create(plugin))
                 .then(CharacterCreateCommand.create(plugin))
@@ -30,15 +39,20 @@ public class CharacterCommand {
                 .build();
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
-        return Commands.argument("character", new CharacterArgument(plugin));
+    public static RequiredArgumentBuilder<CommandSourceStack, String> permissionArgument(CharacterPlugin plugin) {
+        return Commands.argument("permission", StringArgumentType.string())
+                .suggests(new PermissionSuggestionProvider<>(plugin));
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, ?> playerCharacterArgument(CharacterPlugin plugin) {
-        return Commands.argument("character", new PlayerCharacterArgument(plugin));
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
+        return Commands.argument("character", new CharacterArgumentType(plugin));
     }
 
-    static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> playerCharacterArgument(CharacterPlugin plugin) {
+        return Commands.argument("character", new PlayerCharacterArgumentType(plugin));
+    }
+
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {
         return Commands.argument("name", StringArgumentType.word());
     }
 }

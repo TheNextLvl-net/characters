@@ -708,7 +708,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         @Override
         public boolean setBackgroundColor(@Nullable Color color) {
             if (Objects.equals(color, this.backgroundColor)) return false;
-            textDisplayName().ifPresent(display -> display.setBackgroundColor(backgroundColor));
+            textDisplayName().ifPresent(display -> display.setBackgroundColor(color));
             this.backgroundColor = color;
             return true;
         }
