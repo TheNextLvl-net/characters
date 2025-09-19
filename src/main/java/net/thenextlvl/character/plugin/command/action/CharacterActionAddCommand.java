@@ -39,7 +39,6 @@ import org.jspecify.annotations.Nullable;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 
-import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
 
