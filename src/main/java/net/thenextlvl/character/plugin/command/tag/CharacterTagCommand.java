@@ -1,4 +1,4 @@
-package net.thenextlvl.character.plugin.command;
+package net.thenextlvl.character.plugin.command.tag;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -32,7 +32,7 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 
 // todo: split up into multiple commands
 @NullMarked
-final class CharacterTagCommand extends BrigadierCommand {
+public final class CharacterTagCommand extends BrigadierCommand {
     private CharacterTagCommand(CharacterPlugin plugin) {
         super(plugin, "tag", "characters.command.tag");
     }
