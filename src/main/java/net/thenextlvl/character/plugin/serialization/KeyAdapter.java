@@ -14,12 +14,11 @@ public final class KeyAdapter implements TagAdapter<Key> {
     @Override
     @SuppressWarnings("PatternValidation")
     public Key deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var split = tag.getAsString().split(":", 2);
-        return Key.key(split[0], split[1]);
+        return Key.key(tag.getAsString());
     }
 
     @Override
     public Tag serialize(Key key, TagSerializationContext context) throws ParserException {
-        return StringTag.of(key.toString());
+        return StringTag.of(key.asString());
     }
 }
