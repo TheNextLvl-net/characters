@@ -405,7 +405,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     public void loadCharacter(Player player) {
-        getEntity().ifPresent(entity -> updateVisibility(entity, player));
+        getEntity().ifPresent(entity -> {
+            updateTeamOptions(getCharacterSettingsTeam(entity, player));
+            updateVisibility(entity, player);
+        });
     }
 
     @Override
