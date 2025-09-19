@@ -27,7 +27,6 @@ import org.bukkit.entity.TextDisplay.TextAlignment;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 
@@ -65,78 +64,63 @@ final class CharacterTagCommand extends BrigadierCommand {
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetAlignment() {
-        return Commands.literal("alignment").executes(context ->
-                setAlignment(context, TextAlignment.CENTER));
+        return Commands.literal("alignment").executes(this::setAlignment);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetBackgroundColor() {
-        return Commands.literal("background-color").executes(context ->
-                setBackgroundColor(context, null));
+        return Commands.literal("background-color").executes(this::setBackgroundColor);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetBillboard() {
-        return Commands.literal("billboard").executes(context ->
-                setBillboard(context, Billboard.CENTER));
+        return Commands.literal("billboard").executes(this::setBillboard);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetBrightness() {
-        return Commands.literal("brightness").executes(context ->
-                setBrightness(context, null));
+        return Commands.literal("brightness").executes(this::setBrightness);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetDefaultBackground() {
-        return Commands.literal("default-background").executes(context ->
-                setDefaultBackground(context, false));
+        return Commands.literal("default-background").executes(this::setDefaultBackground);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetLeftRotation() {
-        return Commands.literal("left-rotation").executes(context ->
-                setRotation(context, new Quaternionf(), true));
+        return Commands.literal("left-rotation").executes(context -> setRotation(context, true));
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetLineWidth() {
-        return Commands.literal("line-width").executes(context ->
-                setLineWidth(context, 200));
+        return Commands.literal("line-width").executes(this::setLineWidth);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetOffset() {
-        return Commands.literal("offset").executes(context ->
-                setOffset(context, new Vector3f(0, 0.27f, 0)));
+        return Commands.literal("offset").executes(this::setOffset);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetRightRotation() {
-        return Commands.literal("right-rotation").executes(context ->
-                setRotation(context, new Quaternionf(), false));
+        return Commands.literal("right-rotation").executes(context -> setRotation(context, false));
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetScale() {
-        return Commands.literal("scale").executes(context ->
-                setScale(context, 1));
+        return Commands.literal("scale").executes(this::setScale);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetSeeThrough() {
-        return Commands.literal("see-through").executes(context ->
-                setSeeThrough(context, false));
+        return Commands.literal("see-through").executes(this::setSeeThrough);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetText() {
-        return Commands.literal("text").executes(context ->
-                setText(context, null));
+        return Commands.literal("text").executes(this::setText);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetTextOpacity() {
-        return Commands.literal("text-opacity").executes(context ->
-                setTextOpacity(context, 0));
+        return Commands.literal("text-opacity").executes(this::setTextOpacity);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetTextShadow() {
-        return Commands.literal("text-shadow").executes(context ->
-                setTextShadow(context, false));
+        return Commands.literal("text-shadow").executes(this::setTextShadow);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> resetVisibility() {
-        return Commands.literal("visibility").executes(context ->
-                setVisible(context, true));
+        return Commands.literal("visibility").executes(this::setVisible);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> set() {
@@ -161,14 +145,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setAlignment() {
         return Commands.literal("alignment").then(Commands.argument(
                 "alignment", EnumArgumentType.of(TextAlignment.class, EnumStringCodec.lowerHyphen())
-        ).executes(context -> {
-            var alignment = context.getArgument("alignment", TextAlignment.class);
-            return setAlignment(context, alignment);
-        }));
+        ).executes(this::setAlignment));
     }
 
-    private int setAlignment(CommandContext<CommandSourceStack> context, TextAlignment alignment) {
+    private int setAlignment(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var alignment = tryGetArgument(context, "alignment", TextAlignment.class).orElse(TextAlignment.CENTER);
         var success = character.getTagOptions().setAlignment(alignment);
         var message = success ? "character.tag.alignment" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -180,14 +162,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setBackgroundColor() {
         return Commands.literal("background-color").then(Commands.argument(
                 "color", new ColorArgumentType()
-        ).executes(context -> {
-            var color = context.getArgument("color", Color.class);
-            return setBackgroundColor(context, color);
-        }));
+        ).executes(this::setBackgroundColor));
     }
 
-    private int setBackgroundColor(CommandContext<CommandSourceStack> context, @Nullable Color color) {
+    private int setBackgroundColor(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var color = tryGetArgument(context, "color", Color.class).orElse(null);
         var success = character.getTagOptions().setBackgroundColor(color);
         var message = success ? "character.tag.background-color" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -199,14 +179,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setBillboard() {
         return Commands.literal("billboard").then(Commands.argument(
                 "billboard", EnumArgumentType.of(Billboard.class, EnumStringCodec.lowerHyphen())
-        ).executes(context -> {
-            var billboard = context.getArgument("billboard", Billboard.class);
-            return setBillboard(context, billboard);
-        }));
+        ).executes(this::setBillboard));
     }
 
-    private int setBillboard(CommandContext<CommandSourceStack> context, Billboard billboard) {
+    private int setBillboard(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var billboard = tryGetArgument(context, "billboard", Billboard.class).orElse(Billboard.CENTER);
         var success = character.getTagOptions().setBillboard(billboard);
         var message = success ? "character.tag.billboard" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -220,21 +198,19 @@ final class CharacterTagCommand extends BrigadierCommand {
                 "block-light", IntegerArgumentType.integer(0, 15)
         ).then(Commands.argument(
                 "sky-light", IntegerArgumentType.integer(0, 15)
-        ).executes(context -> {
-            var blockLight = context.getArgument("block-light", int.class);
-            var skyLight = context.getArgument("sky-light", int.class);
-            var brightness = new Brightness(blockLight, skyLight);
-            return setBrightness(context, brightness);
-        })));
+        ).executes(this::setBrightness)));
     }
 
-    private int setBrightness(CommandContext<CommandSourceStack> context, @Nullable Brightness brightness) {
+    private int setBrightness(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var blockLight = tryGetArgument(context, "block-light", int.class).orElse(null);
+        var skyLight = tryGetArgument(context, "sky-light", int.class).orElse(null);
+        var brightness = blockLight != null && skyLight != null ? new Brightness(blockLight, skyLight) : null;
         var success = character.getTagOptions().setBrightness(brightness);
         var message = success ? "character.tag.brightness" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
-                Placeholder.unparsed("block_light", String.valueOf(brightness != null ? brightness.getBlockLight() : null)),
-                Placeholder.unparsed("sky_light", String.valueOf(brightness != null ? brightness.getSkyLight() : null)),
+                Placeholder.unparsed("block_light", String.valueOf(blockLight)),
+                Placeholder.unparsed("sky_light", String.valueOf(skyLight)),
                 Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
@@ -242,14 +218,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setDefaultBackground() {
         return Commands.literal("default-background").then(Commands.argument(
                 "enabled", BoolArgumentType.bool()
-        ).executes(context -> {
-            var enabled = context.getArgument("enabled", boolean.class);
-            return setDefaultBackground(context, enabled);
-        }));
+        ).executes(this::setDefaultBackground));
     }
 
-    private int setDefaultBackground(CommandContext<CommandSourceStack> context, boolean enabled) {
+    private int setDefaultBackground(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var enabled = tryGetArgument(context, "enabled", boolean.class).orElse(false);
         var success = character.getTagOptions().setDefaultBackground(enabled);
         var message = success ? "character.tag.background" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -261,14 +235,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setLineWidth() {
         return Commands.literal("line-width").then(Commands.argument(
                 "width", IntegerArgumentType.integer(0)
-        ).executes(context -> {
-            var width = context.getArgument("width", int.class);
-            return setLineWidth(context, width);
-        }));
+        ).executes(this::setLineWidth));
     }
 
-    private int setLineWidth(CommandContext<CommandSourceStack> context, int width) {
+    private int setLineWidth(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var width = tryGetArgument(context, "width", int.class).orElse(200);
         var success = character.getTagOptions().setLineWidth(width);
         var message = success ? "character.tag.line-width" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -284,22 +256,20 @@ final class CharacterTagCommand extends BrigadierCommand {
                 "y", FloatArgumentType.floatArg()
         ).then(Commands.argument(
                 "z", FloatArgumentType.floatArg()
-        ).executes(context -> {
-            var x = context.getArgument("x", float.class);
-            var y = context.getArgument("y", float.class);
-            var z = context.getArgument("z", float.class);
-            return setOffset(context, new Vector3f(x, y, z));
-        }))));
+        ).executes(this::setOffset))));
     }
 
-    private int setOffset(CommandContext<CommandSourceStack> context, Vector3f offset) {
+    private int setOffset(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
-        var success = character.getTagOptions().setOffset(offset);
+        var x = tryGetArgument(context, "x", float.class).orElse(0.0f);
+        var y = tryGetArgument(context, "y", float.class).orElse(0.27f);
+        var z = tryGetArgument(context, "z", float.class).orElse(0.0f);
+        var success = character.getTagOptions().setOffset(new Vector3f(x, y, z));
         var message = success ? "character.tag.offset" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
-                Formatter.number("x", offset.x()),
-                Formatter.number("y", offset.y()),
-                Formatter.number("z", offset.z()),
+                Formatter.number("x", x),
+                Formatter.number("y", y),
+                Formatter.number("z", z),
                 Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
@@ -313,43 +283,39 @@ final class CharacterTagCommand extends BrigadierCommand {
                 "z", FloatArgumentType.floatArg()
         ).then(Commands.argument(
                 "w", FloatArgumentType.floatArg()
-        ).executes(context -> {
-            var w = context.getArgument("w", float.class);
-            var x = context.getArgument("x", float.class);
-            var y = context.getArgument("y", float.class);
-            var z = context.getArgument("z", float.class);
-            return setRotation(context, new Quaternionf(x, y, z, w), left);
-        })))));
+        ).executes(context -> setRotation(context, left))))));
     }
 
-    private int setRotation(CommandContext<CommandSourceStack> context, Quaternionf rotation, boolean left) {
+    private int setRotation(CommandContext<CommandSourceStack> context, boolean left) {
         var character = context.getArgument("character", Character.class);
+        var w = tryGetArgument(context, "w", float.class).orElse(1.0f);
+        var x = tryGetArgument(context, "x", float.class).orElse(0.0f);
+        var y = tryGetArgument(context, "y", float.class).orElse(0.0f);
+        var z = tryGetArgument(context, "z", float.class).orElse(0.0f);
+        var rotation = new Quaternionf(x, y, z, w);
         var success = left ? character.getTagOptions().setLeftRotation(rotation)
                 : character.getTagOptions().setRightRotation(rotation);
         var message = !success ? "nothing.changed" : left
                 ? "character.tag.left-rotation" : "character.tag.right-rotation";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
-                Formatter.number("w", rotation.w()),
-                Formatter.number("x", rotation.x()),
-                Formatter.number("y", rotation.y()),
-                Formatter.number("z", rotation.z()));
+                Formatter.number("w", w),
+                Formatter.number("x", x),
+                Formatter.number("y", y),
+                Formatter.number("z", z));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> setText() {
         return Commands.literal("text").then(Commands.argument(
                 "text", StringArgumentType.greedyString()
-        ).executes(context -> {
-            var text = context.getArgument("text", String.class);
-            var displayName = MiniMessage.miniMessage().deserialize(text);
-            return setText(context, displayName);
-        }));
+        ).executes(this::setText));
     }
 
-    private int setText(CommandContext<CommandSourceStack> context, @Nullable Component text) {
+    private int setText(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
+        var text = tryGetArgument(context, "text", String.class).map(MiniMessage.miniMessage()::deserialize).orElse(null);
 
         var success = character.setDisplayName(text);
         var message = success ? "character.tag.text" : "nothing.changed";
@@ -363,14 +329,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setTextOpacity() {
         return Commands.literal("text-opacity").then(Commands.argument(
                 "opacity", FloatArgumentType.floatArg(0, 100)
-        ).executes(context -> {
-            var opacity = context.getArgument("opacity", float.class);
-            return setTextOpacity(context, opacity);
-        }));
+        ).executes(this::setTextOpacity));
     }
 
-    private int setTextOpacity(CommandContext<CommandSourceStack> context, float opacity) {
+    private int setTextOpacity(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var opacity = tryGetArgument(context, "opacity", float.class).orElse(0f);
         var success = character.getTagOptions().setTextOpacity(opacity);
         var message = success ? "character.tag.text-opacity" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -382,14 +346,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setScale() {
         return Commands.literal("scale").then(Commands.argument(
                 "scale", FloatArgumentType.floatArg(0.05f, 10)
-        ).executes(context -> {
-            var scale = context.getArgument("scale", float.class);
-            return setScale(context, scale);
-        }));
+        ).executes(this::setScale));
     }
 
-    private int setScale(CommandContext<CommandSourceStack> context, float scale) {
+    private int setScale(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var scale = tryGetArgument(context, "scale", float.class).orElse(1.0f);
         var success = character.getTagOptions().setScale(scale);
         var message = success ? "character.tag.scale" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -401,14 +363,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setSeeThrough() {
         return Commands.literal("see-through").then(Commands.argument(
                 "see-through", BoolArgumentType.bool()
-        ).executes(context -> {
-            var seeThrough = context.getArgument("see-through", boolean.class);
-            return setSeeThrough(context, seeThrough);
-        }));
+        ).executes(this::setSeeThrough));
     }
 
-    private int setSeeThrough(CommandContext<CommandSourceStack> context, boolean seeThrough) {
+    private int setSeeThrough(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var seeThrough = tryGetArgument(context, "see-through", boolean.class).orElse(false);
         var success = character.getTagOptions().setSeeThrough(seeThrough);
         var message = !success ? "nothing.changed" : seeThrough
                 ? "character.tag.see-through" : "character.tag.not-see-through";
@@ -420,14 +380,12 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setTextShadow() {
         return Commands.literal("text-shadow").then(Commands.argument(
                 "enabled", BoolArgumentType.bool()
-        ).executes(context -> {
-            var enabled = context.getArgument("enabled", boolean.class);
-            return setTextShadow(context, enabled);
-        }));
+        ).executes(this::setTextShadow));
     }
 
-    private int setTextShadow(CommandContext<CommandSourceStack> context, boolean enabled) {
+    private int setTextShadow(CommandContext<CommandSourceStack> context) {
         var character = context.getArgument("character", Character.class);
+        var enabled = tryGetArgument(context, "enabled", boolean.class).orElse(false);
         var success = character.getTagOptions().setTextShadow(enabled);
         var message = success ? "character.tag.text-shadow" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
@@ -439,15 +397,13 @@ final class CharacterTagCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setVisible() {
         return Commands.literal("visible").then(Commands.argument(
                 "visible", BoolArgumentType.bool()
-        ).executes(context -> {
-            var visible = context.getArgument("visible", boolean.class);
-            return setVisible(context, visible);
-        }));
+        ).executes(this::setVisible));
     }
 
-    private int setVisible(CommandContext<CommandSourceStack> context, boolean visible) {
+    private int setVisible(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
+        var visible = tryGetArgument(context, "visible", boolean.class).orElse(true);
 
         var success = character.setDisplayNameVisible(visible);
         var message = !success ? "nothing.changed" : visible ? "character.tag.visible" : "character.tag.invisible";
