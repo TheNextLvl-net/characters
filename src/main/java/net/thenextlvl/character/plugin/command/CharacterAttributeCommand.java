@@ -39,7 +39,6 @@ final class CharacterAttributeCommand extends BrigadierCommand {
 
     private LiteralArgumentBuilder<CommandSourceStack> reset() {
         var tree = characterArgument(plugin)
-                .then(resetPathfinding())
                 .then(resetTeamColor());
         // fixme
         //  EntityCodecs.types().forEach(type -> tree.then(resetAttribute(type, plugin)));
@@ -48,7 +47,6 @@ final class CharacterAttributeCommand extends BrigadierCommand {
 
     private LiteralArgumentBuilder<CommandSourceStack> set() {
         var tree = characterArgument(plugin)
-                .then(setPathfinding())
                 .then(setTeamColor());
         EntityCodecRegistry.registry().codecs().forEach(codec -> {
             var argument = setAttribute(codec);
@@ -115,16 +113,8 @@ final class CharacterAttributeCommand extends BrigadierCommand {
         return success;
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> resetPathfinding() {
-        return reset("character:pathfinding", character -> character.setPathfinding(false), Character::isPathfinding);
-    }
-
     private ArgumentBuilder<CommandSourceStack, ?> resetTeamColor() {
         return reset("character:team-color", character -> character.setTeamColor(null), Character::getTeamColor);
-    }
-
-    private ArgumentBuilder<CommandSourceStack, ?> setPathfinding() {
-        return attribute("character:pathfinding", Character::setPathfinding);
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> setTeamColor() {
