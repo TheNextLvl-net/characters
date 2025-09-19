@@ -3,14 +3,11 @@ package net.thenextlvl.character.plugin;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import core.i18n.file.ComponentBundle;
 import core.io.IO;
-import core.paper.messenger.PluginMessenger;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
@@ -22,8 +19,6 @@ import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.character.PaperCharacterController;
 import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
-import net.thenextlvl.character.plugin.character.action.PaperActionType;
-import net.thenextlvl.character.plugin.character.action.PaperActionTypeProvider;
 import net.thenextlvl.character.plugin.character.goal.PaperGoalFactory;
 import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
@@ -88,7 +83,6 @@ import org.jspecify.annotations.Nullable;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -98,9 +92,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS;
 import static java.nio.file.StandardOpenOption.READ;
-import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 
 @NullMarked
 public final class CharacterPlugin extends JavaPlugin implements CharacterProvider {
@@ -111,7 +103,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     private final NBT nbt = NBT.builder()
             .registerTypeAdapter(ClickAction.class, new ClickActionAdapter())
-            .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter(this))
+            .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter())
             .registerTypeHierarchyAdapter(AttributeAdapter.class, new AttributeAdapter())
             .registerTypeHierarchyAdapter(AttributeModifier.Operation.class, new EnumAdapter<>(AttributeModifier.Operation.class))
             .registerTypeHierarchyAdapter(BlockData.class, new BlockDataAdapter(getServer()))
@@ -145,36 +137,9 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     private final PluginVersionChecker versionChecker = new PluginVersionChecker(this);
 
-    private final PaperActionTypeProvider actionTypeProvider = new PaperActionTypeProvider();
     private final PaperCharacterController characterController = new PaperCharacterController(this);
     private final PaperGoalFactory goalFactory = new PaperGoalFactory(this);
     private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
-    private final PluginMessenger messenger = new PluginMessenger(this);
-
-    public final ActionType<String> sendActionbar = register(new PaperActionType<>("send_actionbar", String.class,
-            (player, character, message) -> player.sendActionBar(MiniMessage.miniMessage().deserialize(message,
-                    Placeholder.parsed("player", player.getName())))));
-    public final ActionType<String> sendMessage = register(new PaperActionType<>("send_message", String.class,
-            (player, character, message) -> player.sendMessage(MiniMessage.miniMessage().deserialize(message,
-                    Placeholder.parsed("player", player.getName())))));
-    public final ActionType<EntityEffect> sendEntityEffect = register(new PaperActionType<>("send_entity_effect", EntityEffect.class,
-            (player, character, entityEffect) -> player.sendEntityEffect(entityEffect, character),
-            (entityEffect, character) -> entityEffect.isApplicableTo(character.getEntityClass()) && !isDeprecated(entityEffect)));
-    public final ActionType<InetSocketAddress> transfer = register(new PaperActionType<>("transfer", InetSocketAddress.class,
-            (player, character, address) -> player.transfer(address.getHostName(), address.getPort())));
-    public final ActionType<Location> teleport = (register(new PaperActionType<>("teleport", Location.class,
-            (player, character, location) -> player.teleportAsync(location, PLUGIN, RETAIN_PASSENGERS))));
-    public final ActionType<Sound> playSound = register(new PaperActionType<>("play_sound", Sound.class,
-            (player, character, sound) -> player.playSound(sound)));
-    public final ActionType<String> runConsoleCommand = register(new PaperActionType<>("run_console_command", String.class,
-            (player, character, command) -> player.getServer().dispatchCommand(player.getServer().getConsoleSender(),
-                    command.replace("<player>", player.getName()))));
-    public final ActionType<String> runCommand = register(new PaperActionType<>("run_command", String.class,
-            (player, character, command) -> player.performCommand(command.replace("<player>", player.getName()))));
-    public final ActionType<Title> sendTitle = register(new PaperActionType<>("send_title", Title.class,
-            (player, character, title) -> player.showTitle(title)));
-    public final ActionType<String> connect = register(new PaperActionType<>("connect", String.class,
-            (player, character, server) -> messenger.connect(player, server)));
 
     private final Key key = Key.key("characters", "translations");
     private final ComponentBundle bundle = ComponentBundle.builder(key, translations)
@@ -245,11 +210,6 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     }
 
     @Override
-    public PaperActionTypeProvider actionTypeProvider() {
-        return actionTypeProvider;
-    }
-
-    @Override
     public PaperCharacterController characterController() {
         return characterController;
     }
@@ -273,14 +233,6 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         getServer().getPluginManager().registerEvents(new CharacterListener(), this);
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
-    }
-
-    public boolean isDeprecated(Enum<?> anEnum) {
-        try {
-            return anEnum.getDeclaringClass().getField(anEnum.name()).isAnnotationPresent(Deprecated.class);
-        } catch (NoSuchFieldException e) {
-            return false;
-        }
     }
 
     private @Nullable Character<?> readSafe(File file) {
@@ -329,9 +281,5 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
         return new PaperCharacter<>(this, name, type).deserialize(root, nbt);
-    }
-
-    private <T> ActionType<T> register(ActionType<T> actionType) {
-        return actionTypeProvider().register(actionType);
     }
 }
