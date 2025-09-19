@@ -25,6 +25,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.AreaEffectCloud;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Creeper;
@@ -52,6 +53,7 @@ public final class EntityCodecs {
 
     public static void registerAll() {
         EntityCodecRegistry.registry().registerAll(List.of(
+                BASE_PLATE, VISIBLE, ARMS, SMALL, MARKER, CAN_MOVE, CAN_TICK,
                 AGE,
                 BASE_POTION_TYPE, AREA_EFFECT_CLOUD_COLOR, DURATION_ON_USE, DURATION, PARTICLE, ATTRIBUTES, RADIUS, REAPPLICATION_DELAY, WAIT_TIME,
                 ARROW_COLOR,
@@ -72,17 +74,44 @@ public final class EntityCodecs {
         ));
     }
 
+    private static final EntityCodec<?, ?> BASE_PLATE = EntityCodec.booleanCodec(Key.key("armor_stand", "base_plate"), ArmorStand.class)
+            .getter(ArmorStand::hasBasePlate)
+            .setter(ArmorStand::setBasePlate)
+            .build();
+
+    private static final EntityCodec<?, ?> VISIBLE = EntityCodec.booleanCodec(Key.key("armor_stand", "visible"), ArmorStand.class)
+            .getter(ArmorStand::isVisible)
+            .setter(ArmorStand::setVisible)
+            .build();
+
+    private static final EntityCodec<?, ?> ARMS = EntityCodec.booleanCodec(Key.key("armor_stand", "arms"), ArmorStand.class)
+            .getter(ArmorStand::hasArms)
+            .setter(ArmorStand::setArms)
+            .build();
+
+    private static final EntityCodec<?, ?> SMALL = EntityCodec.booleanCodec(Key.key("armor_stand", "small"), ArmorStand.class)
+            .getter(ArmorStand::isSmall)
+            .setter(ArmorStand::setSmall)
+            .build();
+
+    private static final EntityCodec<?, ?> MARKER = EntityCodec.booleanCodec(Key.key("armor_stand", "marker"), ArmorStand.class)
+            .getter(ArmorStand::isMarker)
+            .setter(ArmorStand::setMarker)
+            .build();
+
+    private static final EntityCodec<?, ?> CAN_MOVE = EntityCodec.booleanCodec(Key.key("armor_stand", "can_move"), ArmorStand.class)
+            .getter(ArmorStand::canMove)
+            .setter(ArmorStand::setCanMove)
+            .build();
+
+    private static final EntityCodec<?, ?> CAN_TICK = EntityCodec.booleanCodec(Key.key("armor_stand", "can_tick"), ArmorStand.class)
+            .getter(ArmorStand::canTick)
+            .setter(ArmorStand::setCanTick)
+            .build();
+
     private static final EntityCodec<?, ?> AGE = EntityCodec.intCodec(Key.key("ageable", "age"), Ageable.class)
             .getter(Ageable::getAge)
             .setter(Ageable::setAge)
-            .build();
-
-    private static final EntityCodec<?, ?> EQUIPMENT = EntityCodec.builder(Key.key("living_entity", "equipment"), LivingEntity.class, PaperEntityEquipment.class)
-            .getter(PaperEntityEquipment::of)
-            .setter((livingEntity, paperEntityEquipment) -> {
-                paperEntityEquipment.apply(livingEntity);
-            })
-            .adapter(new EntityEquipmentAdapter())
             .build();
 
     private static final EntityCodec<?, ?> BASE_POTION_TYPE = EntityCodec.enumCodec(Key.key("area_effect_cloud", "base_potion_type"), AreaEffectCloud.class, PotionType.class)
@@ -258,6 +287,14 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> GLIDING = EntityCodec.booleanCodec(Key.key("player", "gliding"), Player.class)
             .getter(Player::isGliding).setter(Player::setGliding).build();
+
+    private static final EntityCodec<?, ?> EQUIPMENT = EntityCodec.builder(Key.key("living_entity", "equipment"), LivingEntity.class, PaperEntityEquipment.class)
+            .getter(PaperEntityEquipment::of)
+            .setter((livingEntity, paperEntityEquipment) -> {
+                paperEntityEquipment.apply(livingEntity);
+            })
+            .adapter(new EntityEquipmentAdapter())
+            .build();
 
     private static final EntityCodec<?, ?> AI = EntityCodec.booleanCodec(Key.key("living_entity", "ai"), LivingEntity.class)
             .getter(LivingEntity::hasAI).setter(LivingEntity::setAI).build();
