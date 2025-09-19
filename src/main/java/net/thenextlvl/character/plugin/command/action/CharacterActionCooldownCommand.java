@@ -15,8 +15,6 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.Objects;
-
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 
@@ -42,10 +40,7 @@ final class CharacterActionCooldownCommand extends ActionCommand {
     @Override
     public int run(CommandContext<CommandSourceStack> context, Character<?> character, ClickAction<?> action, String actionName) {
         var cooldown = tryGetArgument(context, "cooldown", int.class).map(Tick::of).orElse(null);
-
-        var success = cooldown != null && !Objects.equals(action.getCooldown(), cooldown);
-        if (success) action.setCooldown(cooldown);
-
+        var success = cooldown != null && action.setCooldown(cooldown);
         var message = cooldown == null ? "character.action.cooldown"
                 : success ? cooldown.isZero() ? "character.action.cooldown.removed"
                 : "character.action.cooldown.set"

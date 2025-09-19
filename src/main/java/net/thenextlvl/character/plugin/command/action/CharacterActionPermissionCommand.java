@@ -11,8 +11,6 @@ import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.Objects;
-
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.permissionArgument;
 import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
@@ -47,9 +45,7 @@ final class CharacterActionPermissionCommand extends ActionCommand {
             return 0;
         }
 
-        var success = !Objects.equals(action.getPermission(), permission);
-        if (success) action.setPermission(permission);
-
+        var success = action.setPermission(permission);
         var message = success ? permission != null
                 ? "character.action.permission.set" : "character.action.permission.removed"
                 : "nothing.changed";

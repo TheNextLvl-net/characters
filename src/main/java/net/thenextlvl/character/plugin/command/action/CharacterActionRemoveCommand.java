@@ -30,19 +30,14 @@ final class CharacterActionRemoveCommand extends SimpleCommand {
     public int run(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
         var character = context.getArgument("character", Character.class);
-
         var action = context.getArgument("action", String.class);
 
-        if (character.removeAction(action)) {
-            plugin.bundle().sendMessage(sender, "character.action.removed",
-                    Placeholder.unparsed("action", action),
-                    Placeholder.unparsed("character", character.getName()));
-            return SINGLE_SUCCESS;
-        }
-
-        plugin.bundle().sendMessage(sender, "character.action.not_found",
+        var success = character.removeAction(action);
+        var message = success ? "character.action.removed" : "character.action.not_found";
+        
+        plugin.bundle().sendMessage(sender, message,
                 Placeholder.parsed("character", character.getName()),
-                Placeholder.unparsed("action", action));
-        return 0;
+                Placeholder.parsed("action", action));
+        return success ? SINGLE_SUCCESS : 0;
     }
 }
