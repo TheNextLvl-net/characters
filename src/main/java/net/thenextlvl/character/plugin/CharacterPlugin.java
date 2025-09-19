@@ -12,12 +12,10 @@ import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterProvider;
-import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.character.PaperCharacterController;
-import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.goal.PaperGoalFactory;
 import net.thenextlvl.character.plugin.codec.EntityCodecs;
@@ -54,7 +52,6 @@ import net.thenextlvl.nbt.NBTInputStream;
 import net.thenextlvl.nbt.serialization.NBT;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.serialization.adapter.EnumAdapter;
-import net.thenextlvl.nbt.tag.CompoundTag;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -90,7 +87,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.nio.file.StandardOpenOption.READ;
@@ -169,9 +165,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     public void onEnable() {
         EntityCodecs.registerAll();
         readAll().forEach(character -> {
-            var location = character.getSpawnLocation();
-            if (location.map(character::spawn).orElse(true)) return;
-            getComponentLogger().warn("Failed to spawn character {}", character.getName());
+            character.getSpawnLocation().ifPresent(character::spawn);
         });
         registerCommands();
         registerListeners();
@@ -268,20 +262,9 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
             getComponentLogger().warn("Skip loading character '{}': {}", name, e.getMessage());
             return null;
         }
-        var character = type.equals(EntityType.PLAYER)
-                ? createPlayerCharacter(root, name)
-                : createCharacter(root, name, type);
+        var character = new PaperCharacter<>(this, name, type).deserialize(root, nbt);
         characterController.characters.put(name, character);
         character.setSpawnLocation(location);
         return character;
-    }
-
-    private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
-        var uuid = root.optional("uuid").map(tag -> nbt.deserialize(tag, UUID.class)).orElseGet(UUID::randomUUID);
-        return new PaperPlayerCharacter(this, name, uuid).deserialize(root, nbt);
-    }
-
-    private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
-        return new PaperCharacter<>(this, name, type).deserialize(root, nbt);
     }
 }

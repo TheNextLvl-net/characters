@@ -4,6 +4,7 @@ import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import core.io.IO;
 import core.util.StringUtil;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.util.TriState;
@@ -32,13 +33,13 @@ import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.TextDisplay.TextAlignment;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Unmodifiable;
@@ -98,7 +99,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
     @SuppressWarnings("unchecked")
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
-        Class<? extends Entity> entityClass = type.getEntityClass();
+        var entityClass = type.getEntityClass();
         Preconditions.checkArgument(entityClass != null, "Cannot spawn entity of type %s", type);
         this.entityClass = (Class<? extends E>) entityClass;
         this.name = name;
@@ -453,6 +454,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
     @Override
     public void remove() {
+        plugin.getServer().getOnlinePlayers().forEach(player -> {
+            var team = player.getScoreboard().getTeam(getScoreboardName());
+            if (team != null) team.unregister();
+        });
         despawn();
     }
 
@@ -498,11 +503,14 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     protected void internalPreSpawn(E entity) {
-        entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setVisibleByDefault(visibleByDefault);
         entity.setGravity(false);
         entity.setInvulnerable(true);
         entity.setNoPhysics(true);
+
+        if (entity instanceof Mannequin mannequin) {
+            mannequin.setProfile(ResolvableProfile.resolvableProfile().name(name).build());
+        }
 
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 

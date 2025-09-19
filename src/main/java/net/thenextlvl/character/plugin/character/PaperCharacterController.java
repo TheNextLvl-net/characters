@@ -3,12 +3,12 @@ package net.thenextlvl.character.plugin.character;
 import com.google.common.base.Preconditions;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterController;
-import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
@@ -39,7 +39,8 @@ public final class PaperCharacterController implements CharacterController {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Entity> Character<T> createCharacter(String name, EntityType type) {
-        if (type.equals(EntityType.PLAYER)) return (Character<T>) createCharacter(name);
+        if (type.equals(EntityType.MANNEQUIN) || type.equals(EntityType.PLAYER))
+            return (Character<T>) createCharacter(name);
         Preconditions.checkArgument(!characterExists(name), "Character named %s already exists", name);
         var character = new PaperCharacter<T>(plugin, name, type);
         characters.put(name, character);
@@ -56,6 +57,16 @@ public final class PaperCharacterController implements CharacterController {
         var character = this.<T>createCharacter(name, type);
         character.spawn(location);
         return character;
+    }
+
+    @Override
+    public Character<Mannequin> createCharacter(String name) {
+        return createCharacter(name, EntityType.MANNEQUIN);
+    }
+
+    @Override
+    public Character<Mannequin> spawnCharacter(String name, Location location) {
+        return spawnCharacter(name, location, EntityType.MANNEQUIN);
     }
 
     @Override
@@ -107,37 +118,6 @@ public final class PaperCharacterController implements CharacterController {
         return getCharacters(location.getWorld()).filter(character -> character.getLocation()
                 .map(location1 -> location1.distanceSquared(location) <= radiusSquared)
                 .orElse(false));
-    }
-
-    @Override
-    public Optional<PlayerCharacter> getCharacter(Player player) {
-        return characters.values().stream()
-                .filter(character -> character.getType().equals(EntityType.PLAYER))
-                .filter(character -> character.getEntity()
-                        .filter(player::equals)
-                        .isPresent()
-                ).map(PlayerCharacter.class::cast)
-                .findFirst();
-    }
-
-    @Override
-    public PlayerCharacter createCharacter(String name) {
-        return createCharacter(name, UUID.randomUUID());
-    }
-
-    @Override
-    public PlayerCharacter createCharacter(String name, UUID uuid) {
-        Preconditions.checkArgument(!characterExists(name), "Character named %s already exists", name);
-        var character = new PaperPlayerCharacter(plugin, name, uuid);
-        characters.put(name, character);
-        return character;
-    }
-
-    @Override
-    public PlayerCharacter spawnCharacter(String name, Location location) {
-        var character = createCharacter(name);
-        character.spawn(location);
-        return character;
     }
 
     @Override
