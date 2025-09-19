@@ -23,6 +23,9 @@ public sealed interface ActionTypeRegistry permits SimpleActionTypeRegistry {
     @Contract(pure = true)
     boolean isRegistered(ActionType<?> type);
 
+    @Contract(pure = true)
+    boolean isRegistered(String name);
+
     @Contract(mutates = "this")
     boolean unregister(ActionType<?> type);
 

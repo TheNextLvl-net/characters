@@ -15,12 +15,17 @@ final class SimpleActionTypeRegistry implements ActionTypeRegistry {
 
     @Override
     public boolean register(ActionType<?> type) {
-        return actionTypes.add(type);
+        return !isRegistered(type.name()) && actionTypes.add(type);
     }
 
     @Override
     public boolean isRegistered(ActionType<?> type) {
         return actionTypes.contains(type);
+    }
+
+    @Override
+    public boolean isRegistered(String name) {
+        return actionTypes.stream().anyMatch(actionType -> actionType.name().equals(name));
     }
 
     @Override
