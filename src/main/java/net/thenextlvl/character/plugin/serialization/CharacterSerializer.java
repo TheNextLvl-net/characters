@@ -1,7 +1,6 @@
 package net.thenextlvl.character.plugin.serialization;
 
 import net.thenextlvl.character.Character;
-import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
@@ -10,7 +9,6 @@ import net.thenextlvl.nbt.serialization.TagSerializationContext;
 import net.thenextlvl.nbt.serialization.TagSerializer;
 import net.thenextlvl.nbt.tag.ByteTag;
 import net.thenextlvl.nbt.tag.CompoundTag;
-import net.thenextlvl.nbt.tag.ListTag;
 import net.thenextlvl.nbt.tag.Tag;
 import org.jspecify.annotations.NullMarked;
 
@@ -19,18 +17,6 @@ public final class CharacterSerializer implements TagSerializer<Character<?>> {
     @Override
     public Tag serialize(Character<?> character, TagSerializationContext context) throws ParserException {
         var tag = CompoundTag.empty();
-
-        if (character instanceof PlayerCharacter player) {
-            var id = player.getGameProfile().getId();
-            if (id != null) tag.add("uuid", context.serialize(id));
-            var properties = ListTag.of(CompoundTag.ID);
-            player.getGameProfile().getProperties().forEach(property -> properties.add(context.serialize(property)));
-            tag.add("listed", player.isListed());
-            tag.add("properties", properties);
-            tag.add("realPlayer", player.isRealPlayer());
-            tag.add("skinParts", (byte) player.getSkinParts().getRaw());
-        }
-
         character.getDisplayName().ifPresent(displayName -> tag.add("displayName", context.serialize(displayName)));
         character.getSpawnLocation().ifPresent(spawnLocation -> tag.add("location", context.serialize(spawnLocation)));
         character.getTeamColor().ifPresent(teamColor -> tag.add("teamColor", context.serialize(teamColor)));
