@@ -1,4 +1,4 @@
-package net.thenextlvl.character.skin;
+package net.thenextlvl.character.plugin.model;
 
 import net.kyori.adventure.translation.Translatable;
 import org.jetbrains.annotations.Contract;
