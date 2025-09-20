@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.codec;
 
+import com.destroystokyo.paper.PaperSkinParts;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.CollarColorable;
@@ -83,8 +84,7 @@ public final class EntityCodecs {
     private static final EntityCodec<?, ?> SKIN_PARTS = EntityCodec.intCodec(Key.key("mannequin", "skin_parts"), Mannequin.class)
             .getter(mannequin -> mannequin.getSkinParts().getRaw())
             .setter((mannequin, integer) -> {
-                var parts = plugin.skinFactory().skinPartBuilder().raw(integer).build();
-                mannequin.setSkinParts(parts);
+                mannequin.setSkinParts(new PaperSkinParts(integer));
             })
             .build();
 
