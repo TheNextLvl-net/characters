@@ -3,7 +3,7 @@ package net.thenextlvl.character.plugin.character;
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import core.io.IO;
-import core.util.StringUtil;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.util.TriState;
@@ -32,13 +32,13 @@ import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.TextDisplay.TextAlignment;
-import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Unmodifiable;
@@ -73,7 +73,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
-    protected final String scoreboardName = StringUtil.random(32);
     protected final TagOptions tagOptions = new PaperTagOptions();
 
     protected final CharacterPlugin plugin;
@@ -81,7 +80,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     protected final String name;
 
     protected @Nullable E entity = null;
-    protected @Nullable Component displayName = null;
+    protected @Nullable Component displayName;
     protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable String viewPermission = null;
@@ -92,15 +91,15 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     protected Pose pose = Pose.STANDING;
 
     protected boolean displayNameVisible = true;
-    protected boolean pathfinding = false;
     protected boolean persistent = true;
     protected boolean visibleByDefault = true;
 
     @SuppressWarnings("unchecked")
     public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
-        Class<? extends Entity> entityClass = type.getEntityClass();
+        var entityClass = type.getEntityClass();
         Preconditions.checkArgument(entityClass != null, "Cannot spawn entity of type %s", type);
         this.entityClass = (Class<? extends E>) entityClass;
+        this.displayName = Component.text(name);
         this.name = name;
         this.plugin = plugin;
         this.type = type;
@@ -164,11 +163,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     @Override
     public String getName() {
         return name;
-    }
-
-    @Override
-    public String getScoreboardName() {
-        return scoreboardName;
     }
 
     @Override
@@ -256,11 +250,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     @Override
     public boolean isDisplayNameVisible() {
         return displayNameVisible;
-    }
-
-    @Override
-    public boolean isPathfinding() {
-        return pathfinding;
     }
 
     @Override
@@ -363,14 +352,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     @Override
-    public boolean setPathfinding(boolean pathfinding) {
-        if (pathfinding == this.pathfinding) return false;
-        this.pathfinding = pathfinding;
-        getEntity(Mob.class).ifPresent(this::updatePathfinderGoals);
-        return true;
-    }
-
-    @Override
     public boolean setPersistent(boolean persistent) {
         if (persistent == this.persistent) return false;
         this.persistent = persistent;
@@ -424,7 +405,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     public void loadCharacter(Player player) {
-        getEntity().ifPresent(entity -> updateVisibility(entity, player));
+        getEntity().ifPresent(entity -> {
+            updateTeamOptions(getCharacterSettingsTeam(entity, player));
+            updateVisibility(entity, player);
+        });
     }
 
     @Override
@@ -453,6 +437,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
     @Override
     public void remove() {
+        getEntity().ifPresent(entity -> plugin.getServer().getOnlinePlayers().forEach(player -> {
+            var team = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
+            if (team != null) team.unregister();
+        }));
         despawn();
     }
 
@@ -463,9 +451,9 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         root.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> this.entityData = entityData);
         root.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, (ClickAction<@NonNull Object>) plugin.nbt().deserialize(action, ClickAction.class))));
-        root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class)).ifPresent(this::setDisplayName);
+        root.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class))
+                .ifPresentOrElse(this::setDisplayName, () -> this.setDisplayName(null));
         root.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
-        root.optional("pathfinding").map(Tag::getAsBoolean).ifPresent(this::setPathfinding);
         root.optional("tagOptions").ifPresent(tagOptions::deserialize);
         root.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
@@ -498,11 +486,15 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     protected void internalPreSpawn(E entity) {
-        entity.setMetadata("NPC", new FixedMetadataValue(plugin, true));
         entity.setVisibleByDefault(visibleByDefault);
         entity.setGravity(false);
         entity.setInvulnerable(true);
-        entity.setNoPhysics(true);
+        entity.setSilent(true);
+
+        if (entity instanceof Mannequin mannequin) {
+            mannequin.setProfile(ResolvableProfile.resolvableProfile().name(name).build());
+            mannequin.setImmovable(true);
+        }
 
         if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
@@ -516,8 +508,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         if (entity instanceof Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
             mob.setDespawnInPeacefulOverride(TriState.FALSE);
-            updatePathfinderGoals(mob);
-            mob.setAware(false);
         }
 
         if (entity instanceof Attributable attributable) {
@@ -542,15 +532,11 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         updateTeamOptions(entity);
     }
 
-    protected void updatePathfinderGoals(Mob mob) {
-        if (!pathfinding) plugin.getServer().getMobGoals().removeAllGoals(mob);
-    }
-
-    protected Team getCharacterSettingsTeam(Player player) {
-        var characterSettings = player.getScoreboard().getTeam(getScoreboardName());
+    protected Team getCharacterSettingsTeam(Entity entity, Player player) {
+        var characterSettings = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
         if (characterSettings != null) return characterSettings;
-        characterSettings = player.getScoreboard().registerNewTeam(getScoreboardName());
-        characterSettings.addEntry(getScoreboardName());
+        characterSettings = player.getScoreboard().registerNewTeam(entity.getScoreboardEntryName());
+        characterSettings.addEntry(entity.getScoreboardEntryName());
         return characterSettings;
     }
 
@@ -609,7 +595,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     public void updateTeamOptions(E entity) {
-        entity.getTrackedBy().forEach(player -> updateTeamOptions(getCharacterSettingsTeam(player)));
+        entity.getTrackedBy().forEach(player -> updateTeamOptions(getCharacterSettingsTeam(entity, player)));
     }
 
     protected void updateTeamOptions(Team team) {

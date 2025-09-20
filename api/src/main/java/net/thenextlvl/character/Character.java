@@ -50,8 +50,6 @@ public interface Character<E extends Entity> {
 
     String getName();
 
-    String getScoreboardName();
-
     Optional<String> getViewPermission();
 
     Optional<Location> getSpawnLocation();
@@ -86,8 +84,6 @@ public interface Character<E extends Entity> {
 
     boolean isDisplayNameVisible();
 
-    boolean isPathfinding();
-
     boolean isPersistent();
 
     boolean isSpawned();
@@ -119,9 +115,6 @@ public interface Character<E extends Entity> {
 
     @Contract(mutates = "this")
     boolean setDisplayNameVisible(boolean visible);
-
-    @Contract(mutates = "this")
-    boolean setPathfinding(boolean pathfinding);
 
     @Contract(mutates = "this")
     boolean setPersistent(boolean persistent);
