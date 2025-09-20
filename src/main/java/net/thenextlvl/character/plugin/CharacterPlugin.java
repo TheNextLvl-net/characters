@@ -255,6 +255,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         var root = entry.getKey().getAsCompound();
         var name = entry.getValue().orElseThrow(() -> new ParserException("Character misses root name"));
         var type = nbt.deserialize(root.get("type"), EntityType.class);
+        if (type.equals(EntityType.PLAYER)) type = EntityType.MANNEQUIN;
         Location location;
         try {
             location = root.optional("location").map(tag -> nbt.deserialize(tag, Location.class)).orElse(null);
