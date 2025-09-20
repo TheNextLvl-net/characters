@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.command.skin;
 
+import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -14,7 +15,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
-import net.thenextlvl.character.skin.SkinLayer;
+import net.thenextlvl.character.plugin.model.SkinLayer;
 import org.bukkit.entity.Mannequin;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
@@ -48,9 +49,8 @@ class CharacterSkinLayerCommand extends BrigadierCommand {
         var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
 
         var layer = context.getArgument("layer", SkinLayer.class);
-        var skinParts = plugin.skinFactory().skinPartBuilder()
-                .parts(character.getEntity().map(Mannequin::getSkinParts).orElseGet(SkinParts::allParts))
-                .toggle(layer, visible).build();
+        var raw = character.getEntity().map(Mannequin::getSkinParts).orElseGet(SkinParts::allParts).getRaw();
+        var skinParts = new PaperSkinParts(visible ? raw | layer.getMask() : raw & ~layer.getMask());
 
         var success = character.getEntity().map(mannequin -> {
             if (mannequin.getSkinParts().getRaw() == skinParts.getRaw()) return false;
