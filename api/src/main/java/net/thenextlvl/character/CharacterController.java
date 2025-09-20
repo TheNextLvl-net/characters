@@ -1,5 +1,6 @@
 package net.thenextlvl.character;
 
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -10,7 +11,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -42,8 +42,9 @@ public interface CharacterController {
 
     Optional<Character<?>> getCharacter(UUID uuid);
 
-    @Unmodifiable
-    List<Character<?>> getCharacters();
+    Stream<Character<?>> getCharacters();
+
+    Stream<Character<?>> getCharacters(Chunk chunk);
 
     Stream<Character<?>> getCharacters(Player player);
 

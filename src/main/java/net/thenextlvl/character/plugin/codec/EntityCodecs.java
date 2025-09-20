@@ -73,7 +73,8 @@ public final class EntityCodecs {
                 VISUAL_FIRE, FIRE_TICKS, GLOWING, GRAVITY, INVISIBLE, INVULNERABLE, NO_PHYSICS, POSE, FREEZE_TICKS, LOCK_FREEZE_TICKS, SILENT, SNEAKING,
                 CROUCHING, LEAPING, SLEEPING, VARIANT,
                 GLIDING,
-                EQUIPMENT, AI, ARROWS_IN_BODY, BEE_STINGERS_IN_BODY, BODY_YAW, HEALTH, COLLIDABLE,
+                // todo: can we persist the health without issues?
+                EQUIPMENT, AI, ARROWS_IN_BODY, BEE_STINGERS_IN_BODY, BODY_YAW/*, HEALTH*/, COLLIDABLE,
                 AGGRESSIVE, AWARE, LEFT_HANDED,
                 SITTING,
                 SADDLE,

@@ -229,12 +229,18 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     @Override
-    public boolean despawn() {
-        if (entity == null) return false;
+    public void despawn() {
+        if (entity != null) entity.remove();
+        invalidate();
+    }
+
+    public void invalidate() {
+        if (entity != null) plugin.getServer().getOnlinePlayers().forEach(player -> {
+            var team = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
+            if (team != null) team.unregister();
+        });
         removeTextDisplayName();
-        entity.remove();
         entity = null;
-        return true;
     }
 
     @Override
@@ -326,16 +332,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     @Override
-    public boolean respawn() {
-        return spawnLocation != null && respawn(spawnLocation);
-    }
-
-    @Override
-    public boolean respawn(Location location) {
-        return despawn() && spawn(location);
-    }
-
-    @Override
     public boolean setDisplayName(@Nullable Component displayName) {
         if (Objects.equals(displayName, this.displayName)) return false;
         this.displayName = displayName;
@@ -412,18 +408,37 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     @Override
-    public boolean spawn() {
-        return spawnLocation != null && spawn(spawnLocation);
+    public @Nullable E spawn() throws IllegalStateException {
+        if (spawnLocation == null) return null;
+        return spawn(spawnLocation);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public boolean spawn(Location location) {
-        if (isSpawned()) return false;
+    public E spawn(Location location) throws IllegalStateException {
+        Preconditions.checkState(!isSpawned(), "Character is already spawned");
+        Preconditions.checkState(location.isChunkLoaded(), "Chunk is not loaded");
+
         this.spawnLocation = location;
-        Preconditions.checkNotNull(type.getEntityClass(), "Cannot spawn entity of type %s", type);
-        this.entity = location.getWorld().spawn(location, (Class<E>) type.getEntityClass(), this::preSpawn);
-        return entity.isValid();
+        this.entity = location.getWorld().spawn(location, entityClass, this::preSpawn);
+        
+        if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers()
+                .forEach(player -> updateVisibility(entity, player));
+
+        updateTextDisplayName(entity);
+        updateTeamOptions(entity);
+        return entity;
+    }
+
+    @Override
+    public @Nullable E respawn() throws IllegalStateException {
+        if (spawnLocation == null) return null;
+        return respawn(spawnLocation);
+    }
+
+    @Override
+    public E respawn(Location location) throws IllegalStateException {
+        despawn();
+        return spawn(location);
     }
 
     @Override
@@ -480,8 +495,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
             internalPreSpawn(entity);
         } catch (Exception t) {
             plugin.getComponentLogger().error("Failed to spawn character {}", getName(), t);
-            if (entity.isValid()) entity.remove();
-            this.entity = null;
+            entity.remove();
         }
     }
 
@@ -524,12 +538,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
                     .ifPresent(data -> codec.setter().test(entity, data));
         });
         entityData = null;
-
-        if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers()
-                .forEach(player -> updateVisibility(entity, player));
-
-        updateTextDisplayName(entity);
-        updateTeamOptions(entity);
     }
 
     protected Team getCharacterSettingsTeam(Entity entity, Player player) {
