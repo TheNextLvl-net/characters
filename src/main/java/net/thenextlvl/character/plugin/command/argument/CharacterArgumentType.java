@@ -29,6 +29,7 @@ public final class CharacterArgumentType implements CustomArgumentType.Converted
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
         plugin.characterController().getCharacterNames().stream()
+                .map(StringArgumentType::escapeIfRequired)
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
                 .forEach(builder::suggest);
         return builder.buildFuture();
