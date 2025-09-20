@@ -41,10 +41,12 @@ final class CharacterViewPermissionCommand extends SimpleCommand {
 
     @Override
     public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        plugin.bundle().sendMessage(context.getSource().getSender(), "character.view-permission",
+        var character = (Character<?>) context.getArgument("character", Character.class);
+        var permission = character.getViewPermission().orElse(null);
+        var message = permission != null ? "character.view-permission" : "character.view-permission.none";
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
-                Placeholder.unparsed("permission", String.valueOf(character.getViewPermission())));
+                Placeholder.unparsed("permission", String.valueOf(permission)));
         return SINGLE_SUCCESS;
     }
 }
