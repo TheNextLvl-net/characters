@@ -73,7 +73,7 @@ public final class EntityCodecs {
                 VISUAL_FIRE, FIRE_TICKS, GLOWING, GRAVITY, INVISIBLE, INVULNERABLE, NO_PHYSICS, POSE, FREEZE_TICKS, LOCK_FREEZE_TICKS, SILENT, SNEAKING,
                 CROUCHING, LEAPING, SLEEPING, VARIANT,
                 GLIDING,
-                EQUIPMENT, AI, ARROWS_IN_BODY, BEE_STINGERS_IN_BODY, BODY_YAW, COLLIDABLE,
+                EQUIPMENT, AI, ARROWS_IN_BODY, BEE_STINGERS_IN_BODY, BODY_YAW, HEALTH, COLLIDABLE,
                 AGGRESSIVE, AWARE, LEFT_HANDED,
                 SITTING,
                 SADDLE,
@@ -339,6 +339,9 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> BODY_YAW = EntityCodec.floatCodec(Key.key("living_entity", "body_yaw"), LivingEntity.class)
             .getter(LivingEntity::getBodyYaw).setter(LivingEntity::setBodyYaw).build();
+
+    private static final EntityCodec<?, ?> HEALTH = EntityCodec.doubleCodec(Key.key("living_entity", "health"), LivingEntity.class)
+            .getter(LivingEntity::getHealth).setter(LivingEntity::setHealth).build();
 
     private static final EntityCodec<?, ?> COLLIDABLE = EntityCodec.booleanCodec(Key.key("living_entity", "collidable"), LivingEntity.class)
             .getter(LivingEntity::isCollidable).setter(LivingEntity::setCollidable).build();
