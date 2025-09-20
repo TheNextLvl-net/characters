@@ -53,6 +53,13 @@ publishing {
     publications.create<MavenPublication>("maven") {
         artifactId = "characters"
         groupId = "net.thenextlvl"
+        pom.url.set("https://thenextlvl.net/docs/characters")
+        pom.scm {
+            val repository = "TheNextLvl-net/characters"
+            url.set("https://github.com/$repository")
+            connection.set("scm:git:git://github.com/$repository.git")
+            developerConnection.set("scm:git:ssh://github.com/$repository.git")
+        }
         from(components["java"])
     }
     repositories.maven {
