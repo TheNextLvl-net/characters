@@ -5,7 +5,6 @@ on:
 jobs:
   build:
     env:
-      CHANGELOG: ${{ github.event.release.body }}
       REPOSITORY_USER: ${{ secrets.REPOSITORY_USER }}
       REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
     runs-on: ubuntu-latest
