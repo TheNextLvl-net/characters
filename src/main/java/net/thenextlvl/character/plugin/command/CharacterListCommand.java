@@ -22,7 +22,7 @@ final class CharacterListCommand extends SimpleCommand {
     @Override
     public int run(CommandContext<CommandSourceStack> context) {
         var sender = context.getSource().getSender();
-        var characters = plugin.characterController().getCharacters();
+        var characters = plugin.characterController().getCharacters().toList();
         if (characters.isEmpty()) plugin.bundle().sendMessage(sender, "character.list.empty");
         else characters.forEach(character -> plugin.bundle().sendMessage(sender, "character.list",
                 Placeholder.parsed("character", character.getName()),

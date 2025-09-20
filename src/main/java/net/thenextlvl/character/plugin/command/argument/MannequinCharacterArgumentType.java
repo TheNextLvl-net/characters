@@ -34,7 +34,7 @@ public final class MannequinCharacterArgumentType implements CustomArgumentType.
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
-        plugin.characterController().getCharacters().stream()
+        plugin.characterController().getCharacters()
                 .filter(character -> character.getType().equals(EntityType.MANNEQUIN))
                 .map(Character::getName)
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))

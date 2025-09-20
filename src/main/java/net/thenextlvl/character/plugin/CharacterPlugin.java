@@ -21,6 +21,7 @@ import net.thenextlvl.character.plugin.character.goal.PaperGoalFactory;
 import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
+import net.thenextlvl.character.plugin.listener.ChunkListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.model.MessageMigrator;
@@ -72,22 +73,17 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionType;
-import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static java.nio.file.StandardOpenOption.READ;
 
@@ -164,33 +160,14 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     @Override
     public void onEnable() {
         EntityCodecs.registerAll();
-        readAll().forEach(character -> {
-            character.getSpawnLocation().ifPresent(character::spawn);
-        });
         registerCommands();
         registerListeners();
+        loadAll();
     }
 
-    public @Unmodifiable List<Character<?>> readAll() {
+    public void loadAll() {
         var files = savesFolder.listFiles((file, name) -> name.endsWith(".dat"));
-        return files == null ? List.of() : Arrays.stream(files)
-                .map(this::readSafe)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public @Nullable Character<?> read(File file) throws IOException {
-        try (var inputStream = stream(IO.of(file))) {
-            return read(inputStream);
-        } catch (Exception e) {
-            var io = IO.of(file.getPath() + "_old");
-            if (!io.exists()) throw e;
-            getComponentLogger().warn("Failed to load character from {}", file.getPath(), e);
-            getComponentLogger().warn("Falling back to {}", io);
-            try (var inputStream = stream(io)) {
-                return read(inputStream);
-            }
-        }
+        if (files != null) for (var file : files) loadSafe(file);
     }
 
     public ComponentBundle bundle() {
@@ -227,20 +204,29 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new CharacterListener(), this);
+        getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
     }
 
-    private @Nullable Character<?> readSafe(File file) {
+    private void loadSafe(File file) {
         try {
-            return read(file);
+            try (var inputStream = stream(IO.of(file))) {
+                load(inputStream);
+            } catch (Exception e) {
+                var io = IO.of(file.getPath() + "_old");
+                if (!io.exists()) throw e;
+                getComponentLogger().warn("Failed to load character from {}", file.getPath(), e);
+                getComponentLogger().warn("Falling back to {}", io);
+                try (var inputStream = stream(io)) {
+                    load(inputStream);
+                }
+            }
         } catch (EOFException e) {
             getComponentLogger().error("The character file {} is irrecoverably broken", file.getPath());
-            return null;
         } catch (Exception e) {
             getComponentLogger().error("Failed to load character from {}", file.getPath(), e);
             getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
-            return null;
         }
     }
 
@@ -250,7 +236,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     // todo: move deserialization part to own adapter
     //  move name from root to own value tag
-    private @Nullable Character<?> read(NBTInputStream inputStream) throws IOException {
+    private void load(NBTInputStream inputStream) throws IOException {
         var entry = inputStream.readNamedTag();
         var root = entry.getKey().getAsCompound();
         var name = entry.getValue().orElseThrow(() -> new ParserException("Character misses root name"));
@@ -261,11 +247,10 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
             location = root.optional("location").map(tag -> nbt.deserialize(tag, Location.class)).orElse(null);
         } catch (ParserException e) {
             getComponentLogger().warn("Skip loading character '{}': {}", name, e.getMessage());
-            return null;
+            return;
         }
         var character = new PaperCharacter<>(this, name, type).deserialize(root, nbt);
         characterController.characters.put(name, character);
         character.setSpawnLocation(location);
-        return character;
     }
 }
