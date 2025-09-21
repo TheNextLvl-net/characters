@@ -247,15 +247,15 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         var entry = inputStream.readNamedTag();
         var root = entry.getKey().getAsCompound();
         var name = entry.getValue().orElseThrow(() -> new ParserException("Character misses root name"));
-        
+
         if (characterController.characters.containsKey(name)) {
             getComponentLogger().warn("A character with the name '{}' is already loaded", name);
             return null;
         }
-        
+
         var type = nbt.deserialize(root.get("type"), EntityType.class);
         if (type.equals(EntityType.PLAYER)) type = EntityType.MANNEQUIN;
-        
+
         var character = new PaperCharacter<>(this, name, type).deserialize(root, nbt);
         characterController.characters.put(name, character);
         return character;

@@ -13,11 +13,11 @@ import java.util.concurrent.CompletableFuture;
 @NullMarked
 public final class PermissionSuggestionProvider<T> implements SuggestionProvider<T> {
     private final CharacterPlugin plugin;
-    
+
     public PermissionSuggestionProvider(CharacterPlugin plugin) {
         this.plugin = plugin;
     }
-    
+
     @Override
     public CompletableFuture<Suggestions> getSuggestions(CommandContext<T> context, SuggestionsBuilder builder) {
         plugin.getServer().getPluginManager().getPermissions().stream()

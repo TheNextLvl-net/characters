@@ -441,7 +441,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         if (entity != null) entity.remove();
         invalidate();
     }
-    
+
     public void invalidate() {
         removeTextDisplayName();
         if (entity != null) plugin.getServer().getOnlinePlayers().forEach(player -> {
