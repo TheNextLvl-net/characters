@@ -465,6 +465,13 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         root.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         root.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
         root.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
+        try {
+            root.optional("location")
+                    .map(location -> context.deserialize(location, Location.class))
+                    .ifPresent(this::setSpawnLocation);
+        } catch (ParserException e) {
+            plugin.getComponentLogger().warn("Failed to read location of character '{}': {}", name, e.getMessage());
+        }
         return this;
     }
 
