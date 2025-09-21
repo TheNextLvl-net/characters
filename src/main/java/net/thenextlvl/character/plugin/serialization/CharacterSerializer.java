@@ -26,7 +26,6 @@ public final class CharacterSerializer implements TagSerializer<Character<?>> {
         tag.add("type", context.serialize(character.getType()));
         tag.add("visibleByDefault", character.isVisibleByDefault());
         var actions = CompoundTag.empty();
-        var attributes = CompoundTag.empty();
         character.getActions().forEach((name, clickAction) -> actions.add(name, context.serialize(clickAction)));
         var data = character.getEntity().map(entity -> {
             var entityData = CompoundTag.empty();
@@ -37,11 +36,11 @@ public final class CharacterSerializer implements TagSerializer<Character<?>> {
                 if (object == null) entityData.add(codec.key().asString(), ByteTag.of((byte) -1));
                 else entityData.add(codec.key().asString(), codec.adapter().serialize(object, context));
             });
+            ((PaperCharacter<?>) character).entityData = entityData;
             return entityData;
         }).orElseGet(() -> ((PaperCharacter<?>) character).entityData);
         if (data != null) tag.add("entityData", data);
         if (!actions.isEmpty()) tag.add("clickActions", actions);
-        if (!attributes.isEmpty()) tag.add("attributes", attributes);
         return tag;
     }
 }
