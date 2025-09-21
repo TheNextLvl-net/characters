@@ -400,8 +400,9 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
     @Override
     public E spawn(Location location) throws IllegalStateException {
-        Preconditions.checkState(!isSpawned(), "Character is already spawned");
-        Preconditions.checkState(location.isChunkLoaded(), "Chunk is not loaded");
+        Preconditions.checkState(!isSpawned(), "Character '%s' is already spawned", name);
+        Preconditions.checkState(location.isChunkLoaded(), "Chunk at %s, %s in %s is not loaded",
+                location.getBlockX() >> 4, location.getBlockZ() >> 4, location.getWorld().key());
 
         this.spawnLocation = location;
         this.entity = location.getWorld().spawn(location, entityClass, this::preSpawn);
