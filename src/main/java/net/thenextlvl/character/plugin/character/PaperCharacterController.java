@@ -99,6 +99,7 @@ public final class PaperCharacterController implements CharacterController {
         return getCharacters().filter(character -> character.getLocation()
                 .or(character::getSpawnLocation)
                 .filter(location -> {
+                    if (!chunk.getWorld().equals(location.getWorld())) return false;
                     var chunkX = location.getBlockX() >> 4;
                     var chunkZ = location.getBlockZ() >> 4;
                     return chunkX == chunk.getX() && chunkZ == chunk.getZ();
