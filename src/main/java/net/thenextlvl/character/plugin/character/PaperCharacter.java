@@ -229,21 +229,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     @Override
-    public void despawn() {
-        if (entity != null) entity.remove();
-        invalidate();
-    }
-
-    public void invalidate() {
-        if (entity != null) plugin.getServer().getOnlinePlayers().forEach(player -> {
-            var team = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
-            if (team != null) team.unregister();
-        });
-        removeTextDisplayName();
-        entity = null;
-    }
-
-    @Override
     public boolean hasAction(ClickAction<?> action) {
         return actions.containsValue(action);
     }
@@ -420,7 +405,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
         this.spawnLocation = location;
         this.entity = location.getWorld().spawn(location, entityClass, this::preSpawn);
-        
+
         if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers()
                 .forEach(player -> updateVisibility(entity, player));
 
@@ -437,7 +422,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
     @Override
     public E respawn(Location location) throws IllegalStateException {
-        despawn();
+        remove();
         return spawn(location);
     }
 
@@ -452,11 +437,17 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
 
     @Override
     public void remove() {
-        getEntity().ifPresent(entity -> plugin.getServer().getOnlinePlayers().forEach(player -> {
+        if (entity != null) entity.remove();
+        invalidate();
+    }
+    
+    public void invalidate() {
+        removeTextDisplayName();
+        if (entity != null) plugin.getServer().getOnlinePlayers().forEach(player -> {
             var team = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
             if (team != null) team.unregister();
-        }));
-        despawn();
+        });
+        entity = null;
     }
 
     @Override

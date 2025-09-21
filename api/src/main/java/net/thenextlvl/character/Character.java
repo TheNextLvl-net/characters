@@ -96,9 +96,6 @@ public interface Character<E extends Entity> {
     @Contract(pure = true)
     boolean canSee(Player player);
 
-    @Contract(mutates = "this")
-    void despawn();
-
     @Contract(pure = true)
     boolean hasAction(ClickAction<?> action);
 
