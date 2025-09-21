@@ -9,7 +9,9 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
+import io.papermc.paper.math.Rotation;
 import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
@@ -32,9 +34,12 @@ final class CharacterTeleportCommand extends BrigadierCommand {
 
     public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
         var command = new CharacterTeleportCommand(plugin);
+        var rotation = rotationArgument().executes(command::teleportPosition);
+        var position = positionArgument().executes(command::teleportPosition);
+        var entity = entityArgument().executes(command::teleportEntity);
         var teleport = characterArgument(plugin).executes(command::teleportSelf)
-                .then(positionArgument().executes(command::teleportPosition))
-                .then(entityArgument().executes(command::teleportEntity));
+                .then(position.then(rotation))
+                .then(entity);
         return command.create().then(teleport);
     }
 
@@ -44,6 +49,10 @@ final class CharacterTeleportCommand extends BrigadierCommand {
 
     private static ArgumentBuilder<CommandSourceStack, ?> positionArgument() {
         return Commands.argument("position", ArgumentTypes.finePosition(true));
+    }
+
+    private static ArgumentBuilder<CommandSourceStack, ?> rotationArgument() {
+        return Commands.argument("rotation", ArgumentTypes.rotation());
     }
 
     private int teleportSelf(CommandContext<CommandSourceStack> context) {
@@ -66,8 +75,10 @@ final class CharacterTeleportCommand extends BrigadierCommand {
 
     private int teleportPosition(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var resolver = context.getArgument("position", FinePositionResolver.class);
+        var rotationResolver = tryGetArgument(context, "rotation", RotationResolver.class).orElse(null);
+        var rotation = rotationResolver != null ? rotationResolver.resolve(context.getSource()) : Rotation.rotation(0, 0);
         var position = resolver.resolve(context.getSource()).toLocation(context.getSource().getLocation().getWorld());
-        return teleport(context, position);
+        return teleport(context, position.setRotation(rotation));
     }
 
     private int teleportEntity(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
