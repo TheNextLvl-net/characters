@@ -17,7 +17,7 @@ import java.time.Duration;
 @NullMarked
 abstract class CharacterActionCommand<T> extends SimpleCommand {
     private final ActionType<T> actionType;
-    
+
     protected CharacterActionCommand(CharacterPlugin plugin, ActionType<T> actionType, String name) {
         super(plugin, name, null);
         this.actionType = actionType;
