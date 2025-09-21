@@ -495,6 +495,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         entity.setGravity(false);
         entity.setInvulnerable(true);
         entity.setSilent(true);
+        entity.setPersistent(false);
 
         if (entity instanceof Mannequin mannequin) {
             mannequin.setProfile(ResolvableProfile.resolvableProfile().name(name).build());
@@ -506,6 +507,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         if (entity instanceof LivingEntity living) {
             living.setAI(false);
             living.setCanPickupItems(false);
+            living.setRemoveWhenFarAway(false);
             var instance = living.getAttribute(MAX_HEALTH);
             if (instance != null) living.setHealth(instance.getValue());
         }
@@ -529,6 +531,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
                     .ifPresent(data -> codec.setter().test(entity, data));
         });
         entityData = null;
+
+        if (entity.getPose().equals(Pose.DYING)) {
+            entity.setPose(Pose.STANDING, true);
+        }
     }
 
     protected Team getCharacterSettingsTeam(Entity entity, Player player) {
