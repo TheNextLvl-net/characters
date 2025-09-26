@@ -4,7 +4,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -75,7 +74,6 @@ public final class PaperEntityEquipment {
         equipment.setChestplate(chestplate);
         equipment.setLeggings(leggings);
         equipment.setBoots(boots);
-        if (equipment instanceof PlayerInventory) return;
         if (!(equipment.getHolder() instanceof Mob)) return;
         equipment.setItemInMainHandDropChance(itemInMainHandDropChance);
         equipment.setItemInOffHandDropChance(itemInOffHandDropChance);

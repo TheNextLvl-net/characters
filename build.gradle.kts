@@ -10,7 +10,7 @@ plugins {
 }
 
 group = "net.thenextlvl.characters"
-version = "0.6.0"
+version = "0.7.0-pre1"
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -29,9 +29,13 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.9-pre2-R0.1-SNAPSHOT")
 
-    implementation("net.thenextlvl.core:i18n:3.2.2")
+    implementation("net.thenextlvl.core:i18n:3.2.2") {
+        // todo: remove – temp solution until adventure publishes a stable release
+        exclude("net.kyori", "adventure-text-minimessage")
+        exclude("net.kyori", "adventure-text-logger-slf4j")
+    }
     implementation("net.thenextlvl.core:paper:2.3.1")
     implementation("net.thenextlvl.core:utils:1.1.2")
     implementation("org.bstats:bstats-bukkit:3.1.0")
@@ -41,7 +45,6 @@ dependencies {
     }
     implementation(project(":api"))
 
-    //testImplementation("io.papermc.paper:paper-api:1.21.7-R0.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(platform("org.junit:junit-bom:6.0.0-SNAPSHOT"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -60,7 +63,7 @@ tasks.shadowJar {
 paper {
     name = "Characters"
     main = "net.thenextlvl.character.plugin.CharacterPlugin"
-    apiVersion = "1.21.7"
+    apiVersion = "1.21.9"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
     // foliaSupported = true
