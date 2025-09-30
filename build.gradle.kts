@@ -29,13 +29,9 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.9-pre2-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.9-R0.1-SNAPSHOT")
 
-    implementation("net.thenextlvl.core:i18n:3.2.2") {
-        // todo: remove – temp solution until adventure publishes a stable release
-        exclude("net.kyori", "adventure-text-minimessage")
-        exclude("net.kyori", "adventure-text-logger-slf4j")
-    }
+    implementation("net.thenextlvl.core:i18n:3.2.2")
     implementation("net.thenextlvl.core:paper:2.3.1")
     implementation("net.thenextlvl.core:utils:1.1.2")
     implementation("org.bstats:bstats-bukkit:3.1.0")
