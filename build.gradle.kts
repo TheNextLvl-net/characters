@@ -43,7 +43,7 @@ dependencies {
 
     //testImplementation("io.papermc.paper:paper-api:1.21.7-R0.1-SNAPSHOT")
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(platform("org.junit:junit-bom:6.0.0-SNAPSHOT"))
+    testImplementation(platform("org.junit:junit-bom:6.0.0"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
