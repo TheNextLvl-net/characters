@@ -24,47 +24,64 @@ import java.util.UUID;
 
 @NullMarked
 public interface Character<E extends Entity> {
+    @Contract(pure = true)
     Optional<ClickAction<?>> getAction(String name);
 
     @Unmodifiable
+    @Contract(pure = true)
     Map<String, ClickAction<?>> getActions();
 
+    @Contract(pure = true)
     Optional<Component> getDisplayName();
 
     @Unmodifiable
+    @Contract(pure = true)
     Set<Goal> getGoals();
 
+    @Contract(mutates = "this")
     boolean addGoal(Goal goal);
 
+    @Contract(mutates = "this")
     boolean removeGoal(Goal goal);
 
+    @Contract(pure = true)
     <T> Optional<T> getEntity(Class<T> type);
 
+    @Contract(pure = true)
     Optional<E> getEntity();
 
+    @Contract(pure = true)
     Class<? extends E> getEntityClass();
 
+    @Contract(pure = true)
     Optional<NamedTextColor> getTeamColor();
 
+    @Contract(pure = true)
     Optional<Location> getLocation();
 
+    @Contract(pure = true)
     String getName();
 
-    String getScoreboardName();
-
+    @Contract(pure = true)
     Optional<String> getViewPermission();
 
+    @Contract(pure = true)
     Optional<Location> getSpawnLocation();
 
+    @Contract(pure = true)
     TagOptions getTagOptions();
 
+    @Contract(pure = true)
     EntityType getType();
 
     @Unmodifiable
+    @Contract(pure = true)
     Set<UUID> getViewers();
 
+    @Contract(pure = true)
     Optional<World> getWorld();
 
+    @Contract(pure = true)
     Optional<Pathfinder> getPathfinder();
 
     @Contract(mutates = "this")
@@ -76,26 +93,31 @@ public interface Character<E extends Entity> {
     @Contract(mutates = "this")
     boolean addViewers(Collection<UUID> players);
 
+    @Contract(pure = true)
     boolean canSee(Player player);
 
-    boolean despawn();
-
+    @Contract(pure = true)
     boolean hasAction(ClickAction<?> action);
 
+    @Contract(pure = true)
     boolean hasAction(String name);
 
+    @Contract(pure = true)
     boolean isDisplayNameVisible();
 
-    boolean isPathfinding();
-
+    @Contract(pure = true)
     boolean isPersistent();
 
+    @Contract(pure = true)
     boolean isSpawned();
 
+    @Contract(pure = true)
     boolean isTrackedBy(Player player);
 
+    @Contract(pure = true)
     boolean isViewer(UUID player);
 
+    @Contract(pure = true)
     boolean isVisibleByDefault();
 
     @Contract(mutates = "io,this")
@@ -110,18 +132,11 @@ public interface Character<E extends Entity> {
     @Contract(mutates = "this")
     boolean removeViewers(Collection<UUID> players);
 
-    boolean respawn();
-
-    boolean respawn(Location location);
-
     @Contract(mutates = "this")
     boolean setDisplayName(@Nullable Component displayName);
 
     @Contract(mutates = "this")
     boolean setDisplayNameVisible(boolean visible);
-
-    @Contract(mutates = "this")
-    boolean setPathfinding(boolean pathfinding);
 
     @Contract(mutates = "this")
     boolean setPersistent(boolean persistent);
@@ -138,12 +153,24 @@ public interface Character<E extends Entity> {
     @Contract(mutates = "this")
     boolean setVisibleByDefault(boolean visible);
 
-    boolean spawn();
+    @Nullable
+    @Contract(mutates = "this")
+    E spawn() throws IllegalStateException;
 
-    boolean spawn(Location location);
+    @Contract(mutates = "this")
+    E spawn(Location location) throws IllegalStateException;
+
+    @Nullable
+    @Contract(mutates = "this")
+    E respawn() throws IllegalStateException;
+
+    @Contract(mutates = "this")
+    E respawn(Location location) throws IllegalStateException;
 
     // todo: return boolean and add delete event
+    @Contract(mutates = "this")
     void delete();
 
+    @Contract(mutates = "this")
     void remove();
 }

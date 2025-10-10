@@ -1,19 +1,22 @@
 package net.thenextlvl.character.plugin.codec;
 
+import com.destroystokyo.paper.PaperSkinParts;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.entity.CollarColorable;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.codec.EntityCodec;
 import net.thenextlvl.character.codec.EntityCodecRegistry;
+import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.argument.BlockDataArgumentType;
 import net.thenextlvl.character.plugin.model.PaperEntityEquipment;
 import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
 import net.thenextlvl.character.plugin.serialization.EntityEquipmentAdapter;
 import net.thenextlvl.character.plugin.serialization.RegistryAdapter;
-import org.bukkit.Bukkit;
+import net.thenextlvl.character.plugin.serialization.ResolvableProfileAdapter;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
@@ -34,12 +37,14 @@ import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Mob;
-import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Steerable;
 import org.bukkit.entity.Tameable;
+import org.bukkit.inventory.MainHand;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionType;
 import org.jspecify.annotations.NullMarked;
 
@@ -50,9 +55,11 @@ import java.util.stream.Collectors;
 
 @NullMarked
 public final class EntityCodecs {
+    private static final CharacterPlugin plugin = JavaPlugin.getPlugin(CharacterPlugin.class);
 
     public static void registerAll() {
         EntityCodecRegistry.registry().registerAll(List.of(
+                SKIN_PARTS, RESOLVABLE_PROFILE, IMMOVABLE, MAIN_HAND,
                 BASE_PLATE, VISIBLE, ARMS, SMALL, MARKER, CAN_MOVE, CAN_TICK,
                 AGE,
                 BASE_POTION_TYPE, AREA_EFFECT_CLOUD_COLOR, DURATION_ON_USE, DURATION, PARTICLE, ATTRIBUTES, RADIUS, REAPPLICATION_DELAY, WAIT_TIME,
@@ -61,18 +68,42 @@ public final class EntityCodecs {
                 DANCING, CAN_DUPLICATE, DUPLICATION_COOLDOWN,
                 COLLAR_COLOR,
                 POWERED, MAX_FUSE_TICKS, EXPLOSION_RADIUS,
-                ABSORPTION_AMOUNT, 
+                ABSORPTION_AMOUNT,
                 SCREAMING, STARED_AT, CARRIED_BLOCK,
                 VISUAL_FIRE, FIRE_TICKS, GLOWING, GRAVITY, INVISIBLE, INVULNERABLE, NO_PHYSICS, POSE, FREEZE_TICKS, LOCK_FREEZE_TICKS, SILENT, SNEAKING,
                 CROUCHING, LEAPING, SLEEPING, VARIANT,
                 GLIDING,
-                EQUIPMENT, AI, ARROWS_IN_BODY, BEE_STINGERS_IN_BODY, BODY_YAW, COLLIDABLE,
+                // todo: can we persist the health without issues?
+                EQUIPMENT, AI, ARROWS_IN_BODY, BEE_STINGERS_IN_BODY, BODY_YAW/*, HEALTH*/, COLLIDABLE,
                 AGGRESSIVE, AWARE, LEFT_HANDED,
                 SITTING,
                 SADDLE,
                 TAMED
         ));
     }
+
+    private static final EntityCodec<?, ?> SKIN_PARTS = EntityCodec.intCodec(Key.key("mannequin", "skin_parts"), Mannequin.class)
+            .getter(mannequin -> mannequin.getSkinParts().getRaw())
+            .setter((mannequin, integer) -> {
+                mannequin.setSkinParts(new PaperSkinParts(integer));
+            })
+            .build();
+
+    private static final EntityCodec<?, ?> RESOLVABLE_PROFILE = EntityCodec.builder(Key.key("mannequin", "profile"), Mannequin.class, ResolvableProfile.class)
+            .getter(Mannequin::getProfile)
+            .setter(Mannequin::setProfile)
+            .adapter(new ResolvableProfileAdapter())
+            .build();
+
+    private static final EntityCodec<?, ?> IMMOVABLE = EntityCodec.booleanCodec(Key.key("mannequin", "immovable"), Mannequin.class)
+            .getter(Mannequin::isImmovable)
+            .setter(Mannequin::setImmovable)
+            .build();
+
+    private static final EntityCodec<?, ?> MAIN_HAND = EntityCodec.enumCodec(Key.key("mannequin", "main_hand"), Mannequin.class, MainHand.class)
+            .getter(Mannequin::getMainHand)
+            .setter(Mannequin::setMainHand)
+            .build();
 
     private static final EntityCodec<?, ?> BASE_PLATE = EntityCodec.booleanCodec(Key.key("armor_stand", "base_plate"), ArmorStand.class)
             .getter(ArmorStand::hasBasePlate)
@@ -229,7 +260,7 @@ public final class EntityCodecs {
     private static final EntityCodec<?, ?> CARRIED_BLOCK = EntityCodec.builder(Key.key("enderman", "carried_block"), Enderman.class, BlockData.class)
             .getter(Enderman::getCarriedBlock)
             .setter(Enderman::setCarriedBlock)
-            .adapter(new BlockDataAdapter(Bukkit.getServer())) // todo: get rid of Bukkit
+            .adapter(new BlockDataAdapter(plugin.getServer()))
             .argumentType(new BlockDataArgumentType())
             .build();
 
@@ -285,8 +316,8 @@ public final class EntityCodecs {
     private static final EntityCodec<?, ?> VARIANT = EntityCodec.enumCodec(Key.key("fox", "variant"), Fox.class, Fox.Type.class)
             .getter(Fox::getFoxType).setter(Fox::setFoxType).build();
 
-    private static final EntityCodec<?, ?> GLIDING = EntityCodec.booleanCodec(Key.key("player", "gliding"), Player.class)
-            .getter(Player::isGliding).setter(Player::setGliding).build();
+    private static final EntityCodec<?, ?> GLIDING = EntityCodec.booleanCodec(Key.key("living_entity", "gliding"), LivingEntity.class)
+            .getter(LivingEntity::isGliding).setter(LivingEntity::setGliding).build();
 
     private static final EntityCodec<?, ?> EQUIPMENT = EntityCodec.builder(Key.key("living_entity", "equipment"), LivingEntity.class, PaperEntityEquipment.class)
             .getter(PaperEntityEquipment::of)
@@ -309,6 +340,9 @@ public final class EntityCodecs {
 
     private static final EntityCodec<?, ?> BODY_YAW = EntityCodec.floatCodec(Key.key("living_entity", "body_yaw"), LivingEntity.class)
             .getter(LivingEntity::getBodyYaw).setter(LivingEntity::setBodyYaw).build();
+
+    private static final EntityCodec<?, ?> HEALTH = EntityCodec.doubleCodec(Key.key("living_entity", "health"), LivingEntity.class)
+            .getter(LivingEntity::getHealth).setter(LivingEntity::setHealth).build();
 
     private static final EntityCodec<?, ?> COLLIDABLE = EntityCodec.booleanCodec(Key.key("living_entity", "collidable"), LivingEntity.class)
             .getter(LivingEntity::isCollidable).setter(LivingEntity::setCollidable).build();
