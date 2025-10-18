@@ -20,7 +20,7 @@ public final class CharacterWithActionSuggestionProvider<T> implements Suggestio
 
     @Override
     public CompletableFuture<Suggestions> getSuggestions(CommandContext<T> context, SuggestionsBuilder builder) {
-        plugin.characterController().getCharacters().stream()
+        plugin.characterController().getCharacters()
                 .filter(character -> !character.getActions().isEmpty())
                 .map(Character::getName)
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))

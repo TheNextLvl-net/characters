@@ -10,8 +10,8 @@ import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterWithActionSuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
-import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
+import static net.thenextlvl.character.plugin.command.action.CharacterActionCommand.actionArgument;
 
 @NullMarked
 final class CharacterActionRemoveCommand extends SimpleCommand {
@@ -34,7 +34,7 @@ final class CharacterActionRemoveCommand extends SimpleCommand {
 
         var success = character.removeAction(action);
         var message = success ? "character.action.removed" : "character.action.not_found";
-        
+
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.parsed("character", character.getName()),
                 Placeholder.parsed("action", action));
