@@ -8,7 +8,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.action.CharacterActionCommand;
 import net.thenextlvl.character.plugin.command.argument.CharacterArgumentType;
-import net.thenextlvl.character.plugin.command.argument.PlayerCharacterArgumentType;
+import net.thenextlvl.character.plugin.command.argument.MannequinCharacterArgumentType;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.equipment.CharacterEquipmentCommand;
 import net.thenextlvl.character.plugin.command.skin.CharacterSkinCommand;
@@ -48,8 +48,8 @@ public final class CharacterCommand extends BrigadierCommand {
         return Commands.argument("character", new CharacterArgumentType(plugin));
     }
 
-    public static RequiredArgumentBuilder<CommandSourceStack, ?> playerCharacterArgument(CharacterPlugin plugin) {
-        return Commands.argument("character", new PlayerCharacterArgumentType(plugin));
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> mannequinCharacterArgument(CharacterPlugin plugin) {
+        return Commands.argument("character", new MannequinCharacterArgumentType(plugin));
     }
 
     public static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {

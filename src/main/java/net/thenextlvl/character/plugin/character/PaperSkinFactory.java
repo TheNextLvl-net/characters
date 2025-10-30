@@ -3,7 +3,6 @@ package net.thenextlvl.character.plugin.character;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.skin.SkinFactory;
-import net.thenextlvl.character.skin.SkinPartBuilder;
 import org.jspecify.annotations.NullMarked;
 import org.mineskin.Java11RequestHandler;
 import org.mineskin.MineSkinClient;
@@ -40,11 +39,6 @@ public final class PaperSkinFactory implements SkinFactory {
     @Override
     public CompletableFuture<ProfileProperty> skinFromURL(URL url, boolean slim) {
         return submit(GenerateRequest.url(url), slim);
-    }
-
-    @Override
-    public SkinPartBuilder skinPartBuilder() {
-        return new PaperSkinPartBuilder();
     }
 
     private CompletableFuture<ProfileProperty> submit(GenerateRequest request, boolean slim) {
