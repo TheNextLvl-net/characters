@@ -30,7 +30,7 @@ public interface TagOptions extends TagSerializable {
     Vector3f getOffset();
 
     Vector3f getScale();
-    
+
     boolean hasTextShadow();
 
     boolean isDefaultBackground();
