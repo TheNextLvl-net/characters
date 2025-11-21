@@ -1,7 +1,6 @@
 package net.thenextlvl.character.plugin;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
-import core.i18n.file.ComponentBundle;
 import core.io.IO;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
@@ -49,6 +48,7 @@ import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
 import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import net.thenextlvl.character.plugin.version.PluginVersionChecker;
+import net.thenextlvl.i18n.ComponentBundle;
 import net.thenextlvl.nbt.NBTInputStream;
 import net.thenextlvl.nbt.serialization.NBT;
 import net.thenextlvl.nbt.serialization.ParserException;
