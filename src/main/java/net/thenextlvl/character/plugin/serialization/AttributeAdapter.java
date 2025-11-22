@@ -75,16 +75,9 @@ public final class AttributeAdapter implements TagAdapter<Set<AttributeInstance>
         return tag;
     }
 
-    private static final class SimpleAttributeInstance implements AttributeInstance {
-        private final Attribute attribute;
-        private final double baseValue;
-        private final Collection<AttributeModifier> modifiers;
-
-        public SimpleAttributeInstance(Attribute attribute, double baseValue, Collection<AttributeModifier> modifiers) {
-            this.attribute = attribute;
-            this.baseValue = baseValue;
-            this.modifiers = modifiers;
-        }
+    private record SimpleAttributeInstance(
+            Attribute attribute, double baseValue, Collection<AttributeModifier> modifiers
+    ) implements AttributeInstance {
 
         @Override
         public Attribute getAttribute() {
