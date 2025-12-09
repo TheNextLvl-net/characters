@@ -2,8 +2,8 @@ package net.thenextlvl.character.plugin.command.tag;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import core.paper.command.argument.EnumArgumentType;
-import core.paper.command.argument.codec.EnumStringCodec;
+import core.paper.brigadier.arguments.EnumArgumentType;
+import core.paper.brigadier.arguments.codecs.EnumStringCodec;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;

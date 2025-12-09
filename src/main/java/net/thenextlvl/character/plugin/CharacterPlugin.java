@@ -1,7 +1,6 @@
 package net.thenextlvl.character.plugin;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
-import core.io.IO;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -79,11 +78,10 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.io.EOFException;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -94,7 +92,7 @@ import static java.nio.file.StandardOpenOption.READ;
 public final class CharacterPlugin extends JavaPlugin implements CharacterProvider {
     public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new";
     private final Metrics metrics = new Metrics(this, 24223);
-    private final File savesFolder = new File(getDataFolder(), "saves");
+    private final Path savesFolder = getDataPath().resolve("saves");
     private final Path translations = getDataPath().resolve("translations");
 
     private final NBT nbt = NBT.builder()
@@ -169,17 +167,21 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     }
 
     public void loadAll() {
-        var files = savesFolder.listFiles((file, name) -> name.endsWith(".dat"));
-        if (files != null) Arrays.stream(files).map(this::loadSafe).filter(Objects::nonNull).forEach(character -> {
-            character.getSpawnLocation().filter(Location::isChunkLoaded).ifPresent(character::spawn);
-        });
+        try (var files = Files.list(savesFolder)
+                .filter(path -> path.getFileName().toString().endsWith(".dat"))) {
+            files.map(this::loadSafe).filter(Objects::nonNull).forEach(character -> {
+                character.getSpawnLocation().filter(Location::isChunkLoaded).ifPresent(character::spawn);
+            });
+        } catch (IOException e) {
+            getComponentLogger().error("Failed to load all characters", e);
+        }
     }
 
     public ComponentBundle bundle() {
         return bundle;
     }
 
-    public File savesFolder() {
+    public Path savesFolder() {
         return savesFolder;
     }
 
@@ -214,31 +216,31 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
     }
 
-    private @Nullable Character<?> loadSafe(File file) {
+    private @Nullable Character<?> loadSafe(Path file) {
         try {
-            try (var inputStream = stream(IO.of(file))) {
+            try (var inputStream = stream(file)) {
                 return load(inputStream);
             } catch (Exception e) {
-                var io = IO.of(file.getPath() + "_old");
-                if (!io.exists()) throw e;
-                getComponentLogger().warn("Failed to load character from {}", file.getPath(), e);
-                getComponentLogger().warn("Falling back to {}", io);
-                try (var inputStream = stream(io)) {
+                var backup = file.resolveSibling(file.getFileName().toString() + "_old");
+                if (!Files.isRegularFile(backup)) throw e;
+                getComponentLogger().warn("Failed to load character from {}", file, e);
+                getComponentLogger().warn("Falling back to {}", backup);
+                try (var inputStream = stream(backup)) {
                     return load(inputStream);
                 }
             }
         } catch (EOFException e) {
-            getComponentLogger().error("The character file {} is irrecoverably broken", file.getPath());
+            getComponentLogger().error("The character file {} is irrecoverably broken", file);
             return null;
         } catch (Exception e) {
-            getComponentLogger().error("Failed to load character from {}", file.getPath(), e);
+            getComponentLogger().error("Failed to load character from {}", file, e);
             getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             return null;
         }
     }
 
-    private NBTInputStream stream(IO file) throws IOException {
-        return new NBTInputStream(file.inputStream(READ), StandardCharsets.UTF_8);
+    private NBTInputStream stream(Path file) throws IOException {
+        return new NBTInputStream(Files.newInputStream(file, READ), StandardCharsets.UTF_8);
     }
 
     // todo: move deserialization part to own adapter

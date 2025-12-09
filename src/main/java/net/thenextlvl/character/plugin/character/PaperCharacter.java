@@ -2,7 +2,6 @@ package net.thenextlvl.character.plugin.character;
 
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
-import core.io.IO;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -48,10 +47,10 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.HashSet;
@@ -203,7 +202,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     @Override
     public <T> boolean addAction(String name, ClickAction<T> action) {
         return action.getActionType().isApplicable(action.getInput(), this)
-               && !action.equals(actions.put(name, action));
+                && !action.equals(actions.put(name, action));
     }
 
     @Override
@@ -271,21 +270,21 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     @Override
     public boolean persist() {
         if (!isPersistent()) return false;
-        var file = IO.of(file());
-        var backup = IO.of(backupFile());
+        var file = file();
+        var backup = backupFile();
         try {
-            if (file.exists()) Files.move(file.getPath(), backup.getPath(), StandardCopyOption.REPLACE_EXISTING);
-            else file.createParents();
+            if (Files.isRegularFile(file)) Files.move(file, backup, StandardCopyOption.REPLACE_EXISTING);
+            else Files.createDirectories(file.toAbsolutePath().getParent());
             try (var outputStream = new NBTOutputStream(
-                    file.outputStream(WRITE, CREATE, TRUNCATE_EXISTING),
+                    Files.newOutputStream(file, WRITE, CREATE, TRUNCATE_EXISTING),
                     StandardCharsets.UTF_8
             )) {
                 outputStream.writeTag(getName(), plugin.nbt().serialize(this));
                 return true;
             }
         } catch (Throwable t) {
-            if (backup.exists()) try {
-                Files.copy(backup.getPath(), file.getPath(), StandardCopyOption.REPLACE_EXISTING);
+            if (Files.isRegularFile(backup)) try {
+                Files.copy(backup, file, StandardCopyOption.REPLACE_EXISTING);
                 plugin.getComponentLogger().warn("Recovered {} from potential data loss", getName());
             } catch (IOException e) {
                 plugin.getComponentLogger().error("Failed to restore character {}", getName(), e);
@@ -428,11 +427,14 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
     }
 
     @Override
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void delete() {
         remove();
-        backupFile().delete();
-        file().delete();
+        try {
+            Files.deleteIfExists(backupFile());
+            Files.deleteIfExists(file());
+        } catch (IOException e) {
+            plugin.getComponentLogger().error("Failed to delete character {}", getName(), e);
+        }
         plugin.characterController().unregister(name);
     }
 
@@ -498,6 +500,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         }
     }
 
+    @SuppressWarnings("PatternValidation")
     protected void internalPreSpawn(E entity) {
         entity.setVisibleByDefault(visibleByDefault);
         entity.setGravity(false);
@@ -618,12 +621,12 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagDeseri
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }
 
-    private File backupFile() {
-        return new File(plugin.savesFolder(), this.name + ".dat_old");
+    private Path backupFile() {
+        return plugin.savesFolder().resolve(this.name + ".dat_old");
     }
 
-    private File file() {
-        return new File(plugin.savesFolder(), this.name + ".dat");
+    private Path file() {
+        return plugin.savesFolder().resolve(this.name + ".dat");
     }
 
     private class PaperTagOptions implements TagOptions {
