@@ -18,7 +18,9 @@ public interface LookAtGoal extends Goal {
 
     interface Builder extends Goal.Builder<LookAtGoal> {
         Builder lookAt(LookAnchor anchor);
+
         Builder targetEntity(Entity targetingEntity);
+
         Builder targetLocation(Location targetingLocation);
     }
 }

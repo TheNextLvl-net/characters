@@ -1,6 +1,5 @@
 package net.thenextlvl.character.plugin.command.skin;
 
-import com.destroystokyo.paper.profile.ProfileProperty;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -11,10 +10,13 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.thenextlvl.character.PlayerCharacter;
+import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
+import org.bukkit.entity.Mannequin;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -23,7 +25,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static net.thenextlvl.character.plugin.command.CharacterCommand.playerCharacterArgument;
+import static net.thenextlvl.character.plugin.command.CharacterCommand.mannequinCharacterArgument;
 
 @NullMarked
 public final class CharacterSkinCommand extends BrigadierCommand {
@@ -40,23 +42,28 @@ public final class CharacterSkinCommand extends BrigadierCommand {
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> reset() {
-        return Commands.literal("reset").then(playerCharacterArgument(plugin)
+        return Commands.literal("reset").then(mannequinCharacterArgument(plugin)
                 .executes(context -> setSkin(context, null)));
     }
 
     private ArgumentBuilder<CommandSourceStack, ?> set() {
-        return Commands.literal("set").then(playerCharacterArgument(plugin)
+        return Commands.literal("set").then(mannequinCharacterArgument(plugin)
                 .then(fileSkinArgument())
                 .then(playerSkinArgument())
                 .then(urlSkinArgument()));
     }
 
-    private int setSkin(CommandContext<CommandSourceStack> context, @Nullable ProfileProperty textures) {
+    @SuppressWarnings("unchecked")
+    private int setSkin(CommandContext<CommandSourceStack> context, @Nullable ResolvableProfile profile) {
         var sender = context.getSource().getSender();
-        var character = context.getArgument("character", PlayerCharacter.class);
+        var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
 
-        var success = textures == null ? character.clearTextures()
-                : character.setTextures(textures.getValue(), textures.getSignature());
+        var success = character.getEntity().map(mannequin -> {
+            var newProfile = profile != null ? profile : ResolvableProfile.resolvableProfile().name(character.getName()).build();
+            if (mannequin.getProfile().equals(newProfile)) return false;
+            mannequin.setProfile(newProfile);
+            return true;
+        }).orElse(false);
         var message = success ? "character.skin" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
@@ -91,7 +98,7 @@ public final class CharacterSkinCommand extends BrigadierCommand {
         }
         plugin.bundle().sendMessage(sender, "character.skin.generating");
         plugin.skinFactory().skinFromFile(file, slim)
-                .thenAccept(textures -> setSkin(context, textures))
+                .thenAccept(textures -> setSkin(context, ResolvableProfile.resolvableProfile().addProperty(textures).build()))
                 .exceptionally(throwable -> {
                     plugin.bundle().sendMessage(sender, "character.skin.image");
                     return null;
@@ -103,15 +110,7 @@ public final class CharacterSkinCommand extends BrigadierCommand {
         var sender = context.getSource().getSender();
         var name = context.getArgument("offline-player", String.class);
         if (name.length() <= 16) {
-            plugin.getServer().createProfile(name).update().thenAccept(profile -> profile.getProperties().stream()
-                    .filter(property -> property.getName().equals("textures")).findAny()
-                    .ifPresentOrElse(textures -> setSkin(context, textures), () -> {
-                        if (profile.getName() == null) plugin.bundle().sendMessage(sender, "player.not_found",
-                                Placeholder.unparsed("name", name));
-                        else plugin.bundle().sendMessage(sender, "character.skin.not_found",
-                                Placeholder.unparsed("player", profile.getName()));
-                    }));
-            return Command.SINGLE_SUCCESS;
+            return setSkin(context, ResolvableProfile.resolvableProfile().name(name).build());
         } else {
             plugin.bundle().sendMessage(sender, "player.not_found", Placeholder.unparsed("name", name));
             return 0;
@@ -121,13 +120,7 @@ public final class CharacterSkinCommand extends BrigadierCommand {
     private int setPlayerSkin(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         var resolver = context.getArgument("player", PlayerSelectorArgumentResolver.class);
         var player = resolver.resolve(context.getSource()).getFirst();
-        var textures = player.getPlayerProfile().getProperties().stream()
-                .filter(property -> property.getName().equals("textures"))
-                .findAny().orElse(null);
-        if (textures != null) return setSkin(context, textures);
-        plugin.bundle().sendMessage(player, "character.skin.not_found",
-                Placeholder.unparsed("player", player.getName()));
-        return 0;
+        return setSkin(context, ResolvableProfile.resolvableProfile(player.getPlayerProfile()));
     }
 
     private int setUrlSkin(CommandContext<CommandSourceStack> context, boolean slim) {
@@ -136,7 +129,7 @@ public final class CharacterSkinCommand extends BrigadierCommand {
             var url = new URI(!path.startsWith("http") ? "https://" + path : path).toURL();
             plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.generating");
             plugin.skinFactory().skinFromURL(url, slim)
-                    .thenAccept(textures -> setSkin(context, textures))
+                    .thenAccept(textures -> setSkin(context, ResolvableProfile.resolvableProfile().addProperty(textures).build()))
                     .exceptionally(throwable -> {
                         plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.image");
                         return null;

@@ -1,7 +1,6 @@
 package net.thenextlvl.character.plugin;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
-import core.i18n.file.ComponentBundle;
 import core.io.IO;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
@@ -12,17 +11,16 @@ import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterProvider;
-import net.thenextlvl.character.PlayerCharacter;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.character.PaperCharacterController;
-import net.thenextlvl.character.plugin.character.PaperPlayerCharacter;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
 import net.thenextlvl.character.plugin.character.goal.PaperGoalFactory;
 import net.thenextlvl.character.plugin.codec.EntityCodecs;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
+import net.thenextlvl.character.plugin.listener.ChunkListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.model.MessageMigrator;
@@ -50,11 +48,11 @@ import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
 import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import net.thenextlvl.character.plugin.version.PluginVersionChecker;
+import net.thenextlvl.i18n.ComponentBundle;
 import net.thenextlvl.nbt.NBTInputStream;
 import net.thenextlvl.nbt.serialization.NBT;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.serialization.adapter.EnumAdapter;
-import net.thenextlvl.nbt.tag.CompoundTag;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -75,7 +73,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionType;
-import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
@@ -90,8 +87,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static java.nio.file.StandardOpenOption.READ;
 
@@ -168,35 +163,16 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     @Override
     public void onEnable() {
         EntityCodecs.registerAll();
-        readAll().forEach(character -> {
-            var location = character.getSpawnLocation();
-            if (location.map(character::spawn).orElse(true)) return;
-            getComponentLogger().warn("Failed to spawn character {}", character.getName());
-        });
         registerCommands();
         registerListeners();
+        loadAll();
     }
 
-    public @Unmodifiable List<Character<?>> readAll() {
+    public void loadAll() {
         var files = savesFolder.listFiles((file, name) -> name.endsWith(".dat"));
-        return files == null ? List.of() : Arrays.stream(files)
-                .map(this::readSafe)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toUnmodifiableList());
-    }
-
-    public @Nullable Character<?> read(File file) throws IOException {
-        try (var inputStream = stream(IO.of(file))) {
-            return read(inputStream);
-        } catch (Exception e) {
-            var io = IO.of(file.getPath() + "_old");
-            if (!io.exists()) throw e;
-            getComponentLogger().warn("Failed to load character from {}", file.getPath(), e);
-            getComponentLogger().warn("Falling back to {}", io);
-            try (var inputStream = stream(io)) {
-                return read(inputStream);
-            }
-        }
+        if (files != null) Arrays.stream(files).map(this::loadSafe).filter(Objects::nonNull).forEach(character -> {
+            character.getSpawnLocation().filter(Location::isChunkLoaded).ifPresent(character::spawn);
+        });
     }
 
     public ComponentBundle bundle() {
@@ -233,13 +209,24 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new CharacterListener(), this);
+        getServer().getPluginManager().registerEvents(new ChunkListener(this), this);
         getServer().getPluginManager().registerEvents(new ConnectionListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
     }
 
-    private @Nullable Character<?> readSafe(File file) {
+    private @Nullable Character<?> loadSafe(File file) {
         try {
-            return read(file);
+            try (var inputStream = stream(IO.of(file))) {
+                return load(inputStream);
+            } catch (Exception e) {
+                var io = IO.of(file.getPath() + "_old");
+                if (!io.exists()) throw e;
+                getComponentLogger().warn("Failed to load character from {}", file.getPath(), e);
+                getComponentLogger().warn("Falling back to {}", io);
+                try (var inputStream = stream(io)) {
+                    return load(inputStream);
+                }
+            }
         } catch (EOFException e) {
             getComponentLogger().error("The character file {} is irrecoverably broken", file.getPath());
             return null;
@@ -256,32 +243,21 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     // todo: move deserialization part to own adapter
     //  move name from root to own value tag
-    private @Nullable Character<?> read(NBTInputStream inputStream) throws IOException {
+    private @Nullable Character<?> load(NBTInputStream inputStream) throws IOException {
         var entry = inputStream.readNamedTag();
         var root = entry.getKey().getAsCompound();
         var name = entry.getValue().orElseThrow(() -> new ParserException("Character misses root name"));
-        var type = nbt.deserialize(root.get("type"), EntityType.class);
-        Location location;
-        try {
-            location = root.optional("location").map(tag -> nbt.deserialize(tag, Location.class)).orElse(null);
-        } catch (ParserException e) {
-            getComponentLogger().warn("Skip loading character '{}': {}", name, e.getMessage());
+
+        if (characterController.characters.containsKey(name)) {
+            getComponentLogger().warn("A character with the name '{}' is already loaded", name);
             return null;
         }
-        var character = type.equals(EntityType.PLAYER)
-                ? createPlayerCharacter(root, name)
-                : createCharacter(root, name, type);
+
+        var type = nbt.deserialize(root.get("type"), EntityType.class);
+        if (type.equals(EntityType.PLAYER)) type = EntityType.MANNEQUIN;
+
+        var character = new PaperCharacter<>(this, name, type).deserialize(root, nbt);
         characterController.characters.put(name, character);
-        character.setSpawnLocation(location);
         return character;
-    }
-
-    private PlayerCharacter createPlayerCharacter(CompoundTag root, String name) {
-        var uuid = root.optional("uuid").map(tag -> nbt.deserialize(tag, UUID.class)).orElseGet(UUID::randomUUID);
-        return new PaperPlayerCharacter(this, name, uuid).deserialize(root, nbt);
-    }
-
-    private Character<?> createCharacter(CompoundTag root, String name, EntityType type) {
-        return new PaperCharacter<>(this, name, type).deserialize(root, nbt);
     }
 }

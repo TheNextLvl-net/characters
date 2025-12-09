@@ -31,6 +31,6 @@ abstract class ActionCommand extends SimpleCommand {
         }
         return run(context, character, action, actionName);
     }
-    
+
     public abstract int run(CommandContext<CommandSourceStack> context, Character<?> character, ClickAction<?> action, String actionName) throws CommandSyntaxException;
 }
