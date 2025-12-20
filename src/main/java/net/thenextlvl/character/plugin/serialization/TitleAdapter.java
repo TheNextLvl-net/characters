@@ -25,10 +25,10 @@ public final class TitleAdapter implements TagAdapter<Title> {
 
     @Override
     public Tag serialize(Title title, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        tag.add("title", context.serialize(title.title()));
-        tag.add("subtitle", context.serialize(title.subtitle()));
-        Optional.ofNullable(title.times()).ifPresent(times -> tag.add("times", context.serialize(times)));
-        return tag;
+        var tag = CompoundTag.builder();
+        tag.put("title", context.serialize(title.title()));
+        tag.put("subtitle", context.serialize(title.subtitle()));
+        Optional.ofNullable(title.times()).ifPresent(times -> tag.put("times", context.serialize(times)));
+        return tag.build();
     }
 }

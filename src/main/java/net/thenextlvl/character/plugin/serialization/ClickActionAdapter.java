@@ -42,15 +42,15 @@ public final class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
 
     @Override
     public Tag serialize(ClickAction<?> action, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        if (action.getPermission() != null) tag.add("permission", action.getPermission());
-        if (!action.getCooldown().isZero()) tag.add("cooldown", action.getCooldown().toMillis());
-        tag.add("actionType", context.serialize(action.getActionType()));
-        var types = ListTag.<StringTag>of(StringTag.ID);
+        var builder = CompoundTag.builder();
+        if (action.getPermission() != null) builder.put("permission", action.getPermission());
+        if (!action.getCooldown().isZero()) builder.put("cooldown", action.getCooldown().toMillis());
+        builder.put("actionType", context.serialize(action.getActionType()));
+        var types = ListTag.<StringTag>builder().contentType(StringTag.ID);
         for (var type : action.getClickTypes()) types.add(StringTag.of(type.name()));
-        tag.add("clickTypes", types);
-        tag.add("input", context.serialize(action.getInput()));
-        tag.add("chance", action.getChance());
-        return tag;
+        builder.put("clickTypes", types.build());
+        builder.put("input", context.serialize(action.getInput()));
+        builder.put("chance", action.getChance());
+        return builder.build();
     }
 }

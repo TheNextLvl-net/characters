@@ -24,11 +24,11 @@ public final class SoundAdapter implements TagAdapter<Sound> {
 
     @Override
     public Tag serialize(Sound sound, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        tag.add("name", context.serialize(sound.name()));
-        tag.add("source", sound.source().name());
-        tag.add("volume", sound.volume());
-        tag.add("pitch", sound.pitch());
-        return tag;
+        return CompoundTag.builder()
+                .put("name", context.serialize(sound.name()))
+                .put("source", sound.source().name())
+                .put("volume", sound.volume())
+                .put("pitch", sound.pitch())
+                .build();
     }
 }

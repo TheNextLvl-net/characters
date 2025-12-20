@@ -24,10 +24,10 @@ public final class TitleTimesAdapter implements TagAdapter<Title.Times> {
 
     @Override
     public Tag serialize(Title.Times times, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        tag.add("fadeIn", times.fadeIn().toMillis());
-        tag.add("stay", times.stay().toMillis());
-        tag.add("fadeOut", times.fadeOut().toMillis());
-        return tag;
+        return CompoundTag.builder()
+                .put("fadeIn", times.fadeIn().toMillis())
+                .put("stay", times.stay().toMillis())
+                .put("fadeOut", times.fadeOut().toMillis())
+                .build();
     }
 }

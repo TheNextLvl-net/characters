@@ -23,11 +23,11 @@ public final class QuaternionfAdapter implements TagAdapter<Quaternionf> {
 
     @Override
     public Tag serialize(Quaternionf quaternion, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        tag.add("w", quaternion.w);
-        tag.add("x", quaternion.x);
-        tag.add("y", quaternion.y);
-        tag.add("z", quaternion.z);
-        return tag;
+        return CompoundTag.builder()
+                .put("w", quaternion.w)
+                .put("x", quaternion.x)
+                .put("y", quaternion.y)
+                .put("z", quaternion.z)
+                .build();
     }
 }

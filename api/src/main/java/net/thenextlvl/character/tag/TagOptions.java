@@ -1,6 +1,7 @@
 package net.thenextlvl.character.tag;
 
 import net.thenextlvl.nbt.serialization.TagSerializable;
+import net.thenextlvl.nbt.tag.CompoundTag;
 import org.bukkit.Color;
 import org.bukkit.entity.Display.Billboard;
 import org.bukkit.entity.Display.Brightness;
@@ -12,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public interface TagOptions extends TagSerializable {
+public interface TagOptions extends TagSerializable<CompoundTag> {
     Billboard getBillboard();
 
     @Nullable

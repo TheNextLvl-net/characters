@@ -22,11 +22,11 @@ public final class ProfilePropertyAdapter implements TagAdapter<ProfileProperty>
 
     @Override
     public Tag serialize(ProfileProperty property, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        tag.add("name", property.getName());
-        tag.add("value", property.getValue());
+        var tag = CompoundTag.builder();
+        tag.put("name", property.getName());
+        tag.put("value", property.getValue());
         if (property.getSignature() != null)
-            tag.add("signature", property.getSignature());
-        return tag;
+            tag.put("signature", property.getSignature());
+        return tag.build();
     }
 }

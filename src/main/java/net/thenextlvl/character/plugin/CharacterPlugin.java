@@ -28,7 +28,6 @@ import net.thenextlvl.character.plugin.serialization.AttributeAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
 import net.thenextlvl.character.plugin.serialization.BrightnessAdapter;
 import net.thenextlvl.character.plugin.serialization.CatVariantAdapter;
-import net.thenextlvl.character.plugin.serialization.CharacterSerializer;
 import net.thenextlvl.character.plugin.serialization.ClickActionAdapter;
 import net.thenextlvl.character.plugin.serialization.ColorAdapter;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
@@ -50,8 +49,7 @@ import net.thenextlvl.character.plugin.version.PluginVersionChecker;
 import net.thenextlvl.i18n.ComponentBundle;
 import net.thenextlvl.nbt.NBTInputStream;
 import net.thenextlvl.nbt.serialization.NBT;
-import net.thenextlvl.nbt.serialization.ParserException;
-import net.thenextlvl.nbt.serialization.adapter.EnumAdapter;
+import net.thenextlvl.nbt.serialization.adapters.EnumAdapter;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -79,14 +77,11 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-
-import static java.nio.file.StandardOpenOption.READ;
 
 @NullMarked
 public final class CharacterPlugin extends JavaPlugin implements CharacterProvider {
@@ -103,7 +98,6 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
             .registerTypeHierarchyAdapter(BlockData.class, new BlockDataAdapter(getServer()))
             .registerTypeHierarchyAdapter(Brightness.class, new BrightnessAdapter())
             .registerTypeHierarchyAdapter(Cat.Type.class, new CatVariantAdapter())
-            .registerTypeHierarchyAdapter(Character.class, new CharacterSerializer())
             .registerTypeHierarchyAdapter(Color.class, new ColorAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
             .registerTypeHierarchyAdapter(DyeColor.class, new EnumAdapter<>(DyeColor.class))
@@ -218,14 +212,14 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     private @Nullable Character<?> loadSafe(Path file) {
         try {
-            try (var inputStream = stream(file)) {
+            try (var inputStream = NBTInputStream.create(file)) {
                 return load(inputStream);
             } catch (Exception e) {
                 var backup = file.resolveSibling(file.getFileName().toString() + "_old");
                 if (!Files.isRegularFile(backup)) throw e;
                 getComponentLogger().warn("Failed to load character from {}", file, e);
                 getComponentLogger().warn("Falling back to {}", backup);
-                try (var inputStream = stream(backup)) {
+                try (var inputStream = NBTInputStream.create(backup)) {
                     return load(inputStream);
                 }
             }
@@ -239,16 +233,10 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         }
     }
 
-    private NBTInputStream stream(Path file) throws IOException {
-        return new NBTInputStream(Files.newInputStream(file, READ), StandardCharsets.UTF_8);
-    }
-
-    // todo: move deserialization part to own adapter
-    //  move name from root to own value tag
     private @Nullable Character<?> load(NBTInputStream inputStream) throws IOException {
         var entry = inputStream.readNamedTag();
-        var root = entry.getKey().getAsCompound();
-        var name = entry.getValue().orElseThrow(() -> new ParserException("Character misses root name"));
+        var root = entry.getValue();
+        var name = entry.getKey();
 
         if (characterController.characters.containsKey(name)) {
             getComponentLogger().warn("A character with the name '{}' is already loaded", name);
@@ -258,7 +246,8 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         var type = nbt.deserialize(root.get("type"), EntityType.class);
         if (type.equals(EntityType.PLAYER)) type = EntityType.MANNEQUIN;
 
-        var character = new PaperCharacter<>(this, name, type).deserialize(root, nbt);
+        var character = new PaperCharacter<>(this, name, type);
+        character.deserialize(root);
         characterController.characters.put(name, character);
         return character;
     }

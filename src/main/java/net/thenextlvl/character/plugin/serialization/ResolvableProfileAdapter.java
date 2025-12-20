@@ -30,11 +30,11 @@ public class ResolvableProfileAdapter implements TagAdapter<ResolvableProfile> {
 
     @Override
     public Tag serialize(ResolvableProfile profile, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        if (profile.name() != null) tag.add("name", profile.name());
-        if (profile.uuid() != null) tag.add("uuid", context.serialize(profile.uuid()));
+        var tag = CompoundTag.builder();
+        if (profile.name() != null) tag.put("name", profile.name());
+        if (profile.uuid() != null) tag.put("uuid", context.serialize(profile.uuid()));
         var properties = profile.properties().stream().map(context::serialize).toList();
-        if (!properties.isEmpty()) tag.add("properties", ListTag.of(properties));
-        return tag;
+        if (!properties.isEmpty()) tag.put("properties", ListTag.of(properties));
+        return tag.build();
     }
 }

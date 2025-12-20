@@ -21,9 +21,9 @@ public final class BrightnessAdapter implements TagAdapter<Brightness> {
 
     @Override
     public Tag serialize(Brightness brightness, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        tag.add("blockLight", brightness.getBlockLight());
-        tag.add("skyLight", brightness.getSkyLight());
-        return tag;
+        return CompoundTag.builder()
+                .put("blockLight", brightness.getBlockLight())
+                .put("skyLight", brightness.getSkyLight())
+                .build();
     }
 }

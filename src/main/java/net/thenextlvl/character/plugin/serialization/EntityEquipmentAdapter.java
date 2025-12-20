@@ -33,24 +33,25 @@ public final class EntityEquipmentAdapter implements TagAdapter<PaperEntityEquip
 
     @Override
     public Tag serialize(PaperEntityEquipment equipment, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
+        var tag = CompoundTag.builder();
         if (equipment.itemInMainHand != null && !equipment.itemInMainHand.isEmpty())
-            tag.add("itemInMainHand", context.serialize(equipment.itemInMainHand));
+            tag.put("itemInMainHand", context.serialize(equipment.itemInMainHand));
         if (equipment.itemInOffHand != null && !equipment.itemInOffHand.isEmpty())
-            tag.add("itemInOffHand", context.serialize(equipment.itemInOffHand));
+            tag.put("itemInOffHand", context.serialize(equipment.itemInOffHand));
         if (equipment.helmet != null && !equipment.helmet.isEmpty())
-            tag.add("helmet", context.serialize(equipment.helmet));
+            tag.put("helmet", context.serialize(equipment.helmet));
         if (equipment.chestplate != null && !equipment.chestplate.isEmpty())
-            tag.add("chestplate", context.serialize(equipment.chestplate));
+            tag.put("chestplate", context.serialize(equipment.chestplate));
         if (equipment.leggings != null && !equipment.leggings.isEmpty())
-            tag.add("leggings", context.serialize(equipment.leggings));
-        if (equipment.boots != null && !equipment.boots.isEmpty()) tag.add("boots", context.serialize(equipment.boots));
-        tag.add("itemInMainHandDropChance", context.serialize(equipment.itemInMainHandDropChance));
-        tag.add("itemInOffHandDropChance", context.serialize(equipment.itemInOffHandDropChance));
-        tag.add("helmetDropChance", context.serialize(equipment.helmetDropChance));
-        tag.add("chestplateDropChance", context.serialize(equipment.chestplateDropChance));
-        tag.add("leggingsDropChance", context.serialize(equipment.leggingsDropChance));
-        tag.add("bootsDropChance", context.serialize(equipment.bootsDropChance));
-        return tag;
+            tag.put("leggings", context.serialize(equipment.leggings));
+        if (equipment.boots != null && !equipment.boots.isEmpty())
+            tag.put("boots", context.serialize(equipment.boots));
+        tag.put("itemInMainHandDropChance", context.serialize(equipment.itemInMainHandDropChance));
+        tag.put("itemInOffHandDropChance", context.serialize(equipment.itemInOffHandDropChance));
+        tag.put("helmetDropChance", context.serialize(equipment.helmetDropChance));
+        tag.put("chestplateDropChance", context.serialize(equipment.chestplateDropChance));
+        tag.put("leggingsDropChance", context.serialize(equipment.leggingsDropChance));
+        tag.put("bootsDropChance", context.serialize(equipment.bootsDropChance));
+        return tag.build();
     }
 }

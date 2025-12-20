@@ -22,7 +22,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
-import static io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS;
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND;
 
@@ -66,7 +65,7 @@ final class CharacterTeleportCommand extends BrigadierCommand {
         var character = (Character<?>) context.getArgument("character", Character.class);
 
         character.getEntity().map(Entity::getLocation).or(character::getSpawnLocation)
-                .ifPresent(location -> player.teleportAsync(location, COMMAND, RETAIN_PASSENGERS));
+                .ifPresent(location -> player.teleportAsync(location, COMMAND));
 
         plugin.bundle().sendMessage(sender, "character.teleported.self",
                 Placeholder.unparsed("character", character.getName()));
@@ -91,7 +90,7 @@ final class CharacterTeleportCommand extends BrigadierCommand {
         var sender = context.getSource().getSender();
         var character = (Character<?>) context.getArgument("character", Character.class);
 
-        character.getEntity().ifPresent(entity -> entity.teleportAsync(location, COMMAND, RETAIN_PASSENGERS));
+        character.getEntity().ifPresent(entity -> entity.teleportAsync(location, COMMAND));
         var success = character.setSpawnLocation(location);
         var message = success ? "character.teleported" : "nothing.changed";
 

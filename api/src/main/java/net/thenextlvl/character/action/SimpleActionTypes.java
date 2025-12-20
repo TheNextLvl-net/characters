@@ -12,7 +12,6 @@ import org.jspecify.annotations.NullMarked;
 
 import java.net.InetSocketAddress;
 
-import static io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS;
 import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 
 @NullMarked
@@ -46,7 +45,7 @@ final class SimpleActionTypes implements ActionTypes {
             .build();
 
     private final ActionType<Location> teleport = ActionType.builder("teleport", Location.class)
-            .action((player, character, location) -> player.teleportAsync(location, PLUGIN, RETAIN_PASSENGERS))
+            .action((player, character, location) -> player.teleportAsync(location, PLUGIN))
             .build();
 
     private final ActionType<Sound> playSound = ActionType.builder("play_sound", Sound.class)

@@ -26,13 +26,13 @@ public final class LocationAdapter implements TagAdapter<Location> {
 
     @Override
     public Tag serialize(Location location, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
-        tag.add("x", location.getX());
-        tag.add("y", location.getY());
-        tag.add("z", location.getZ());
-        tag.add("yaw", location.getYaw());
-        tag.add("pitch", location.getPitch());
-        tag.add("world", context.serialize(location.getWorld()));
-        return tag;
+        return CompoundTag.builder()
+                .put("x", location.getX())
+                .put("y", location.getY())
+                .put("z", location.getZ())
+                .put("yaw", location.getYaw())
+                .put("pitch", location.getPitch())
+                .put("world", context.serialize(location.getWorld()))
+                .build();
     }
 }

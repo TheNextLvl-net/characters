@@ -55,24 +55,24 @@ public final class AttributeAdapter implements TagAdapter<Set<AttributeInstance>
 
     @Override
     public Tag serialize(Set<AttributeInstance> attributes, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.empty();
+        var tag = CompoundTag.builder();
         attributes.forEach(instance -> {
-            var attributeTag = CompoundTag.empty();
-            attributeTag.add("baseValue", instance.getBaseValue());
+            var attributeTag = CompoundTag.builder();
+            attributeTag.put("baseValue", instance.getBaseValue());
 
-            var modifiersTag = CompoundTag.empty();
+            var modifiersTag = CompoundTag.builder();
             instance.getModifiers().forEach(modifier -> {
-                var modifierTag = CompoundTag.empty();
-                modifierTag.add("operation", context.serialize(modifier.getOperation()));
-                modifierTag.add("amount", modifier.getAmount());
-                modifierTag.add("slot", context.serialize(modifier.getSlotGroup()));
-                modifiersTag.add(modifier.key().asString(), modifierTag);
+                modifiersTag.put(modifier.key().asString(), CompoundTag.builder()
+                        .put("operation", context.serialize(modifier.getOperation()))
+                        .put("amount", modifier.getAmount())
+                        .put("slot", context.serialize(modifier.getSlotGroup()))
+                        .build());
             });
 
-            attributeTag.add("modifiers", modifiersTag);
-            tag.add(instance.getAttribute().key().asString(), attributeTag);
+            attributeTag.put("modifiers", modifiersTag.build());
+            tag.put(instance.getAttribute().key().asString(), attributeTag.build());
         });
-        return tag;
+        return tag.build();
     }
 
     private record SimpleAttributeInstance(
