@@ -31,7 +31,7 @@ repositories {
 dependencies {
     paperweight.paperDevBundle("1.21.10-R0.1-SNAPSHOT")
 
-    implementation("net.thenextlvl.core:paper:3.0.0-pre1")
+    implementation("net.thenextlvl.core:paper:3.0.0-pre4")
     implementation("net.thenextlvl.version-checker:modrinth-paper:1.0.0")
     implementation("net.thenextlvl:i18n:1.1.0")
     implementation("org.bstats:bstats-bukkit:3.1.0")
