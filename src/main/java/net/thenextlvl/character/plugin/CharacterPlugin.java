@@ -140,6 +140,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     @Override
     public void onLoad() {
         getServer().getServicesManager().register(CharacterProvider.class, this, this, ServicePriority.Highest);
+        getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         versionChecker.checkVersion();
     }
 

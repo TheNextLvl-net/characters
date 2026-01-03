@@ -1,6 +1,6 @@
 package net.thenextlvl.character.action;
 
-import core.paper.messenger.PluginMessenger;
+import com.google.common.io.ByteStreams;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -17,8 +17,6 @@ import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 @NullMarked
 final class SimpleActionTypes implements ActionTypes {
     public static final ActionTypes INSTANCE = new SimpleActionTypes();
-
-    private final PluginMessenger messenger = new PluginMessenger(JavaPlugin.getProvidingPlugin(SimpleActionTypes.class));
 
     private final ActionType<String> sendActionbar = ActionType.builder("send_actionbar", String.class)
             .action((player, character, input) -> {
@@ -68,7 +66,13 @@ final class SimpleActionTypes implements ActionTypes {
             .build();
 
     private final ActionType<String> connect = ActionType.builder("connect", String.class)
-            .action((player, character, server) -> messenger.connect(player, server))
+            .action((player, character, server) -> {
+                var plugin = JavaPlugin.getProvidingPlugin(SimpleActionTypes.class);
+                var dataOutput = ByteStreams.newDataOutput();
+                dataOutput.writeUTF("Connect");
+                dataOutput.writeUTF(server);
+                player.sendPluginMessage(plugin, "BungeeCord", dataOutput.toByteArray());
+            })
             .build();
 
     @Override
