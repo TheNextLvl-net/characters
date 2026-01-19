@@ -1,6 +1,8 @@
 package net.thenextlvl.character.plugin;
 
 import com.destroystokyo.paper.profile.ProfileProperty;
+import dev.faststats.bukkit.BukkitMetrics;
+import dev.faststats.core.ErrorTracker;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -85,8 +87,15 @@ import java.util.Objects;
 
 @NullMarked
 public final class CharacterPlugin extends JavaPlugin implements CharacterProvider {
-    public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new";
+    public static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware();
+    public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new?template=bug_report.yml";
+
     private final Metrics metrics = new Metrics(this, 24223);
+    private final dev.faststats.core.Metrics fastStats = BukkitMetrics.factory()
+            .token("873c0bfa3ed19cc26a1a172d008b501b")
+            .errorTracker(ERROR_TRACKER)
+            .create(this);
+
     private final Path savesFolder = getDataPath().resolve("saves");
     private final Path translations = getDataPath().resolve("translations");
 
@@ -169,6 +178,8 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
             });
         } catch (IOException e) {
             getComponentLogger().error("Failed to load all characters", e);
+            getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
+            ERROR_TRACKER.trackError(e);
         }
     }
 
@@ -230,6 +241,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         } catch (Exception e) {
             getComponentLogger().error("Failed to load character from {}", file, e);
             getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
+            ERROR_TRACKER.trackError(e);
             return null;
         }
     }

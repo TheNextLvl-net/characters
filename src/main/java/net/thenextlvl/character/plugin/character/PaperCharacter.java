@@ -59,6 +59,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import static net.thenextlvl.character.plugin.CharacterPlugin.ISSUES;
 import static org.bukkit.attribute.Attribute.MAX_HEALTH;
 
 @NullMarked
@@ -282,8 +283,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
                 plugin.getComponentLogger().error("Failed to restore character {}", getName(), e);
             }
             plugin.getComponentLogger().error("Failed to save character {}", getName(), t);
-            plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}",
-                    CharacterPlugin.ISSUES);
+            plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             return false;
         }
     }
@@ -426,6 +426,8 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
             Files.deleteIfExists(file());
         } catch (IOException e) {
             plugin.getComponentLogger().error("Failed to delete character {}", getName(), e);
+            plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
+            CharacterPlugin.ERROR_TRACKER.trackError(e);
         }
         plugin.characterController().unregister(name);
     }
@@ -462,8 +464,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     protected void preSpawn(E entity) {
         try {
             internalPreSpawn(entity);
-        } catch (Exception t) {
-            plugin.getComponentLogger().error("Failed to spawn character {}", getName(), t);
+        } catch (Exception e) {
+            plugin.getComponentLogger().error("Failed to spawn character {}", getName(), e);
+            plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
+            CharacterPlugin.ERROR_TRACKER.trackError(e);
             entity.remove();
         }
     }
