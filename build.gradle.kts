@@ -10,7 +10,6 @@ plugins {
 }
 
 group = "net.thenextlvl.characters"
-version = "0.7.0-pre2"
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(21)
