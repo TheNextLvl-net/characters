@@ -171,8 +171,8 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
     }
 
     public void loadAll() {
-        try (var files = Files.list(savesFolder)
-                .filter(path -> path.getFileName().toString().endsWith(".dat"))) {
+        if (!Files.isDirectory(savesFolder)) return;
+        try (var files = Files.list(savesFolder).filter(path -> path.getFileName().toString().endsWith(".dat"))) {
             files.map(this::loadSafe).filter(Objects::nonNull).forEach(character -> {
                 character.getSpawnLocation().filter(Location::isChunkLoaded).ifPresent(character::spawn);
             });
