@@ -38,7 +38,7 @@ dependencies {
         exclude("com.google.guava", "guava")
     }
 
-    implementation("dev.faststats.metrics:bukkit:0.11.0")
+    implementation("dev.faststats.metrics:bukkit:0.11.1")
     implementation("org.bstats:bstats-bukkit:3.1.0")
 
     implementation(project(":api"))
