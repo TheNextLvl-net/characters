@@ -32,7 +32,7 @@ dependencies {
 
     implementation("net.thenextlvl.core:paper:3.0.0-pre4")
     implementation("net.thenextlvl.version-checker:modrinth-paper:1.0.1")
-    implementation("net.thenextlvl:i18n:1.1.0")
+    implementation("net.thenextlvl:i18n:1.2.0")
     implementation("org.mineskin:java-client-java11:3.2.1-SNAPSHOT") {
         exclude("com.google.code.gson", "gson")
         exclude("com.google.guava", "guava")
