@@ -39,7 +39,7 @@ dependencies {
     }
 
     implementation("dev.faststats.metrics:bukkit:0.16.0")
-    implementation("org.bstats:bstats-bukkit:3.1.0")
+    implementation("org.bstats:bstats-bukkit:3.2.1-SNAPSHOT")
 
     implementation(project(":api"))
 
