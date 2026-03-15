@@ -27,16 +27,16 @@ import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.COMMAND;
 
 @NullMarked
 final class CharacterTeleportCommand extends BrigadierCommand {
-    private CharacterTeleportCommand(CharacterPlugin plugin) {
+    private CharacterTeleportCommand(final CharacterPlugin plugin) {
         super(plugin, "teleport", "characters.command.teleport");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterTeleportCommand(plugin);
-        var rotation = rotationArgument().executes(command::teleportPosition);
-        var position = positionArgument().executes(command::teleportPosition);
-        var entity = entityArgument().executes(command::teleportEntity);
-        var teleport = characterArgument(plugin).executes(command::teleportSelf)
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterTeleportCommand(plugin);
+        final var rotation = rotationArgument().executes(command::teleportPosition);
+        final var position = positionArgument().executes(command::teleportPosition);
+        final var entity = entityArgument().executes(command::teleportEntity);
+        final var teleport = characterArgument(plugin).executes(command::teleportSelf)
                 .then(position.then(rotation))
                 .then(entity);
         return command.create().then(teleport);
@@ -54,15 +54,15 @@ final class CharacterTeleportCommand extends BrigadierCommand {
         return Commands.argument("rotation", ArgumentTypes.rotation());
     }
 
-    private int teleportSelf(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
+    private int teleportSelf(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
 
-        if (!(sender instanceof Player player)) {
+        if (!(sender instanceof final Player player)) {
             plugin.bundle().sendMessage(sender, "command.sender");
             return 0;
         }
 
-        var character = (Character<?>) context.getArgument("character", Character.class);
+        final var character = (Character<?>) context.getArgument("character", Character.class);
 
         character.getEntity().map(Entity::getLocation).or(character::getSpawnLocation)
                 .ifPresent(location -> player.teleportAsync(location, COMMAND));
@@ -72,27 +72,27 @@ final class CharacterTeleportCommand extends BrigadierCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private int teleportPosition(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        var resolver = context.getArgument("position", FinePositionResolver.class);
-        var rotationResolver = tryGetArgument(context, "rotation", RotationResolver.class).orElse(null);
-        var rotation = rotationResolver != null ? rotationResolver.resolve(context.getSource()) : Rotation.rotation(0, 0);
-        var position = resolver.resolve(context.getSource()).toLocation(context.getSource().getLocation().getWorld());
+    private int teleportPosition(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        final var resolver = context.getArgument("position", FinePositionResolver.class);
+        final var rotationResolver = tryGetArgument(context, "rotation", RotationResolver.class).orElse(null);
+        final var rotation = rotationResolver != null ? rotationResolver.resolve(context.getSource()) : Rotation.rotation(0, 0);
+        final var position = resolver.resolve(context.getSource()).toLocation(context.getSource().getLocation().getWorld());
         return teleport(context, position.setRotation(rotation));
     }
 
-    private int teleportEntity(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        var selector = context.getArgument("entity", EntitySelectorArgumentResolver.class);
-        var entity = selector.resolve(context.getSource()).getFirst();
+    private int teleportEntity(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        final var selector = context.getArgument("entity", EntitySelectorArgumentResolver.class);
+        final var entity = selector.resolve(context.getSource()).getFirst();
         return teleport(context, entity.getLocation());
     }
 
-    private int teleport(CommandContext<CommandSourceStack> context, Location location) {
-        var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
+    private int teleport(final CommandContext<CommandSourceStack> context, final Location location) {
+        final var sender = context.getSource().getSender();
+        final var character = (Character<?>) context.getArgument("character", Character.class);
 
         character.getEntity().ifPresent(entity -> entity.teleportAsync(location, COMMAND));
-        var success = character.setSpawnLocation(location);
-        var message = success ? "character.teleported" : "nothing.changed";
+        final var success = character.setSpawnLocation(location);
+        final var message = success ? "character.teleported" : "nothing.changed";
 
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("world", location.getWorld().getName()),

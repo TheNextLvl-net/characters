@@ -13,12 +13,12 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class ComponentAdapter implements TagAdapter<Component> {
     @Override
-    public Component deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public Component deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return MiniMessage.miniMessage().deserialize(tag.getAsString());
     }
 
     @Override
-    public Tag serialize(Component component, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final Component component, final TagSerializationContext context) throws ParserException {
         return StringTag.of(MiniMessage.miniMessage().serialize(component));
     }
 }

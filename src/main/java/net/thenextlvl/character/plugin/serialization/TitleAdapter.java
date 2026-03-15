@@ -15,17 +15,17 @@ import java.util.Optional;
 @NullMarked
 public final class TitleAdapter implements TagAdapter<Title> {
     @Override
-    public Title deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var title = context.deserialize(root.get("title"), Component.class);
-        var subtitle = context.deserialize(root.get("subtitle"), Component.class);
-        var times = root.optional("times").map(t -> context.deserialize(t, Title.Times.class)).orElse(null);
+    public Title deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var title = context.deserialize(root.get("title"), Component.class);
+        final var subtitle = context.deserialize(root.get("subtitle"), Component.class);
+        final var times = root.optional("times").map(t -> context.deserialize(t, Title.Times.class)).orElse(null);
         return Title.title(title, subtitle, times);
     }
 
     @Override
-    public Tag serialize(Title title, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.builder();
+    public Tag serialize(final Title title, final TagSerializationContext context) throws ParserException {
+        final var tag = CompoundTag.builder();
         tag.put("title", context.serialize(title.title()));
         tag.put("subtitle", context.serialize(title.subtitle()));
         Optional.ofNullable(title.times()).ifPresent(times -> tag.put("times", context.serialize(times)));

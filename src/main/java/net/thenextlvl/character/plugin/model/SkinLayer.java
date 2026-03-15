@@ -17,7 +17,7 @@ public enum SkinLayer implements Translatable {
     private final int mask;
     private final String translationKey;
 
-    SkinLayer(int bit, String id) {
+    SkinLayer(final int bit, final String id) {
         this.mask = 1 << bit;
         this.translationKey = "options.modelPart." + id;
     }

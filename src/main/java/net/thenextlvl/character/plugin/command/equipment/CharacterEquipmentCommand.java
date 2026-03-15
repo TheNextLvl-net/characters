@@ -13,12 +13,12 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class CharacterEquipmentCommand extends BrigadierCommand {
-    private CharacterEquipmentCommand(CharacterPlugin plugin) {
+    private CharacterEquipmentCommand(final CharacterPlugin plugin) {
         super(plugin, "equipment", "characters.command.equipment");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterEquipmentCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterEquipmentCommand(plugin);
         return command.create()
                 .then(CharacterEquipmentClearCommand.create(plugin))
                 .then(CharacterEquipmentSetCommand.create(plugin));

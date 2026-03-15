@@ -18,29 +18,29 @@ import java.time.Duration;
 abstract class CharacterActionCommand<T> extends SimpleCommand {
     private final ActionType<T> actionType;
 
-    protected CharacterActionCommand(CharacterPlugin plugin, ActionType<T> actionType, String name) {
+    protected CharacterActionCommand(final CharacterPlugin plugin, final ActionType<T> actionType, final String name) {
         super(plugin, name, null);
         this.actionType = actionType;
     }
 
-    protected int addAction(CommandContext<CommandSourceStack> context, T input) {
-        var sender = context.getSource().getSender();
-        var character = (net.thenextlvl.character.Character<?>) context.getArgument("character", Character.class);
-        var actionName = context.getArgument("action", String.class);
-        var clickTypes = context.getArgument("click-types", ClickTypes.class);
+    protected int addAction(final CommandContext<CommandSourceStack> context, final T input) {
+        final var sender = context.getSource().getSender();
+        final var character = (net.thenextlvl.character.Character<?>) context.getArgument("character", Character.class);
+        final var actionName = context.getArgument("action", String.class);
+        final var clickTypes = context.getArgument("click-types", ClickTypes.class);
 
-        var previous = character.getAction(actionName);
-        var cooldown = previous.map(ClickAction::getCooldown).orElse(Duration.ZERO);
-        var permission = previous.map(ClickAction::getPermission).orElse(null);
-        var chance = previous.map(ClickAction::getChance).orElse(100);
+        final var previous = character.getAction(actionName);
+        final var cooldown = previous.map(ClickAction::getCooldown).orElse(Duration.ZERO);
+        final var permission = previous.map(ClickAction::getPermission).orElse(null);
+        final var chance = previous.map(ClickAction::getChance).orElse(100);
 
-        var success = character.addAction(actionName, ClickAction.create(actionType, clickTypes.getClickTypes(), input, action -> {
+        final var success = character.addAction(actionName, ClickAction.create(actionType, clickTypes.getClickTypes(), input, action -> {
             action.setChance(chance);
             action.setCooldown(cooldown);
             action.setPermission(permission);
         }));
 
-        var message = success ? "character.action.added" : "nothing.changed";
+        final var message = success ? "character.action.added" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.unparsed("action", actionName),
                 Placeholder.unparsed("character", character.getName()));

@@ -15,18 +15,18 @@ import org.jspecify.annotations.NullMarked;
 public final class RegistryAdapter<T extends Keyed> implements TagAdapter<T> {
     private final RegistryKey<T> registryKey;
 
-    public RegistryAdapter(RegistryKey<T> registryKey) {
+    public RegistryAdapter(final RegistryKey<T> registryKey) {
         this.registryKey = registryKey;
     }
 
     @Override
-    public T deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var registry = RegistryAccess.registryAccess().getRegistry(registryKey);
+    public T deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var registry = RegistryAccess.registryAccess().getRegistry(registryKey);
         return registry.getOrThrow(context.deserialize(tag, Key.class));
     }
 
     @Override
-    public Tag serialize(T object, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final T object, final TagSerializationContext context) throws ParserException {
         return context.serialize(object.key());
     }
 }

@@ -16,7 +16,7 @@ public class PaperFollowPathGoal extends PaperWalkGoal implements FollowPathGoal
     private final List<Location> paths;
     private int pathIndex = 0;
 
-    public PaperFollowPathGoal(CharacterPlugin plugin, PathfindOptions options, List<Location> paths) {
+    public PaperFollowPathGoal(final CharacterPlugin plugin, final PathfindOptions options, final List<Location> paths) {
         super(plugin, options);
         this.paths = paths;
     }
@@ -49,12 +49,12 @@ public class PaperFollowPathGoal extends PaperWalkGoal implements FollowPathGoal
     public static class Builder extends PaperWalkGoal.Builder<FollowPathGoal, FollowPathGoal.Builder> implements FollowPathGoal.Builder {
         private @Nullable List<Location> paths;
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             super(plugin);
         }
 
         @Override
-        public FollowPathGoal.Builder paths(List<Location> paths) {
+        public FollowPathGoal.Builder paths(final List<Location> paths) {
             this.paths = paths;
             return this;
         }

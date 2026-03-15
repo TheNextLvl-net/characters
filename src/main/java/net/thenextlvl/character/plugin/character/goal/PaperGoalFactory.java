@@ -18,42 +18,42 @@ import java.util.List;
 public class PaperGoalFactory implements GoalFactory {
     private final CharacterPlugin plugin;
 
-    public PaperGoalFactory(CharacterPlugin plugin) {
+    public PaperGoalFactory(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public AttackGoal.Builder attack(Entity entity) {
+    public AttackGoal.Builder attack(final Entity entity) {
         return new PaperAttackGoal.Builder(plugin).target(entity);
     }
 
     @Override
-    public EscapeGoal.Builder escape(Entity entity) {
+    public EscapeGoal.Builder escape(final Entity entity) {
         return new PaperEscapeGoal.Builder(plugin).runningFrom(entity);
     }
 
     @Override
-    public FollowEntityGoal.Builder follow(Entity entity) {
+    public FollowEntityGoal.Builder follow(final Entity entity) {
         return new PaperFollowEntityGoal.Builder(plugin).target(entity);
     }
 
     @Override
-    public FollowPathGoal.Builder follow(List<Location> path) {
+    public FollowPathGoal.Builder follow(final List<Location> path) {
         return new PaperFollowPathGoal.Builder(plugin).paths(path);
     }
 
     @Override
-    public LookAtGoal.Builder lookAt(Entity entity) {
+    public LookAtGoal.Builder lookAt(final Entity entity) {
         return new PaperLookAtGoal.Builder(plugin).targetEntity(entity);
     }
 
     @Override
-    public LookAtGoal.Builder lookAt(Location location) {
+    public LookAtGoal.Builder lookAt(final Location location) {
         return new PaperLookAtGoal.Builder(plugin).targetLocation(location);
     }
 
     @Override
-    public WalkToGoal.Builder walkTo(Location location) {
+    public WalkToGoal.Builder walkTo(final Location location) {
         return new PaperWalkToGoal.Builder(plugin).goal(location);
     }
 }

@@ -16,28 +16,28 @@ import org.jspecify.annotations.NullMarked;
 public final class ConnectionListener implements Listener {
     private final CharacterPlugin plugin;
 
-    public ConnectionListener(CharacterPlugin plugin) {
+    public ConnectionListener(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
+    public void onPlayerChangedWorld(final PlayerChangedWorldEvent event) {
         loadCharacters(event.getPlayer().getWorld(), event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public void onPlayerJoin(final PlayerJoinEvent event) {
         loadCharacters(event.getPlayer().getWorld(), event.getPlayer());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onPlayerQuit(PlayerQuitEvent event) {
+    public void onPlayerQuit(final PlayerQuitEvent event) {
         plugin.characterController().getCharacters().forEach(character ->
                 character.getActions().values().forEach(action ->
                         action.resetCooldown(event.getPlayer())));
     }
 
-    private void loadCharacters(World world, Player player) {
+    private void loadCharacters(final World world, final Player player) {
         plugin.characterController().getCharacters(world)
                 .map(character -> (PaperCharacter<?>) character)
                 .forEach(character -> character.loadCharacter(player));

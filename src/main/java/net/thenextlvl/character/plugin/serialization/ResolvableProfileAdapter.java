@@ -16,9 +16,9 @@ import java.util.UUID;
 @NullMarked
 public class ResolvableProfileAdapter implements TagAdapter<ResolvableProfile> {
     @Override
-    public ResolvableProfile deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var builder = ResolvableProfile.resolvableProfile();
+    public ResolvableProfile deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var builder = ResolvableProfile.resolvableProfile();
         root.optional("name").map(Tag::getAsString).ifPresent(builder::name);
         root.optional("uuid").map(id -> context.deserialize(id, UUID.class)).ifPresent(builder::uuid);
         root.optional("properties").map(Tag::getAsList).map(properties -> properties.stream()
@@ -29,11 +29,11 @@ public class ResolvableProfileAdapter implements TagAdapter<ResolvableProfile> {
     }
 
     @Override
-    public Tag serialize(ResolvableProfile profile, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.builder();
+    public Tag serialize(final ResolvableProfile profile, final TagSerializationContext context) throws ParserException {
+        final var tag = CompoundTag.builder();
         if (profile.name() != null) tag.put("name", profile.name());
         if (profile.uuid() != null) tag.put("uuid", context.serialize(profile.uuid()));
-        var properties = profile.properties().stream().map(context::serialize).toList();
+        final var properties = profile.properties().stream().map(context::serialize).toList();
         if (!properties.isEmpty()) tag.put("properties", ListTag.of(properties));
         return tag.build();
     }

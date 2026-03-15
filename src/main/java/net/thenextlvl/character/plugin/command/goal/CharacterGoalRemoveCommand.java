@@ -10,12 +10,12 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 
 @NullMarked
 final class CharacterGoalRemoveCommand extends BrigadierCommand {
-    private CharacterGoalRemoveCommand(CharacterPlugin plugin) {
+    private CharacterGoalRemoveCommand(final CharacterPlugin plugin) {
         super(plugin, "remove", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterGoalRemoveCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterGoalRemoveCommand(plugin);
         return command.create().then(characterArgument(plugin)); // todo: implement
     }
 }

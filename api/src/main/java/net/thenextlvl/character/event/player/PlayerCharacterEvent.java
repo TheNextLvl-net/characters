@@ -12,7 +12,7 @@ public abstract class PlayerCharacterEvent extends CharacterEvent {
     private final Player player;
 
     @ApiStatus.Internal
-    public PlayerCharacterEvent(Character<?> character, Player player) {
+    public PlayerCharacterEvent(final Character<?> character, final Player player) {
         super(character);
         this.player = player;
     }

@@ -13,28 +13,28 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagSeeThroughCommand extends SimpleCommand {
-    private CharacterTagSeeThroughCommand(CharacterPlugin plugin) {
+    private CharacterTagSeeThroughCommand(final CharacterPlugin plugin) {
         super(plugin, "see-through", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagSeeThroughCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagSeeThroughCommand(plugin);
         return command.create().then(Commands.argument(
                 "see-through", BoolArgumentType.bool()
         ).executes(command));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagSeeThroughCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagSeeThroughCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var seeThrough = tryGetArgument(context, "see-through", boolean.class).orElse(false);
-        var success = character.getTagOptions().setSeeThrough(seeThrough);
-        var message = !success ? "nothing.changed" : seeThrough
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var seeThrough = tryGetArgument(context, "see-through", boolean.class).orElse(false);
+        final var success = character.getTagOptions().setSeeThrough(seeThrough);
+        final var message = !success ? "nothing.changed" : seeThrough
                 ? "character.tag.see-through" : "character.tag.not-see-through";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()));

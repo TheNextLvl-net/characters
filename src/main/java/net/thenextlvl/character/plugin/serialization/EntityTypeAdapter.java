@@ -14,8 +14,8 @@ import java.util.Arrays;
 @NullMarked
 public final class EntityTypeAdapter implements TagAdapter<EntityType> {
     @Override
-    public EntityType deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var key = context.deserialize(tag, Key.class);
+    public EntityType deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var key = context.deserialize(tag, Key.class);
         return Arrays.stream(EntityType.values())
                 .filter(type -> type.key().equals(key))
                 .findAny()
@@ -23,7 +23,7 @@ public final class EntityTypeAdapter implements TagAdapter<EntityType> {
     }
 
     @Override
-    public Tag serialize(EntityType type, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final EntityType type, final TagSerializationContext context) throws ParserException {
         return context.serialize(type.key());
     }
 }

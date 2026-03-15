@@ -7,7 +7,7 @@ module net.thenextlvl.characters {
     exports net.thenextlvl.character.skin;
     exports net.thenextlvl.character.tag;
     exports net.thenextlvl.character;
-    
+
     requires com.google.common;
     requires core.paper;
     requires net.kyori.adventure.key;

@@ -13,28 +13,28 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagTextShadowCommand extends SimpleCommand {
-    private CharacterTagTextShadowCommand(CharacterPlugin plugin) {
+    private CharacterTagTextShadowCommand(final CharacterPlugin plugin) {
         super(plugin, "text-shadow", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagTextShadowCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagTextShadowCommand(plugin);
         return command.create().then(Commands.argument(
                 "enabled", BoolArgumentType.bool()
         ).executes(command));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagTextShadowCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagTextShadowCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var enabled = tryGetArgument(context, "enabled", boolean.class).orElse(false);
-        var success = character.getTagOptions().setTextShadow(enabled);
-        var message = success ? "character.tag.text-shadow" : "nothing.changed";
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var enabled = tryGetArgument(context, "enabled", boolean.class).orElse(false);
+        final var success = character.getTagOptions().setTextShadow(enabled);
+        final var message = success ? "character.tag.text-shadow" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("value", String.valueOf(enabled)));

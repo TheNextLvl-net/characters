@@ -25,28 +25,28 @@ final class SimpleActionTypeRegistry implements ActionTypeRegistry {
     ));
 
     @Override
-    public boolean register(ActionType<?> type) {
+    public boolean register(final ActionType<?> type) {
         return !isRegistered(type.name()) && actionTypes.add(type);
     }
 
     @Override
-    public boolean isRegistered(ActionType<?> type) {
+    public boolean isRegistered(final ActionType<?> type) {
         return actionTypes.contains(type);
     }
 
     @Override
-    public boolean isRegistered(String name) {
+    public boolean isRegistered(final String name) {
         return actionTypes.stream().anyMatch(actionType -> actionType.name().equals(name));
     }
 
     @Override
-    public boolean unregister(ActionType<?> type) {
+    public boolean unregister(final ActionType<?> type) {
         return actionTypes.remove(type);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Optional<ActionType<T>> getByName(String name) {
+    public <T> Optional<ActionType<T>> getByName(final String name) {
         return actionTypes.stream()
                 .filter(actionType -> actionType.name().equals(name))
                 .map(actionType -> (ActionType<T>) actionType)

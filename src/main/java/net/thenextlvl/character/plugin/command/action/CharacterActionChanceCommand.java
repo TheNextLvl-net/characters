@@ -19,12 +19,12 @@ import static net.thenextlvl.character.plugin.command.action.CharacterActionComm
 
 @NullMarked
 final class CharacterActionChanceCommand extends ActionCommand {
-    private CharacterActionChanceCommand(CharacterPlugin plugin) {
+    private CharacterActionChanceCommand(final CharacterPlugin plugin) {
         super(plugin, "chance", "characters.command.action.chance");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterActionChanceCommand(plugin);
+    static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterActionChanceCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
                 .then(actionArgument(plugin)
@@ -37,10 +37,10 @@ final class CharacterActionChanceCommand extends ActionCommand {
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context, Character<?> character, ClickAction<?> action, String actionName) {
-        var chance = tryGetArgument(context, "chance", int.class).orElse(null);
-        var success = chance != null && action.setChance(chance);
-        var message = chance == null ? "character.action.chance"
+    public int run(final CommandContext<CommandSourceStack> context, final Character<?> character, final ClickAction<?> action, final String actionName) {
+        final var chance = tryGetArgument(context, "chance", int.class).orElse(null);
+        final var success = chance != null && action.setChance(chance);
+        final var message = chance == null ? "character.action.chance"
                 : success ? "character.action.chance.set" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("action", actionName),

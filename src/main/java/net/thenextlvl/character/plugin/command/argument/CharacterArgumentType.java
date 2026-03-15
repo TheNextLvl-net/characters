@@ -16,18 +16,18 @@ import java.util.concurrent.CompletableFuture;
 public final class CharacterArgumentType implements CustomArgumentType.Converted<Character<?>, String> {
     private final CharacterPlugin plugin;
 
-    public CharacterArgumentType(CharacterPlugin plugin) {
+    public CharacterArgumentType(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public Character<?> convert(String nativeType) {
+    public Character<?> convert(final String nativeType) {
         return plugin.characterController().getCharacter(nativeType)
                 .orElseThrow(() -> new NullPointerException("No character was found"));
     }
 
     @Override
-    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
+    public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
         plugin.characterController().getCharacterNames().stream()
                 .map(StringArgumentType::escapeIfRequired)
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))

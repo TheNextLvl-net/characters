@@ -12,17 +12,17 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class QuaternionfAdapter implements TagAdapter<Quaternionf> {
     @Override
-    public Quaternionf deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var w = root.get("w").getAsFloat();
-        var x = root.get("x").getAsFloat();
-        var y = root.get("y").getAsFloat();
-        var z = root.get("z").getAsFloat();
+    public Quaternionf deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var w = root.get("w").getAsFloat();
+        final var x = root.get("x").getAsFloat();
+        final var y = root.get("y").getAsFloat();
+        final var z = root.get("z").getAsFloat();
         return new Quaternionf(x, y, z, w);
     }
 
     @Override
-    public Tag serialize(Quaternionf quaternion, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final Quaternionf quaternion, final TagSerializationContext context) throws ParserException {
         return CompoundTag.builder()
                 .put("w", quaternion.w)
                 .put("x", quaternion.x)

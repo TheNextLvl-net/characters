@@ -9,7 +9,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class CharacterListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onPlayerCharacterClick(PlayerClickCharacterEvent event) {
+    public void onPlayerCharacterClick(final PlayerClickCharacterEvent event) {
         // todo: remove, this is just for testing
         if (event.getType().isLeftClick()) {
             event.getCharacter().getPathfinder().ifPresent(pathfinder -> {

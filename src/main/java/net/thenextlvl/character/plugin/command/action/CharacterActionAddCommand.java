@@ -26,13 +26,13 @@ import static net.thenextlvl.character.plugin.command.action.CharacterActionComm
 
 @NullMarked
 public final class CharacterActionAddCommand extends BrigadierCommand {
-    private CharacterActionAddCommand(CharacterPlugin plugin) {
+    private CharacterActionAddCommand(final CharacterPlugin plugin) {
         super(plugin, "add", "characters.command.action.add");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterActionAddCommand(plugin);
-        var commands = clickTypesArgument()
+    static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterActionAddCommand(plugin);
+        final var commands = clickTypesArgument()
                 .then(ConnectCommand.create(plugin))
                 .then(PlaySoundCommand.create(plugin))
                 .then(RunConsoleCommand.create(plugin))

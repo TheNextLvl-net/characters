@@ -14,12 +14,12 @@ import java.util.concurrent.CompletableFuture;
 public final class CharacterWithActionSuggestionProvider<T> implements SuggestionProvider<T> {
     private final CharacterPlugin plugin;
 
-    public CharacterWithActionSuggestionProvider(CharacterPlugin plugin) {
+    public CharacterWithActionSuggestionProvider(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
-    public CompletableFuture<Suggestions> getSuggestions(CommandContext<T> context, SuggestionsBuilder builder) {
+    public CompletableFuture<Suggestions> getSuggestions(final CommandContext<T> context, final SuggestionsBuilder builder) {
         plugin.characterController().getCharacters()
                 .filter(character -> !character.getActions().isEmpty())
                 .map(Character::getName)

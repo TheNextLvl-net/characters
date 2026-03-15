@@ -20,13 +20,13 @@ import java.util.function.BiFunction;
 final class CharacterTagRotationCommand extends SimpleCommand {
     private final Rotation rotation;
 
-    private CharacterTagRotationCommand(CharacterPlugin plugin, Rotation rotation) {
+    private CharacterTagRotationCommand(final CharacterPlugin plugin, final Rotation rotation) {
         super(plugin, rotation.name, null);
         this.rotation = rotation;
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin, Rotation rotation) {
-        var command = new CharacterTagRotationCommand(plugin, rotation);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin, final Rotation rotation) {
+        final var command = new CharacterTagRotationCommand(plugin, rotation);
         return command.create().then(Commands.argument(
                 "x", FloatArgumentType.floatArg()
         ).then(Commands.argument(
@@ -38,20 +38,20 @@ final class CharacterTagRotationCommand extends SimpleCommand {
         ).executes(command)).executes(command))));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin, Rotation rotation) {
-        var command = new CharacterTagRotationCommand(plugin, rotation);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin, final Rotation rotation) {
+        final var command = new CharacterTagRotationCommand(plugin, rotation);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var w = tryGetArgument(context, "w", float.class).orElse(1.0f);
-        var x = tryGetArgument(context, "x", float.class).orElse(0.0f);
-        var y = tryGetArgument(context, "y", float.class).orElse(0.0f);
-        var z = tryGetArgument(context, "z", float.class).orElse(0.0f);
-        var success = rotation.setter.apply(character.getTagOptions(), new Quaternionf(x, y, z, w));
-        var message = success ? rotation.success : "nothing.changed";
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var w = tryGetArgument(context, "w", float.class).orElse(1.0f);
+        final var x = tryGetArgument(context, "x", float.class).orElse(0.0f);
+        final var y = tryGetArgument(context, "y", float.class).orElse(0.0f);
+        final var z = tryGetArgument(context, "z", float.class).orElse(0.0f);
+        final var success = rotation.setter.apply(character.getTagOptions(), new Quaternionf(x, y, z, w));
+        final var message = success ? rotation.success : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
                 Formatter.number("w", w),
@@ -69,7 +69,7 @@ final class CharacterTagRotationCommand extends SimpleCommand {
         private final String success;
         private final BiFunction<TagOptions, Quaternionf, Boolean> setter;
 
-        Rotation(String name, String success, BiFunction<TagOptions, Quaternionf, Boolean> setter) {
+        Rotation(final String name, final String success, final BiFunction<TagOptions, Quaternionf, Boolean> setter) {
             this.name = name;
             this.success = success;
             this.setter = setter;

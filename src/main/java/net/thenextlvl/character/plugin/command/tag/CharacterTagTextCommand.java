@@ -15,30 +15,30 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagTextCommand extends SimpleCommand {
-    private CharacterTagTextCommand(CharacterPlugin plugin) {
+    private CharacterTagTextCommand(final CharacterPlugin plugin) {
         super(plugin, "text", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagTextCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagTextCommand(plugin);
         return command.create().then(Commands.argument(
                 "text", StringArgumentType.greedyString()
         ).executes(command));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagTextCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagTextCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
-        var text = tryGetArgument(context, "text", String.class).map(MiniMessage.miniMessage()::deserialize).orElse(null);
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
+        final var character = context.getArgument("character", Character.class);
+        final var text = tryGetArgument(context, "text", String.class).map(MiniMessage.miniMessage()::deserialize).orElse(null);
 
-        var success = character.setDisplayName(text);
-        var message = success ? "character.tag.text" : "nothing.changed";
+        final var success = character.setDisplayName(text);
+        final var message = success ? "character.tag.text" : "nothing.changed";
 
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.component("text", text != null ? text : Component.text(character.getName())),

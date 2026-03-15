@@ -13,7 +13,7 @@ public abstract class CharacterEvent extends Event {
     private final Character<?> character;
 
     @ApiStatus.Internal
-    protected CharacterEvent(Character<?> character) {
+    protected CharacterEvent(final Character<?> character) {
         this.character = character;
     }
 

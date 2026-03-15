@@ -52,35 +52,35 @@ public class PaperPathfindOptions implements PathfindOptions, Cloneable {
         return speedMultiplier;
     }
 
-    public void setAvoidWater(boolean avoidWater) {
+    public void setAvoidWater(final boolean avoidWater) {
         this.avoidWater = avoidWater;
     }
 
-    public void setCanFloat(boolean canFloat) {
+    public void setCanFloat(final boolean canFloat) {
         this.canFloat = canFloat;
     }
 
-    public void setCanOpenDoors(boolean canOpenDoors) {
+    public void setCanOpenDoors(final boolean canOpenDoors) {
         this.canOpenDoors = canOpenDoors;
     }
 
-    public void setCanPassDoors(boolean canPassDoors) {
+    public void setCanPassDoors(final boolean canPassDoors) {
         this.canPassDoors = canPassDoors;
     }
 
-    public void setDistanceMargin(double distanceMargin) {
+    public void setDistanceMargin(final double distanceMargin) {
         this.distanceMargin = distanceMargin;
     }
 
-    public void setMaxFallDistance(double maxFallDistance) {
+    public void setMaxFallDistance(final double maxFallDistance) {
         this.maxFallDistance = maxFallDistance;
     }
 
-    public void setSpeed(double speed) {
+    public void setSpeed(final double speed) {
         this.speed = speed;
     }
 
-    public void setSpeedMultiplier(double speedMultiplier) {
+    public void setSpeedMultiplier(final double speedMultiplier) {
         this.speedMultiplier = speedMultiplier;
     }
 
@@ -88,7 +88,7 @@ public class PaperPathfindOptions implements PathfindOptions, Cloneable {
     public PaperPathfindOptions clone() {
         try {
             return (PaperPathfindOptions) super.clone();
-        } catch (CloneNotSupportedException e) {
+        } catch (final CloneNotSupportedException e) {
             throw new AssertionError();
         }
     }

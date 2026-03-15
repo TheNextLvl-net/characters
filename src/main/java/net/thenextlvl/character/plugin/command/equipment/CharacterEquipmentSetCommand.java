@@ -19,12 +19,12 @@ import static net.thenextlvl.character.plugin.command.equipment.CharacterEquipme
 
 @NullMarked
 final class CharacterEquipmentSetCommand extends SimpleCommand {
-    private CharacterEquipmentSetCommand(CharacterPlugin plugin) {
+    private CharacterEquipmentSetCommand(final CharacterPlugin plugin) {
         super(plugin, "set", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterEquipmentSetCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterEquipmentSetCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .then(equipmentSlotArgument().then(Commands.argument(
                         "item", ArgumentTypes.itemStack()
@@ -32,15 +32,15 @@ final class CharacterEquipmentSetCommand extends SimpleCommand {
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = (net.thenextlvl.character.Character<?>) context.getArgument("character", Character.class);
-        var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
-        var item = context.getArgument("item", ItemStack.class);
-        var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = (net.thenextlvl.character.Character<?>) context.getArgument("character", Character.class);
+        final var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
+        final var item = context.getArgument("item", ItemStack.class);
+        final var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
             equipment.setItem(slot, item, true);
             return true;
         }).orElse(false);
-        var message = !success ? "nothing.changed" : item.isEmpty()
+        final var message = !success ? "nothing.changed" : item.isEmpty()
                 ? "character.equipment.slot.cleared" : "character.equipment.slot";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.component("item", item.effectiveName().hoverEvent(item.asHoverEvent())),

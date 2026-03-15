@@ -13,19 +13,19 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class LocationAdapter implements TagAdapter<Location> {
     @Override
-    public Location deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var x = root.get("x").getAsDouble();
-        var y = root.get("y").getAsDouble();
-        var z = root.get("z").getAsDouble();
-        var yaw = root.get("yaw").getAsFloat();
-        var pitch = root.get("pitch").getAsFloat();
-        var world = context.deserialize(root.get("world"), World.class);
+    public Location deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var x = root.get("x").getAsDouble();
+        final var y = root.get("y").getAsDouble();
+        final var z = root.get("z").getAsDouble();
+        final var yaw = root.get("yaw").getAsFloat();
+        final var pitch = root.get("pitch").getAsFloat();
+        final var world = context.deserialize(root.get("world"), World.class);
         return new Location(world, x, y, z, yaw, pitch);
     }
 
     @Override
-    public Tag serialize(Location location, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final Location location, final TagSerializationContext context) throws ParserException {
         return CompoundTag.builder()
                 .put("x", location.getX())
                 .put("y", location.getY())

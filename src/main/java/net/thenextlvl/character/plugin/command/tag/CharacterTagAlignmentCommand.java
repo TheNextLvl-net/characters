@@ -15,28 +15,28 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagAlignmentCommand extends SimpleCommand {
-    private CharacterTagAlignmentCommand(CharacterPlugin plugin) {
+    private CharacterTagAlignmentCommand(final CharacterPlugin plugin) {
         super(plugin, "alignment", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagAlignmentCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagAlignmentCommand(plugin);
         return command.create().then(Commands.argument(
                 "alignment", EnumArgumentType.of(TextAlignment.class, EnumStringCodec.lowerHyphen())
         ).executes(command));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagAlignmentCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagAlignmentCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var alignment = tryGetArgument(context, "alignment", TextAlignment.class).orElse(TextAlignment.CENTER);
-        var success = character.getTagOptions().setAlignment(alignment);
-        var message = success ? "character.tag.alignment" : "nothing.changed";
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var alignment = tryGetArgument(context, "alignment", TextAlignment.class).orElse(TextAlignment.CENTER);
+        final var success = character.getTagOptions().setAlignment(alignment);
+        final var message = success ? "character.tag.alignment" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("value", alignment.name().toLowerCase()));

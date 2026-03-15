@@ -14,13 +14,13 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class CatVariantAdapter implements TagAdapter<Cat.Type> {
     @Override
-    public Cat.Type deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public Cat.Type deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT)
                 .getOrThrow(context.deserialize(tag, Key.class));
     }
 
     @Override
-    public Tag serialize(Cat.Type type, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final Cat.Type type, final TagSerializationContext context) throws ParserException {
         return context.serialize(type.key());
     }
 }

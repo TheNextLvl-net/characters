@@ -14,20 +14,20 @@ import org.jspecify.annotations.NullMarked;
 public final class WorldAdapter implements TagAdapter<World> {
     private final Server server;
 
-    public WorldAdapter(Server server) {
+    public WorldAdapter(final Server server) {
         this.server = server;
     }
 
     @Override
-    public World deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var namespace = context.deserialize(tag, Key.class);
-        var world = server.getWorld(namespace);
+    public World deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var namespace = context.deserialize(tag, Key.class);
+        final var world = server.getWorld(namespace);
         if (world != null) return world;
         throw new ParserException("World not found: " + namespace);
     }
 
     @Override
-    public Tag serialize(World world, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final World world, final TagSerializationContext context) throws ParserException {
         return context.serialize(world.getKey());
     }
 }

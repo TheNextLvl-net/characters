@@ -13,16 +13,16 @@ import org.jspecify.annotations.Nullable;
 
 @NullMarked
 abstract class ActionCommand extends SimpleCommand {
-    protected ActionCommand(CharacterPlugin plugin, String name, @Nullable String permission) {
+    protected ActionCommand(final CharacterPlugin plugin, final String name, @Nullable final String permission) {
         super(plugin, name, permission);
     }
 
     @Override
-    public final int run(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
-        var actionName = context.getArgument("action", String.class);
-        var action = character.getAction(actionName).orElse(null);
+    public final int run(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        final var sender = context.getSource().getSender();
+        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var actionName = context.getArgument("action", String.class);
+        final var action = character.getAction(actionName).orElse(null);
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
                     Placeholder.parsed("character", character.getName()),

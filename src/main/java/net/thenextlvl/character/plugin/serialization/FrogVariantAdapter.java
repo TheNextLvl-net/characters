@@ -14,13 +14,13 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class FrogVariantAdapter implements TagAdapter<Frog.Variant> {
     @Override
-    public Frog.Variant deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public Frog.Variant deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT)
                 .getOrThrow(context.deserialize(tag, Key.class));
     }
 
     @Override
-    public Tag serialize(Frog.Variant variant, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final Frog.Variant variant, final TagSerializationContext context) throws ParserException {
         return context.serialize(variant.key());
     }
 }

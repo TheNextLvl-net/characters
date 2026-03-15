@@ -19,13 +19,13 @@ import java.util.concurrent.CompletableFuture;
 public final class MannequinCharacterArgumentType implements CustomArgumentType.Converted<Character<Mannequin>, String> {
     private final CharacterPlugin plugin;
 
-    public MannequinCharacterArgumentType(CharacterPlugin plugin) {
+    public MannequinCharacterArgumentType(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Character<Mannequin> convert(String nativeType) {
+    public Character<Mannequin> convert(final String nativeType) {
         return plugin.characterController().getCharacter(nativeType)
                 .filter(character -> character.getType().equals(EntityType.MANNEQUIN))
                 .map(character -> (Character<@NonNull Mannequin>) character)
@@ -33,7 +33,7 @@ public final class MannequinCharacterArgumentType implements CustomArgumentType.
     }
 
     @Override
-    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
+    public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
         plugin.characterController().getCharacters()
                 .filter(character -> character.getType().equals(EntityType.MANNEQUIN))
                 .map(Character::getName)

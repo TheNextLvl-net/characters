@@ -17,13 +17,13 @@ import java.util.concurrent.CompletableFuture;
 @NullMarked
 public final class ParticleArgumentType implements CustomArgumentType.Converted<Particle, Particle> {
     @Override
-    public Particle convert(Particle nativeType) {
+    public Particle convert(final Particle nativeType) {
         if (nativeType.getDataType().equals(Void.class)) return nativeType;
         throw new IllegalArgumentException("This particle is not allowed");
     }
 
     @Override
-    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
+    public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
         RegistryAccess.registryAccess().getRegistry(RegistryKey.PARTICLE_TYPE).stream()
                 .filter(particle -> particle.getDataType().equals(Void.class))
                 .map(Particle::getKey)

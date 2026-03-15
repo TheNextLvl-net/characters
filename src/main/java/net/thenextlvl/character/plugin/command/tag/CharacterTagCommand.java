@@ -12,12 +12,12 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 
 @NullMarked
 public final class CharacterTagCommand extends BrigadierCommand {
-    private CharacterTagCommand(CharacterPlugin plugin) {
+    private CharacterTagCommand(final CharacterPlugin plugin) {
         super(plugin, "tag", "characters.command.tag");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterTagCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterTagCommand(plugin);
         return command.create()
                 .then(command.reset())
                 .then(command.set());

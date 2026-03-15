@@ -35,16 +35,16 @@ public final class ColorArgumentType implements CustomArgumentType.Converted<Col
     );
 
     @Override
-    public Color convert(String nativeType) {
-        var color = predefined.get(nativeType);
+    public Color convert(final String nativeType) {
+        final var color = predefined.get(nativeType);
         if (color != null) return color;
 
-        var argb = Long.decode("0x" + nativeType);
+        final var argb = Long.decode("0x" + nativeType);
         return Color.fromARGB(argb.intValue());
     }
 
     @Override
-    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
+    public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
         predefined.keySet().stream()
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
                 .forEach(builder::suggest);

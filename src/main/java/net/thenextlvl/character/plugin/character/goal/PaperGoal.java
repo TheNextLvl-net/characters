@@ -12,7 +12,7 @@ public abstract class PaperGoal implements Goal {
 
     protected final CharacterPlugin plugin;
 
-    public PaperGoal(CharacterPlugin plugin) {
+    public PaperGoal(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -30,7 +30,7 @@ public abstract class PaperGoal implements Goal {
     public abstract static class Builder<T extends Goal> implements Goal.Builder<T> {
         protected final CharacterPlugin plugin;
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             this.plugin = plugin;
         }
 

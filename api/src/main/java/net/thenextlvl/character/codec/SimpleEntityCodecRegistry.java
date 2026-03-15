@@ -17,28 +17,28 @@ final class SimpleEntityCodecRegistry implements EntityCodecRegistry {
     private final Set<EntityCodec<?, ?>> codecs = new HashSet<>();
 
     @Override
-    public void register(EntityCodec<?, ?> codec) throws IllegalStateException {
+    public void register(final EntityCodec<?, ?> codec) throws IllegalStateException {
         Preconditions.checkState(codecs.add(codec), "Codec with the same key is already registered: %s", codec.key());
     }
 
     @Override
-    public void registerAll(Collection<EntityCodec<?, ?>> codecs) throws IllegalStateException {
+    public void registerAll(final Collection<EntityCodec<?, ?>> codecs) throws IllegalStateException {
         codecs.forEach(this::register);
     }
 
     @Override
-    public boolean unregister(EntityCodec<?, ?> codec) {
+    public boolean unregister(final EntityCodec<?, ?> codec) {
         return codecs.remove(codec);
     }
 
     @Override
-    public boolean isRegistered(EntityCodec<?, ?> codec) {
+    public boolean isRegistered(final EntityCodec<?, ?> codec) {
         return codecs.contains(codec);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E, T> Optional<EntityCodec<E, T>> getCodec(Key key) {
+    public <E, T> Optional<EntityCodec<E, T>> getCodec(final Key key) {
         return codecs.stream().filter(codec -> codec.key().equals(key))
                 .map(codec -> (EntityCodec<E, T>) codec)
                 .findAny();

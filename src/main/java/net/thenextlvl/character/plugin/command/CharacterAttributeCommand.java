@@ -26,19 +26,19 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 // todo: split up into multiple commands
 @NullMarked
 final class CharacterAttributeCommand extends BrigadierCommand {
-    private CharacterAttributeCommand(CharacterPlugin plugin) {
+    private CharacterAttributeCommand(final CharacterPlugin plugin) {
         super(plugin, "attribute", "characters.command.attribute");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterAttributeCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterAttributeCommand(plugin);
         return command.create()
                 .then(command.reset())
                 .then(command.set());
     }
 
     private LiteralArgumentBuilder<CommandSourceStack> reset() {
-        var tree = characterArgument(plugin)
+        final var tree = characterArgument(plugin)
                 .then(resetTeamColor());
         // fixme
         //  EntityCodecs.types().forEach(type -> tree.then(resetAttribute(type, plugin)));
@@ -46,10 +46,10 @@ final class CharacterAttributeCommand extends BrigadierCommand {
     }
 
     private LiteralArgumentBuilder<CommandSourceStack> set() {
-        var tree = characterArgument(plugin)
+        final var tree = characterArgument(plugin)
                 .then(setTeamColor());
         EntityCodecRegistry.registry().codecs().forEach(codec -> {
-            var argument = setAttribute(codec);
+            final var argument = setAttribute(codec);
             if (argument != null) tree.then(argument);
         });
         return Commands.literal("set").then(tree);
@@ -68,15 +68,15 @@ final class CharacterAttributeCommand extends BrigadierCommand {
     //     });
     // }
 
-    private <E, T> @Nullable ArgumentBuilder<CommandSourceStack, ?> setAttribute(EntityCodec<E, T> codec) {
+    private <E, T> @Nullable ArgumentBuilder<CommandSourceStack, ?> setAttribute(final EntityCodec<E, T> codec) {
         if (codec.argumentType() == null) return null;
-        var argument = Commands.argument("value", codec.argumentType());
+        final var argument = Commands.argument("value", codec.argumentType());
         return Commands.literal(codec.key().asString()).then(argument.executes(context -> {
-            var value = context.getArgument("value", codec.valueType());
-            var character = (Character<?>) context.getArgument("character", Character.class);
-            var success = character.getEntity(codec.entityType()).map(entity -> codec.setter().test(entity, value)).orElse(false);
-            var message = success ? "character.attribute" : "nothing.changed";
-            var split = context.getInput().split(" ", 6); // trickery to display the unparsed value
+            final var value = context.getArgument("value", codec.valueType());
+            final var character = (Character<?>) context.getArgument("character", Character.class);
+            final var success = character.getEntity(codec.entityType()).map(entity -> codec.setter().test(entity, value)).orElse(false);
+            final var message = success ? "character.attribute" : "nothing.changed";
+            final var split = context.getInput().split(" ", 6); // trickery to display the unparsed value
             plugin.bundle().sendMessage(context.getSource().getSender(), message,
                     Placeholder.unparsed("attribute", codec.key().asString()),
                     Placeholder.unparsed("character", character.getName()),
@@ -85,27 +85,27 @@ final class CharacterAttributeCommand extends BrigadierCommand {
         }));
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> attribute(String attribute, BiFunction<Character<?>, Boolean, Boolean> setter) {
+    private ArgumentBuilder<CommandSourceStack, ?> attribute(final String attribute, final BiFunction<Character<?>, Boolean, Boolean> setter) {
         return Commands.literal(attribute).then(Commands.argument("enabled", BoolArgumentType.bool()).executes(context -> {
-            var enabled = context.getArgument("enabled", boolean.class);
-            var success = set(context, attribute,
+            final var enabled = context.getArgument("enabled", boolean.class);
+            final var success = set(context, attribute,
                     character -> setter.apply(character, enabled),
                     ignored -> enabled);
             return success ? Command.SINGLE_SUCCESS : 0;
         }));
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> reset(String attribute, Function<Character<?>, Boolean> setter, Function<Character<?>, @Nullable Object> getter) {
+    private ArgumentBuilder<CommandSourceStack, ?> reset(final String attribute, final Function<Character<?>, Boolean> setter, final Function<Character<?>, @Nullable Object> getter) {
         return Commands.literal(attribute).executes(context -> {
-            var success = set(context, attribute, setter, getter);
+            final var success = set(context, attribute, setter, getter);
             return success ? Command.SINGLE_SUCCESS : 0;
         });
     }
 
-    private boolean set(CommandContext<CommandSourceStack> context, String attribute, Function<Character<?>, Boolean> setter, Function<Character<?>, @Nullable Object> getter) {
-        var character = context.getArgument("character", Character.class);
-        var success = setter.apply(character);
-        var message = success ? "character.attribute" : "nothing.changed";
+    private boolean set(final CommandContext<CommandSourceStack> context, final String attribute, final Function<Character<?>, Boolean> setter, final Function<Character<?>, @Nullable Object> getter) {
+        final var character = context.getArgument("character", Character.class);
+        final var success = setter.apply(character);
+        final var message = success ? "character.attribute" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("attribute", attribute),
                 Placeholder.unparsed("character", character.getName()),
@@ -120,8 +120,8 @@ final class CharacterAttributeCommand extends BrigadierCommand {
     private ArgumentBuilder<CommandSourceStack, ?> setTeamColor() {
         return Commands.literal("character:team-color").then(Commands.argument("color", new NamedTextColorArgumentType())
                 .executes(context -> {
-                    var color = context.getArgument("color", NamedTextColor.class);
-                    var success = set(context, "team-color",
+                    final var color = context.getArgument("color", NamedTextColor.class);
+                    final var success = set(context, "team-color",
                             character -> character.setTeamColor(color),
                             character -> color);
                     return success ? Command.SINGLE_SUCCESS : 0;

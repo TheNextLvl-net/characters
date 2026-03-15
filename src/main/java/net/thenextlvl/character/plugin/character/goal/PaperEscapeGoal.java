@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 public class PaperEscapeGoal extends PaperWalkGoal implements EscapeGoal {
     private final Entity runningFrom;
 
-    private PaperEscapeGoal(CharacterPlugin plugin, PathfindOptions options, Entity runningFrom) {
+    private PaperEscapeGoal(final CharacterPlugin plugin, final PathfindOptions options, final Entity runningFrom) {
         super(plugin, options);
         this.runningFrom = runningFrom;
     }
@@ -30,12 +30,12 @@ public class PaperEscapeGoal extends PaperWalkGoal implements EscapeGoal {
     public static class Builder extends PaperWalkGoal.Builder<EscapeGoal, EscapeGoal.Builder> implements EscapeGoal.Builder {
         private @Nullable Entity runningFrom;
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             super(plugin);
         }
 
         @Override
-        public EscapeGoal.Builder runningFrom(Entity runningFrom) {
+        public EscapeGoal.Builder runningFrom(final Entity runningFrom) {
             this.runningFrom = runningFrom;
             return this;
         }

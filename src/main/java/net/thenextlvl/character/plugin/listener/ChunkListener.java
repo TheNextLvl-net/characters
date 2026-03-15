@@ -11,12 +11,12 @@ import org.jspecify.annotations.NullMarked;
 public final class ChunkListener implements Listener {
     private final CharacterPlugin plugin;
 
-    public ChunkListener(CharacterPlugin plugin) {
+    public ChunkListener(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onChunkLoad(ChunkLoadEvent event) {
+    public void onChunkLoad(final ChunkLoadEvent event) {
         plugin.characterController().getCharacters(event.getChunk())
                 .filter(character -> !character.isSpawned())
                 .forEach(character -> character.getSpawnLocation().ifPresent(character::spawn));

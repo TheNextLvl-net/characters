@@ -15,12 +15,12 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class SendEntityEffectCommand extends CharacterActionCommand<EntityEffect> {
-    private SendEntityEffectCommand(CharacterPlugin plugin) {
+    private SendEntityEffectCommand(final CharacterPlugin plugin) {
         super(plugin, ActionTypes.types().sendEntityEffect(), "send-entity-effect");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new SendEntityEffectCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new SendEntityEffectCommand(plugin);
         return command.create().then(entityEffectArgument().executes(command));
     }
 
@@ -29,7 +29,7 @@ public final class SendEntityEffectCommand extends CharacterActionCommand<Entity
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    public int run(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         return addAction(context, context.getArgument("entity-effect", EntityEffect.class));
     }
 }

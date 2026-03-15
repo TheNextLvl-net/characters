@@ -24,18 +24,18 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.mannequin
 
 @NullMarked
 class CharacterSkinLayerCommand extends BrigadierCommand {
-    private CharacterSkinLayerCommand(CharacterPlugin plugin) {
+    private CharacterSkinLayerCommand(final CharacterPlugin plugin) {
         super(plugin, "layer", "characters.command.skin.layer");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterSkinLayerCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterSkinLayerCommand(plugin);
         return command.create()
                 .then(command.layer("hide", false))
                 .then(command.layer("show", true));
     }
 
-    private LiteralArgumentBuilder<CommandSourceStack> layer(String name, boolean visible) {
+    private LiteralArgumentBuilder<CommandSourceStack> layer(final String name, final boolean visible) {
         return Commands.literal(name).then(layerArgument().then(mannequinCharacterArgument(plugin)
                 .executes(context -> toggle(context, visible))));
     }
@@ -45,19 +45,19 @@ class CharacterSkinLayerCommand extends BrigadierCommand {
     }
 
     @SuppressWarnings("unchecked")
-    private int toggle(CommandContext<CommandSourceStack> context, boolean visible) {
-        var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
+    private int toggle(final CommandContext<CommandSourceStack> context, final boolean visible) {
+        final var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
 
-        var layer = context.getArgument("layer", SkinLayer.class);
-        var raw = character.getEntity().map(Mannequin::getSkinParts).orElseGet(SkinParts::allParts).getRaw();
-        var skinParts = new PaperSkinParts(visible ? raw | layer.getMask() : raw & ~layer.getMask());
+        final var layer = context.getArgument("layer", SkinLayer.class);
+        final var raw = character.getEntity().map(Mannequin::getSkinParts).orElseGet(SkinParts::allParts).getRaw();
+        final var skinParts = new PaperSkinParts(visible ? raw | layer.getMask() : raw & ~layer.getMask());
 
-        var success = character.getEntity().map(mannequin -> {
+        final var success = character.getEntity().map(mannequin -> {
             if (mannequin.getSkinParts().getRaw() == skinParts.getRaw()) return false;
             mannequin.setSkinParts(skinParts);
             return true;
         }).orElse(false);
-        var message = !success ? "nothing.changed" : visible
+        final var message = !success ? "nothing.changed" : visible
                 ? "character.skin_layer.shown" : "character.skin_layer.hidden";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.component("layer", Component.translatable(layer)),

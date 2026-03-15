@@ -17,30 +17,30 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.nameArgum
 
 @NullMarked
 final class CharacterCreateCommand extends SimpleCommand {
-    private CharacterCreateCommand(CharacterPlugin plugin) {
+    private CharacterCreateCommand(final CharacterPlugin plugin) {
         super(plugin, "create", "characters.command.create");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterCreateCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterCreateCommand(plugin);
         return command.create().then(nameArgument(plugin)
                 .then(typeArgument(plugin).executes(command))
                 .executes(command));
     }
 
-    private static RequiredArgumentBuilder<CommandSourceStack, EntityType> typeArgument(CharacterPlugin plugin) {
+    private static RequiredArgumentBuilder<CommandSourceStack, EntityType> typeArgument(final CharacterPlugin plugin) {
         return Commands.argument("type", ArgumentTypes.resource(RegistryKey.ENTITY_TYPE));
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var name = context.getArgument("name", String.class);
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
+        final var name = context.getArgument("name", String.class);
         if (plugin.characterController().characterExists(name)) {
             plugin.bundle().sendMessage(sender, "character.exists", Placeholder.unparsed("name", name));
             return 0;
         } else {
-            var type = tryGetArgument(context, "type", EntityType.class).orElse(EntityType.MANNEQUIN);
+            final var type = tryGetArgument(context, "type", EntityType.class).orElse(EntityType.MANNEQUIN);
             plugin.characterController().spawnCharacter(name, context.getSource().getLocation(), type);
             plugin.bundle().sendMessage(sender, "character.created", Placeholder.unparsed("name", name),
                     Placeholder.unparsed("type", type.key().asString()));

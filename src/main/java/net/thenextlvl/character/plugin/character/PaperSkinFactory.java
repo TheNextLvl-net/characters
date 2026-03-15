@@ -18,8 +18,8 @@ import java.util.concurrent.CompletableFuture;
 public final class PaperSkinFactory implements SkinFactory {
     private final MineSkinClient client;
 
-    public PaperSkinFactory(CharacterPlugin plugin) {
-        var apiKey = System.getenv("MINESKIN_API_KEY");
+    public PaperSkinFactory(final CharacterPlugin plugin) {
+        final var apiKey = System.getenv("MINESKIN_API_KEY");
         this.client = MineSkinClient.builder()
                 .requestHandler(Java11RequestHandler::new)
                 .userAgent("Characters/" + plugin.getPluginMeta().getVersion())
@@ -32,21 +32,21 @@ public final class PaperSkinFactory implements SkinFactory {
     }
 
     @Override
-    public CompletableFuture<ProfileProperty> skinFromFile(File image, boolean slim) {
+    public CompletableFuture<ProfileProperty> skinFromFile(final File image, final boolean slim) {
         return submit(GenerateRequest.upload(image), slim);
     }
 
     @Override
-    public CompletableFuture<ProfileProperty> skinFromURL(URL url, boolean slim) {
+    public CompletableFuture<ProfileProperty> skinFromURL(final URL url, final boolean slim) {
         return submit(GenerateRequest.url(url), slim);
     }
 
-    private CompletableFuture<ProfileProperty> submit(GenerateRequest request, boolean slim) {
+    private CompletableFuture<ProfileProperty> submit(final GenerateRequest request, final boolean slim) {
         return client.queue().submit(request.variant(slim ? Variant.SLIM : Variant.AUTO))
                 .thenCompose(response -> response.getJob().waitForCompletion(client))
                 .thenCompose(jobReference -> jobReference.getOrLoadSkin(client))
                 .thenApply(skinInfo -> {
-                    var data = skinInfo.texture().data();
+                    final var data = skinInfo.texture().data();
                     return new ProfileProperty("textures", data.value(), data.signature());
                 });
     }

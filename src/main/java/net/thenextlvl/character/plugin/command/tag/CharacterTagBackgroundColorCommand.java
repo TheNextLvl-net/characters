@@ -14,28 +14,28 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagBackgroundColorCommand extends SimpleCommand {
-    private CharacterTagBackgroundColorCommand(CharacterPlugin plugin) {
+    private CharacterTagBackgroundColorCommand(final CharacterPlugin plugin) {
         super(plugin, "background-color", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagBackgroundColorCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagBackgroundColorCommand(plugin);
         return command.create().then(Commands.argument(
                 "color", new ColorArgumentType()
         ).executes(command));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagBackgroundColorCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagBackgroundColorCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var color = tryGetArgument(context, "color", Color.class).orElse(null);
-        var success = character.getTagOptions().setBackgroundColor(color);
-        var message = success ? "character.tag.background-color" : "nothing.changed";
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var color = tryGetArgument(context, "color", Color.class).orElse(null);
+        final var success = character.getTagOptions().setBackgroundColor(color);
+        final var message = success ? "character.tag.background-color" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("value", color != null ? "#" + Integer.toHexString(color.asARGB()) : "null"));

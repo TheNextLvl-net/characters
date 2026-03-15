@@ -15,25 +15,25 @@ import static net.thenextlvl.character.plugin.command.action.CharacterActionComm
 
 @NullMarked
 final class CharacterActionRemoveCommand extends SimpleCommand {
-    private CharacterActionRemoveCommand(CharacterPlugin plugin) {
+    private CharacterActionRemoveCommand(final CharacterPlugin plugin) {
         super(plugin, "remove", "characters.command.action.remove");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterActionRemoveCommand(plugin);
+    static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterActionRemoveCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
                 .then(actionArgument(plugin).executes(command)));
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
-        var action = context.getArgument("action", String.class);
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
+        final var character = context.getArgument("character", Character.class);
+        final var action = context.getArgument("action", String.class);
 
-        var success = character.removeAction(action);
-        var message = success ? "character.action.removed" : "character.action.not_found";
+        final var success = character.removeAction(action);
+        final var message = success ? "character.action.removed" : "character.action.not_found";
 
         plugin.bundle().sendMessage(sender, message,
                 Placeholder.parsed("character", character.getName()),

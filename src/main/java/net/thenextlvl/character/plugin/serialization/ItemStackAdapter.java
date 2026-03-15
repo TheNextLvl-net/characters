@@ -14,12 +14,12 @@ import java.util.Base64;
 @NullMarked
 public final class ItemStackAdapter implements TagAdapter<ItemStack> {
     @Override
-    public ItemStack deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public ItemStack deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return ItemStack.deserializeBytes(Base64.getDecoder().decode(tag.getAsString()));
     }
 
     @Override
-    public Tag serialize(ItemStack itemStack, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final ItemStack itemStack, final TagSerializationContext context) throws ParserException {
         return StringTag.of(Base64.getEncoder().encodeToString(itemStack.serializeAsBytes()));
     }
 }

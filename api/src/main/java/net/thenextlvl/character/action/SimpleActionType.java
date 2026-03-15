@@ -16,8 +16,8 @@ final class SimpleActionType<T> implements ActionType<T> {
     private final @Nullable BiPredicate<T, Character<?>> applicable;
 
     SimpleActionType(
-            @KeyPattern.Value String name, Class<T> type, Action<T> action,
-            @Nullable BiPredicate<T, Character<?>> applicable
+            @KeyPattern.Value final String name, final Class<T> type, final Action<T> action,
+            @Nullable final BiPredicate<T, Character<?>> applicable
     ) {
         this.name = name;
         this.type = type;
@@ -41,7 +41,7 @@ final class SimpleActionType<T> implements ActionType<T> {
     }
 
     @Override
-    public boolean isApplicable(T input, Character<?> character) {
+    public boolean isApplicable(final T input, final Character<?> character) {
         return applicable == null || applicable.test(input, character);
     }
 
@@ -51,17 +51,17 @@ final class SimpleActionType<T> implements ActionType<T> {
         private @Nullable Action<T> action;
         private @Nullable BiPredicate<T, Character<?>> applicable = null;
 
-        Builder(Class<T> type, @KeyPattern.Value String name) {
+        Builder(final Class<T> type, @KeyPattern.Value final String name) {
             this.type = type;
             this.name = name;
         }
 
-        public Builder<T> action(@Nullable Action<T> action) {
+        public Builder<T> action(@Nullable final Action<T> action) {
             this.action = action;
             return this;
         }
 
-        public Builder<T> applicable(BiPredicate<T, Character<?>> applicable) {
+        public Builder<T> applicable(final BiPredicate<T, Character<?>> applicable) {
             this.applicable = applicable;
             return this;
         }

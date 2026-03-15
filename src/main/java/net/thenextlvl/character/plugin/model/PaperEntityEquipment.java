@@ -23,10 +23,10 @@ public final class PaperEntityEquipment {
     public final float bootsDropChance;
 
     public PaperEntityEquipment(
-            @Nullable ItemStack itemInMainHand, @Nullable ItemStack itemInOffHand,
-            @Nullable ItemStack helmet, @Nullable ItemStack chestplate, @Nullable ItemStack leggings, @Nullable ItemStack boots,
-            float itemInMainHandDropChance, float itemInOffHandDropChance,
-            float helmetDropChance, float chestplateDropChance, float leggingsDropChance, float bootsDropChance
+            @Nullable final ItemStack itemInMainHand, @Nullable final ItemStack itemInOffHand,
+            @Nullable final ItemStack helmet, @Nullable final ItemStack chestplate, @Nullable final ItemStack leggings, @Nullable final ItemStack boots,
+            final float itemInMainHandDropChance, final float itemInOffHandDropChance,
+            final float helmetDropChance, final float chestplateDropChance, final float leggingsDropChance, final float bootsDropChance
     ) {
         this.itemInMainHand = itemInMainHand;
         this.itemInOffHand = itemInOffHand;
@@ -42,7 +42,7 @@ public final class PaperEntityEquipment {
         this.bootsDropChance = bootsDropChance;
     }
 
-    public PaperEntityEquipment(EntityEquipment equipment) {
+    public PaperEntityEquipment(final EntityEquipment equipment) {
         this.itemInMainHand = equipment.getItemInMainHand();
         this.itemInOffHand = equipment.getItemInOffHand();
         this.helmet = equipment.getHelmet();
@@ -57,17 +57,17 @@ public final class PaperEntityEquipment {
         this.bootsDropChance = equipment.getBootsDropChance();
     }
 
-    public static @Nullable PaperEntityEquipment of(LivingEntity entity) {
-        var equipment = entity.getEquipment();
+    public static @Nullable PaperEntityEquipment of(final LivingEntity entity) {
+        final var equipment = entity.getEquipment();
         return equipment == null ? null : new PaperEntityEquipment(equipment);
     }
 
-    public void apply(LivingEntity entity) {
-        var equipment = entity.getEquipment();
+    public void apply(final LivingEntity entity) {
+        final var equipment = entity.getEquipment();
         if (equipment != null) apply(equipment);
     }
 
-    public void apply(EntityEquipment equipment) {
+    public void apply(final EntityEquipment equipment) {
         equipment.setItemInMainHand(itemInMainHand);
         equipment.setItemInOffHand(itemInOffHand);
         equipment.setHelmet(helmet);

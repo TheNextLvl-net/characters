@@ -27,24 +27,24 @@ import java.util.UUID;
 public final class AttributeAdapter implements TagAdapter<Set<AttributeInstance>> {
     @Override
     @SuppressWarnings("PatternValidation")
-    public Set<AttributeInstance> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var attributes = new HashSet<AttributeInstance>();
-        var registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ATTRIBUTE);
+    public Set<AttributeInstance> deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var attributes = new HashSet<AttributeInstance>();
+        final var registry = RegistryAccess.registryAccess().getRegistry(RegistryKey.ATTRIBUTE);
         root.forEach((key, tag1) -> {
-            var attribute = registry.get(Key.key(key));
+            final var attribute = registry.get(Key.key(key));
             if (attribute == null) return;
-            var attributeTag = tag1.getAsCompound();
-            var baseValue = attributeTag.get("baseValue").getAsDouble();
-            var modifiers = new HashSet<AttributeModifier>();
+            final var attributeTag = tag1.getAsCompound();
+            final var baseValue = attributeTag.get("baseValue").getAsDouble();
+            final var modifiers = new HashSet<AttributeModifier>();
             attributeTag.optional("modifiers").map(Tag::getAsCompound).ifPresent(modifiersTag -> {
                 modifiersTag.forEach((key1, modifierTag) -> {
-                    var asCompound = modifierTag.getAsCompound();
-                    var modifierKey = NamespacedKey.fromString(key1);
+                    final var asCompound = modifierTag.getAsCompound();
+                    final var modifierKey = NamespacedKey.fromString(key1);
                     if (modifierKey == null) return;
-                    var amount = asCompound.get("amount").getAsInt();
-                    var operation = context.deserialize(asCompound.get("operation"), AttributeModifier.Operation.class);
-                    var slot = asCompound.optional("slot").map(tag2 -> context.deserialize(tag2, EquipmentSlotGroup.class)).orElse(EquipmentSlotGroup.ANY);
+                    final var amount = asCompound.get("amount").getAsInt();
+                    final var operation = context.deserialize(asCompound.get("operation"), AttributeModifier.Operation.class);
+                    final var slot = asCompound.optional("slot").map(tag2 -> context.deserialize(tag2, EquipmentSlotGroup.class)).orElse(EquipmentSlotGroup.ANY);
                     modifiers.add(new AttributeModifier(modifierKey, amount, operation, slot));
                 });
             });
@@ -54,13 +54,13 @@ public final class AttributeAdapter implements TagAdapter<Set<AttributeInstance>
     }
 
     @Override
-    public Tag serialize(Set<AttributeInstance> attributes, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.builder();
+    public Tag serialize(final Set<AttributeInstance> attributes, final TagSerializationContext context) throws ParserException {
+        final var tag = CompoundTag.builder();
         attributes.forEach(instance -> {
-            var attributeTag = CompoundTag.builder();
+            final var attributeTag = CompoundTag.builder();
             attributeTag.put("baseValue", instance.getBaseValue());
 
-            var modifiersTag = CompoundTag.builder();
+            final var modifiersTag = CompoundTag.builder();
             instance.getModifiers().forEach(modifier -> {
                 modifiersTag.put(modifier.key().asString(), CompoundTag.builder()
                         .put("operation", context.serialize(modifier.getOperation()))
@@ -90,7 +90,7 @@ public final class AttributeAdapter implements TagAdapter<Set<AttributeInstance>
         }
 
         @Override
-        public void setBaseValue(double value) {
+        public void setBaseValue(final double value) {
             throw new UnsupportedOperationException();
         }
 
@@ -100,37 +100,37 @@ public final class AttributeAdapter implements TagAdapter<Set<AttributeInstance>
         }
 
         @Override
-        public @Nullable AttributeModifier getModifier(Key key) {
+        public @Nullable AttributeModifier getModifier(final Key key) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void removeModifier(Key key) {
+        public void removeModifier(final Key key) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public @Nullable AttributeModifier getModifier(UUID uuid) {
+        public @Nullable AttributeModifier getModifier(final UUID uuid) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void removeModifier(UUID uuid) {
+        public void removeModifier(final UUID uuid) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void addModifier(AttributeModifier modifier) {
+        public void addModifier(final AttributeModifier modifier) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void addTransientModifier(AttributeModifier modifier) {
+        public void addTransientModifier(final AttributeModifier modifier) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void removeModifier(AttributeModifier modifier) {
+        public void removeModifier(final AttributeModifier modifier) {
             throw new UnsupportedOperationException();
         }
 

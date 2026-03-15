@@ -172,11 +172,11 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
 
     public void loadAll() {
         if (!Files.isDirectory(savesFolder)) return;
-        try (var files = Files.list(savesFolder).filter(path -> path.getFileName().toString().endsWith(".dat"))) {
+        try (final var files = Files.list(savesFolder).filter(path -> path.getFileName().toString().endsWith(".dat"))) {
             files.map(this::loadSafe).filter(Objects::nonNull).forEach(character -> {
                 character.getSpawnLocation().filter(Location::isChunkLoaded).ifPresent(character::spawn);
             });
-        } catch (IOException e) {
+        } catch (final IOException e) {
             getComponentLogger().error("Failed to load all characters", e);
             getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             ERROR_TRACKER.trackError(e);
@@ -222,23 +222,23 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         getServer().getPluginManager().registerEvents(new EntityListener(this), this);
     }
 
-    private @Nullable Character<?> loadSafe(Path file) {
+    private @Nullable Character<?> loadSafe(final Path file) {
         try {
-            try (var inputStream = NBTInputStream.create(file)) {
+            try (final var inputStream = NBTInputStream.create(file)) {
                 return load(inputStream);
-            } catch (Exception e) {
-                var backup = file.resolveSibling(file.getFileName().toString() + "_old");
+            } catch (final Exception e) {
+                final var backup = file.resolveSibling(file.getFileName().toString() + "_old");
                 if (!Files.isRegularFile(backup)) throw e;
                 getComponentLogger().warn("Failed to load character from {}", file, e);
                 getComponentLogger().warn("Falling back to {}", backup);
-                try (var inputStream = NBTInputStream.create(backup)) {
+                try (final var inputStream = NBTInputStream.create(backup)) {
                     return load(inputStream);
                 }
             }
-        } catch (EOFException e) {
+        } catch (final EOFException e) {
             getComponentLogger().error("The character file {} is irrecoverably broken", file);
             return null;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             getComponentLogger().error("Failed to load character from {}", file, e);
             getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             ERROR_TRACKER.trackError(e);
@@ -246,10 +246,10 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         }
     }
 
-    private @Nullable Character<?> load(NBTInputStream inputStream) throws IOException {
-        var entry = inputStream.readNamedTag();
-        var root = entry.getValue();
-        var name = entry.getKey();
+    private @Nullable Character<?> load(final NBTInputStream inputStream) throws IOException {
+        final var entry = inputStream.readNamedTag();
+        final var root = entry.getValue();
+        final var name = entry.getKey();
 
         if (characterController.characters.containsKey(name)) {
             getComponentLogger().warn("A character with the name '{}' is already loaded", name);
@@ -259,7 +259,7 @@ public final class CharacterPlugin extends JavaPlugin implements CharacterProvid
         var type = nbt.deserialize(root.get("type"), EntityType.class);
         if (type.equals(EntityType.PLAYER)) type = EntityType.MANNEQUIN;
 
-        var character = new PaperCharacter<>(this, name, type);
+        final var character = new PaperCharacter<>(this, name, type);
         character.deserialize(root);
         characterController.characters.put(name, character);
         return character;

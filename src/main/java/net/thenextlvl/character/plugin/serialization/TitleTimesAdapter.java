@@ -14,16 +14,16 @@ import java.time.Duration;
 @NullMarked
 public final class TitleTimesAdapter implements TagAdapter<Title.Times> {
     @Override
-    public Title.Times deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var fadeIn = Duration.ofMillis(root.get("fadeIn").getAsLong());
-        var stay = Duration.ofMillis(root.get("stay").getAsLong());
-        var fadeOut = Duration.ofMillis(root.get("fadeOut").getAsLong());
+    public Title.Times deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var fadeIn = Duration.ofMillis(root.get("fadeIn").getAsLong());
+        final var stay = Duration.ofMillis(root.get("stay").getAsLong());
+        final var fadeOut = Duration.ofMillis(root.get("fadeOut").getAsLong());
         return Title.Times.times(fadeIn, stay, fadeOut);
     }
 
     @Override
-    public Tag serialize(Title.Times times, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final Title.Times times, final TagSerializationContext context) throws ParserException {
         return CompoundTag.builder()
                 .put("fadeIn", times.fadeIn().toMillis())
                 .put("stay", times.stay().toMillis())

@@ -12,17 +12,17 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class ProfilePropertyAdapter implements TagAdapter<ProfileProperty> {
     @Override
-    public ProfileProperty deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var name = root.get("name").getAsString();
-        var value = root.get("value").getAsString();
-        var signature = root.optional("signature").map(Tag::getAsString).orElse(null);
+    public ProfileProperty deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var name = root.get("name").getAsString();
+        final var value = root.get("value").getAsString();
+        final var signature = root.optional("signature").map(Tag::getAsString).orElse(null);
         return new ProfileProperty(name, value, signature);
     }
 
     @Override
-    public Tag serialize(ProfileProperty property, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.builder();
+    public Tag serialize(final ProfileProperty property, final TagSerializationContext context) throws ParserException {
+        final var tag = CompoundTag.builder();
         tag.put("name", property.getName());
         tag.put("value", property.getValue());
         if (property.getSignature() != null)

@@ -8,11 +8,11 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class ConnectCommand extends CharacterStringActionCommand {
-    private ConnectCommand(CharacterPlugin plugin) {
+    private ConnectCommand(final CharacterPlugin plugin) {
         super(plugin, ActionTypes.types().connect(), "connect", "server");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
         return new ConnectCommand(plugin).create();
     }
 }

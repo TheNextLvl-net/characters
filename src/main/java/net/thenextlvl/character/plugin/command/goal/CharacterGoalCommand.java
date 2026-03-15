@@ -8,12 +8,12 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class CharacterGoalCommand extends BrigadierCommand {
-    private CharacterGoalCommand(CharacterPlugin plugin) {
+    private CharacterGoalCommand(final CharacterPlugin plugin) {
         super(plugin, "goal", "characters.command.goal");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterGoalCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterGoalCommand(plugin);
         return command.create()
                 .then(CharacterGoalAddCommand.create(plugin))
                 .then(CharacterGoalRemoveCommand.create(plugin));

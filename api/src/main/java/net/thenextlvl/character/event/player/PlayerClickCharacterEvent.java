@@ -16,7 +16,7 @@ public class PlayerClickCharacterEvent extends PlayerCharacterEvent implements C
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerClickCharacterEvent(Character<?> character, Entity clickedEntity, Player player, ClickType type) {
+    public PlayerClickCharacterEvent(final Character<?> character, final Entity clickedEntity, final Player player, final ClickType type) {
         super(character, player);
         this.clickedEntity = clickedEntity;
         this.type = type;
@@ -48,7 +48,7 @@ public class PlayerClickCharacterEvent extends PlayerCharacterEvent implements C
     }
 
     @Override
-    public void setCancelled(boolean cancelled) {
+    public void setCancelled(final boolean cancelled) {
         this.cancelled = cancelled;
     }
 }

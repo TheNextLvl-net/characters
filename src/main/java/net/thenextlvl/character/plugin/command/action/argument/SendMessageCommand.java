@@ -8,11 +8,11 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class SendMessageCommand extends CharacterStringActionCommand {
-    private SendMessageCommand(CharacterPlugin plugin) {
+    private SendMessageCommand(final CharacterPlugin plugin) {
         super(plugin, ActionTypes.types().sendMessage(), "send-message", "message");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
         return new SendMessageCommand(plugin).create();
     }
 }

@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class BlockDataArgumentType implements CustomArgumentType.Converted<BlockData, BlockState> {
     @Override
-    public BlockData convert(BlockState nativeType) {
+    public BlockData convert(final BlockState nativeType) {
         return nativeType.getBlockData();
     }
 

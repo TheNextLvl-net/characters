@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 public class PaperFollowEntityGoal extends PaperWalkGoal implements FollowEntityGoal {
     private final Entity target;
 
-    private PaperFollowEntityGoal(CharacterPlugin plugin, PathfindOptions options, Entity entity) {
+    private PaperFollowEntityGoal(final CharacterPlugin plugin, final PathfindOptions options, final Entity entity) {
         super(plugin, options);
         this.target = entity;
     }
@@ -30,12 +30,12 @@ public class PaperFollowEntityGoal extends PaperWalkGoal implements FollowEntity
     public static class Builder extends PaperWalkGoal.Builder<FollowEntityGoal, FollowEntityGoal.Builder> implements FollowEntityGoal.Builder {
         private @Nullable Entity target;
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             super(plugin);
         }
 
         @Override
-        public FollowEntityGoal.Builder target(Entity target) {
+        public FollowEntityGoal.Builder target(final Entity target) {
             this.target = target;
             return this;
         }

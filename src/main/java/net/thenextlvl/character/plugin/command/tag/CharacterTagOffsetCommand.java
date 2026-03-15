@@ -15,12 +15,12 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagOffsetCommand extends SimpleCommand {
-    private CharacterTagOffsetCommand(CharacterPlugin plugin) {
+    private CharacterTagOffsetCommand(final CharacterPlugin plugin) {
         super(plugin, "offset", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagOffsetCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagOffsetCommand(plugin);
         return command.create().then(Commands.argument(
                 "x", FloatArgumentType.floatArg()
         ).then(Commands.argument(
@@ -30,19 +30,19 @@ final class CharacterTagOffsetCommand extends SimpleCommand {
         ).executes(command))));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagOffsetCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagOffsetCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var x = tryGetArgument(context, "x", float.class).orElse(0.0f);
-        var y = tryGetArgument(context, "y", float.class).orElse(0.27f);
-        var z = tryGetArgument(context, "z", float.class).orElse(0.0f);
-        var success = character.getTagOptions().setOffset(new Vector3f(x, y, z));
-        var message = success ? "character.tag.offset" : "nothing.changed";
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var x = tryGetArgument(context, "x", float.class).orElse(0.0f);
+        final var y = tryGetArgument(context, "y", float.class).orElse(0.27f);
+        final var z = tryGetArgument(context, "z", float.class).orElse(0.0f);
+        final var success = character.getTagOptions().setOffset(new Vector3f(x, y, z));
+        final var message = success ? "character.tag.offset" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Formatter.number("x", x),
                 Formatter.number("y", y),

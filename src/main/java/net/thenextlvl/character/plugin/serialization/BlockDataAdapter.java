@@ -14,17 +14,17 @@ import org.jspecify.annotations.NullMarked;
 public final class BlockDataAdapter implements TagAdapter<BlockData> {
     private final Server server;
 
-    public BlockDataAdapter(Server server) {
+    public BlockDataAdapter(final Server server) {
         this.server = server;
     }
 
     @Override
-    public BlockData deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public BlockData deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return server.createBlockData(tag.getAsString());
     }
 
     @Override
-    public Tag serialize(BlockData data, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final BlockData data, final TagSerializationContext context) throws ParserException {
         return StringTag.of(data.getAsString(true));
     }
 }

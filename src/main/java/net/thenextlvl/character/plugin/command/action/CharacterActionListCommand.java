@@ -14,21 +14,21 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 
 @NullMarked
 final class CharacterActionListCommand extends SimpleCommand {
-    private CharacterActionListCommand(CharacterPlugin plugin) {
+    private CharacterActionListCommand(final CharacterPlugin plugin) {
         super(plugin, "list", "characters.command.action.list");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterActionListCommand(plugin);
+    static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterActionListCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
                 .executes(command));
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
+        final var character = (Character<?>) context.getArgument("character", Character.class);
         if (character.getActions().isEmpty()) {
             plugin.bundle().sendMessage(sender, "character.action.list.empty",
                     Placeholder.unparsed("character", character.getName()));

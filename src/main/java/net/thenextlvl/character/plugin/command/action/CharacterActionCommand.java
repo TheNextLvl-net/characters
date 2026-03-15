@@ -12,11 +12,11 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class CharacterActionCommand extends BrigadierCommand {
-    private CharacterActionCommand(CharacterPlugin plugin) {
+    private CharacterActionCommand(final CharacterPlugin plugin) {
         super(plugin, "action", "characters.command.action");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
         return new CharacterActionCommand(plugin).create()
                 .then(CharacterActionAddCommand.create(plugin))
                 .then(CharacterActionChanceCommand.create(plugin))
@@ -26,7 +26,7 @@ public final class CharacterActionCommand extends BrigadierCommand {
                 .then(CharacterActionRemoveCommand.create(plugin));
     }
 
-    static ArgumentBuilder<CommandSourceStack, ?> actionArgument(CharacterPlugin plugin) {
+    static ArgumentBuilder<CommandSourceStack, ?> actionArgument(final CharacterPlugin plugin) {
         return Commands.argument("action", StringArgumentType.word())
                 .suggests(new CharacterActionSuggestionProvider());
     }

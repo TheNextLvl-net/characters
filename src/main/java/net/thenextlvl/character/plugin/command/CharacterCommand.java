@@ -18,11 +18,11 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class CharacterCommand extends BrigadierCommand {
-    private CharacterCommand(CharacterPlugin plugin) {
+    private CharacterCommand(final CharacterPlugin plugin) {
         super(plugin, "character", "characters.command");
     }
 
-    public static LiteralCommandNode<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralCommandNode<CommandSourceStack> create(final CharacterPlugin plugin) {
         return new CharacterCommand(plugin).create()
                 .then(CharacterActionCommand.create(plugin))
                 .then(CharacterAttributeCommand.create(plugin))
@@ -39,20 +39,20 @@ public final class CharacterCommand extends BrigadierCommand {
                 .build();
     }
 
-    public static RequiredArgumentBuilder<CommandSourceStack, String> permissionArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, String> permissionArgument(final CharacterPlugin plugin) {
         return Commands.argument("permission", StringArgumentType.string())
                 .suggests(new PermissionSuggestionProvider<>(plugin));
     }
 
-    public static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> characterArgument(final CharacterPlugin plugin) {
         return Commands.argument("character", new CharacterArgumentType(plugin));
     }
 
-    public static RequiredArgumentBuilder<CommandSourceStack, ?> mannequinCharacterArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> mannequinCharacterArgument(final CharacterPlugin plugin) {
         return Commands.argument("character", new MannequinCharacterArgumentType(plugin));
     }
 
-    public static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(CharacterPlugin plugin) {
+    public static RequiredArgumentBuilder<CommandSourceStack, ?> nameArgument(final CharacterPlugin plugin) {
         return Commands.argument("name", StringArgumentType.word());
     }
 }

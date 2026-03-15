@@ -18,7 +18,7 @@ public enum ClickTypes {
 
     private final EnumSet<ClickType> clickTypes;
 
-    ClickTypes(EnumSet<ClickType> clickTypes) {
+    ClickTypes(final EnumSet<ClickType> clickTypes) {
         this.clickTypes = clickTypes;
     }
 

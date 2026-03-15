@@ -5,7 +5,7 @@ import net.thenextlvl.character.action.ClickType;
 import net.thenextlvl.character.event.player.PlayerClickCharacterEvent;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
-import org.bukkit.GameRule;
+import org.bukkit.GameRules;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -21,46 +21,46 @@ import org.jspecify.annotations.NullMarked;
 public final class EntityListener implements Listener {
     private final CharacterPlugin plugin;
 
-    public EntityListener(CharacterPlugin plugin) {
+    public EntityListener(final CharacterPlugin plugin) {
         this.plugin = plugin;
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+    public void onPlayerInteractEntity(final PlayerInteractEntityEvent event) {
         if (!event.getHand().equals(EquipmentSlot.HAND)) return;
         plugin.characterController().getCharacter(event.getRightClicked()).ifPresent(character -> {
-            var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_RIGHT : ClickType.RIGHT;
-            var characterEvent = new PlayerClickCharacterEvent(character, event.getRightClicked(), event.getPlayer(), type);
+            final var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_RIGHT : ClickType.RIGHT;
+            final var characterEvent = new PlayerClickCharacterEvent(character, event.getRightClicked(), event.getPlayer(), type);
             characterEvent.callEvent();
             event.setCancelled(true);
         });
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onPrePlayerAttackEntity(PrePlayerAttackEntityEvent event) {
+    public void onPrePlayerAttackEntity(final PrePlayerAttackEntityEvent event) {
         plugin.characterController().getCharacter(event.getAttacked()).ifPresent(character -> {
-            var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
-            var characterEvent = new PlayerClickCharacterEvent(character, event.getAttacked(), event.getPlayer(), type);
+            final var type = event.getPlayer().isSneaking() ? ClickType.SHIFT_LEFT : ClickType.LEFT;
+            final var characterEvent = new PlayerClickCharacterEvent(character, event.getAttacked(), event.getPlayer(), type);
             event.setCancelled(!characterEvent.callEvent() || event.getAttacked().isInvulnerable());
         });
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void onEntityDamage(EntityDamageEvent event) {
+    public void onEntityDamage(final EntityDamageEvent event) {
         if (!plugin.characterController().isCharacter(event.getEntity())) return;
         event.setCancelled(event.getEntity().isInvulnerable());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onHangingBreak(HangingBreakEvent event) {
+    public void onHangingBreak(final HangingBreakEvent event) {
         if (!plugin.characterController().isCharacter(event.getEntity())) return;
         event.setCancelled(event.getEntity().isInvulnerable());
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onEntityDeath(EntityDeathEvent event) {
+    public void onEntityDeath(final EntityDeathEvent event) {
         plugin.characterController().getCharacter(event.getEntity()).ifPresent(character -> {
-            if (!Boolean.TRUE.equals(event.getEntity().getWorld().getGameRuleValue(GameRule.DO_IMMEDIATE_RESPAWN))) {
+            if (!Boolean.TRUE.equals(event.getEntity().getWorld().getGameRuleValue(GameRules.IMMEDIATE_RESPAWN))) {
                 plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.remove(), 20);
                 plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.spawn(), 75);
             } else character.respawn();
@@ -68,7 +68,7 @@ public final class EntityListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onEntityRemove(EntityRemoveEvent event) {
+    public void onEntityRemove(final EntityRemoveEvent event) {
         plugin.characterController().getCharacter(event.getEntity()).ifPresent(entityCharacter -> {
             entityCharacter.persist();
             ((PaperCharacter<?>) entityCharacter).invalidate();

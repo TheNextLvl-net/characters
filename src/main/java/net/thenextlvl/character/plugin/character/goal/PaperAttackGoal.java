@@ -13,7 +13,7 @@ public class PaperAttackGoal extends PaperWalkGoal implements AttackGoal {
     private final Entity target;
     private final double attackRange;
 
-    public PaperAttackGoal(CharacterPlugin plugin, PathfindOptions options, Entity target, double attackRange) {
+    public PaperAttackGoal(final CharacterPlugin plugin, final PathfindOptions options, final Entity target, final double attackRange) {
         super(plugin, options);
         this.target = target;
         this.attackRange = attackRange;
@@ -38,18 +38,18 @@ public class PaperAttackGoal extends PaperWalkGoal implements AttackGoal {
         private @Nullable Entity target;
         private double attackRange = 2.0;
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             super(plugin);
         }
 
         @Override
-        public AttackGoal.Builder attackRange(double range) {
+        public AttackGoal.Builder attackRange(final double range) {
             this.attackRange = range;
             return this;
         }
 
         @Override
-        public AttackGoal.Builder target(Entity target) {
+        public AttackGoal.Builder target(final Entity target) {
             this.target = target;
             return this;
         }

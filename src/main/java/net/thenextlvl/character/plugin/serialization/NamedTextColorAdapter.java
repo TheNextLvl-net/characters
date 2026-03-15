@@ -12,12 +12,12 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class NamedTextColorAdapter implements TagAdapter<NamedTextColor> {
     @Override
-    public NamedTextColor deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public NamedTextColor deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return NamedTextColor.NAMES.valueOrThrow(tag.getAsString());
     }
 
     @Override
-    public Tag serialize(NamedTextColor color, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final NamedTextColor color, final TagSerializationContext context) throws ParserException {
         return StringTag.of(color.toString());
     }
 }

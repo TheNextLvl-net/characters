@@ -15,7 +15,7 @@ public class PaperLookAtGoal extends PaperGoal implements LookAtGoal {
     private final @Nullable Location targetLocation;
     private final LookAnchor lookAnchor;
 
-    private PaperLookAtGoal(CharacterPlugin plugin, @Nullable Entity targetEntity, @Nullable Location targetLocation, LookAnchor lookAnchor) {
+    private PaperLookAtGoal(final CharacterPlugin plugin, @Nullable final Entity targetEntity, @Nullable final Location targetLocation, final LookAnchor lookAnchor) {
         super(plugin);
         this.targetEntity = targetEntity;
         this.targetLocation = targetLocation;
@@ -47,24 +47,24 @@ public class PaperLookAtGoal extends PaperGoal implements LookAtGoal {
         private @Nullable Location targetLocation;
         private LookAnchor lookAnchor = LookAnchor.EYES;
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             super(plugin);
         }
 
         @Override
-        public LookAtGoal.Builder targetEntity(Entity targetingEntity) {
+        public LookAtGoal.Builder targetEntity(final Entity targetingEntity) {
             this.targetEntity = targetingEntity;
             return this;
         }
 
         @Override
-        public LookAtGoal.Builder targetLocation(Location targetingLocation) {
+        public LookAtGoal.Builder targetLocation(final Location targetingLocation) {
             this.targetLocation = targetingLocation;
             return this;
         }
 
         @Override
-        public LookAtGoal.Builder lookAt(LookAnchor anchor) {
+        public LookAtGoal.Builder lookAt(final LookAnchor anchor) {
             this.lookAnchor = anchor;
             return this;
         }

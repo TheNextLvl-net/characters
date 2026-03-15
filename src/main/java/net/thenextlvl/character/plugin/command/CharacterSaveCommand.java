@@ -13,21 +13,21 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 
 @NullMarked
 final class CharacterSaveCommand extends SimpleCommand {
-    private CharacterSaveCommand(CharacterPlugin plugin) {
+    private CharacterSaveCommand(final CharacterPlugin plugin) {
         super(plugin, "save", "characters.command.save");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterSaveCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterSaveCommand(plugin);
         return command.create().then(characterArgument(plugin).executes(command));
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var sender = context.getSource().getSender();
-        var success = character.isPersistent() && character.persist();
-        var message = !character.isPersistent() ? "character.not_persistent"
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var sender = context.getSource().getSender();
+        final var success = character.isPersistent() && character.persist();
+        final var message = !character.isPersistent() ? "character.not_persistent"
                 : success ? "character.persisted" : "character.persisted.failed";
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? SINGLE_SUCCESS : 0;

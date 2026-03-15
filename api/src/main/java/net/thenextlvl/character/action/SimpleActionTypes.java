@@ -125,10 +125,10 @@ final class SimpleActionTypes implements ActionTypes {
         return connect;
     }
 
-    private boolean isDeprecated(Enum<?> anEnum) {
+    private boolean isDeprecated(final Enum<?> anEnum) {
         try {
             return anEnum.getDeclaringClass().getField(anEnum.name()).isAnnotationPresent(Deprecated.class);
-        } catch (NoSuchFieldException e) {
+        } catch (final NoSuchFieldException e) {
             return false;
         }
     }

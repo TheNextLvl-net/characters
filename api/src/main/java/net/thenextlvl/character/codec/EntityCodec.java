@@ -90,72 +90,72 @@ public interface EntityCodec<E, T> extends Keyed {
      * @return a new {@link Builder} instance for constructing configured {@link EntityCodec} objects
      */
     @Contract(value = "_, _, _ -> new", pure = true)
-    static <E, T> @NonNull Builder<E, T> builder(@NonNull Key key, @NonNull Class<E> entityType, @NonNull Class<? super T> valueType) {
+    static <E, T> @NonNull Builder<E, T> builder(@NonNull final Key key, @NonNull final Class<E> entityType, @NonNull final Class<? super T> valueType) {
         return new SimpleEntityCodec.Builder<>(key, entityType, valueType);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, String> stringCodec(@NonNull Key key, @NonNull Class<E> entityType) {
+    static <E> @NonNull Builder<E, String> stringCodec(@NonNull final Key key, @NonNull final Class<E> entityType) {
         return SimpleEntityCodec.stringCodec(key, entityType);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Duration> durationCodec(@NonNull Key key, @NonNull Class<E> entityType) {
+    static <E> @NonNull Builder<E, Duration> durationCodec(@NonNull final Key key, @NonNull final Class<E> entityType) {
         return durationCodec(key, entityType, Duration.ZERO);
     }
 
     @Contract(value = "_, _, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Duration> durationCodec(@NonNull Key key, @NonNull Class<E> entityType, @NonNull Duration minimum) {
+    static <E> @NonNull Builder<E, Duration> durationCodec(@NonNull final Key key, @NonNull final Class<E> entityType, @NonNull final Duration minimum) {
         return SimpleEntityCodec.durationCodec(key, entityType, minimum);
     }
 
     @Contract(value = "_, _, _ -> new", pure = true)
-    static <E, T extends Enum<T>> @NonNull Builder<E, T> enumCodec(@NonNull Key key, @NonNull Class<E> entityType, @NonNull Class<T> enumType) {
+    static <E, T extends Enum<T>> @NonNull Builder<E, T> enumCodec(@NonNull final Key key, @NonNull final Class<E> entityType, @NonNull final Class<T> enumType) {
         return SimpleEntityCodec.enumCodec(key, entityType, enumType);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Boolean> booleanCodec(@NonNull Key key, @NonNull Class<E> entityType) {
+    static <E> @NonNull Builder<E, Boolean> booleanCodec(@NonNull final Key key, @NonNull final Class<E> entityType) {
         return SimpleEntityCodec.booleanCodec(key, entityType);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Integer> intCodec(@NonNull Key key, @NonNull Class<E> entityType) {
+    static <E> @NonNull Builder<E, Integer> intCodec(@NonNull final Key key, @NonNull final Class<E> entityType) {
         return intCodec(key, entityType, Integer.MIN_VALUE, Integer.MAX_VALUE);
     }
 
     @Contract(value = "_, _, _, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Integer> intCodec(@NonNull Key key, @NonNull Class<E> entityType, int min, int max) {
+    static <E> @NonNull Builder<E, Integer> intCodec(@NonNull final Key key, @NonNull final Class<E> entityType, final int min, final int max) {
         return SimpleEntityCodec.intCodec(key, entityType, min, max);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Long> longCodec(@NonNull Key key, @NonNull Class<E> entityType) {
+    static <E> @NonNull Builder<E, Long> longCodec(@NonNull final Key key, @NonNull final Class<E> entityType) {
         return longCodec(key, entityType, Long.MIN_VALUE, Long.MAX_VALUE);
     }
 
     @Contract(value = "_, _, _, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Long> longCodec(@NonNull Key key, @NonNull Class<E> entityType, long min, long max) {
+    static <E> @NonNull Builder<E, Long> longCodec(@NonNull final Key key, @NonNull final Class<E> entityType, final long min, final long max) {
         return SimpleEntityCodec.longCodec(key, entityType, min, max);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Double> doubleCodec(@NonNull Key key, @NonNull Class<E> entityType) {
+    static <E> @NonNull Builder<E, Double> doubleCodec(@NonNull final Key key, @NonNull final Class<E> entityType) {
         return doubleCodec(key, entityType, Double.MIN_VALUE, Double.MAX_VALUE);
     }
 
     @Contract(value = "_, _, _, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Double> doubleCodec(@NonNull Key key, @NonNull Class<E> entityType, double min, double max) {
+    static <E> @NonNull Builder<E, Double> doubleCodec(@NonNull final Key key, @NonNull final Class<E> entityType, final double min, final double max) {
         return SimpleEntityCodec.doubleCodec(key, entityType, min, max);
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Float> floatCodec(@NonNull Key key, @NonNull Class<E> entityType) {
+    static <E> @NonNull Builder<E, Float> floatCodec(@NonNull final Key key, @NonNull final Class<E> entityType) {
         return floatCodec(key, entityType, Float.MIN_VALUE, Float.MAX_VALUE);
     }
 
     @Contract(value = "_, _, _, _ -> new", pure = true)
-    static <E> @NonNull Builder<E, Float> floatCodec(@NonNull Key key, @NonNull Class<E> entityType, float min, float max) {
+    static <E> @NonNull Builder<E, Float> floatCodec(@NonNull final Key key, @NonNull final Class<E> entityType, final float min, final float max) {
         return SimpleEntityCodec.floatCodec(key, entityType, min, max);
     }
 

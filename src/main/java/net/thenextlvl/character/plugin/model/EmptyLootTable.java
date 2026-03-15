@@ -20,12 +20,12 @@ public final class EmptyLootTable implements LootTable {
     }
 
     @Override
-    public Collection<ItemStack> populateLoot(@Nullable Random random, LootContext context) {
+    public Collection<ItemStack> populateLoot(@Nullable final Random random, final LootContext context) {
         return List.of();
     }
 
     @Override
-    public void fillInventory(Inventory inventory, @Nullable Random random, LootContext context) {
+    public void fillInventory(final Inventory inventory, @Nullable final Random random, final LootContext context) {
     }
 
     @Override

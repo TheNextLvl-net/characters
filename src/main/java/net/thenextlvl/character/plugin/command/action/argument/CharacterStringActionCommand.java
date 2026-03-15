@@ -13,19 +13,19 @@ import org.jspecify.annotations.NullMarked;
 class CharacterStringActionCommand extends CharacterActionCommand<String> {
     private final String argument;
 
-    protected CharacterStringActionCommand(CharacterPlugin plugin, ActionType<String> actionType, String name, String argument) {
+    protected CharacterStringActionCommand(final CharacterPlugin plugin, final ActionType<String> actionType, final String name, final String argument) {
         super(plugin, actionType, name);
         this.argument = argument;
     }
 
     @Override
     protected LiteralArgumentBuilder<CommandSourceStack> create() {
-        var argument = Commands.argument(this.argument, StringArgumentType.greedyString());
+        final var argument = Commands.argument(this.argument, StringArgumentType.greedyString());
         return super.create().then(argument.executes(this));
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
+    public int run(final CommandContext<CommandSourceStack> context) {
         return addAction(context, context.getArgument(argument, String.class));
     }
 }

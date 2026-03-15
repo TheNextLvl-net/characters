@@ -17,12 +17,12 @@ import static net.thenextlvl.character.plugin.command.action.CharacterActionComm
 
 @NullMarked
 final class CharacterActionPermissionCommand extends ActionCommand {
-    private CharacterActionPermissionCommand(CharacterPlugin plugin) {
+    private CharacterActionPermissionCommand(final CharacterPlugin plugin) {
         super(plugin, "permission", "characters.command.action.permission");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterActionPermissionCommand(plugin);
+    static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterActionPermissionCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
                 .then(actionArgument(plugin)
@@ -31,12 +31,12 @@ final class CharacterActionPermissionCommand extends ActionCommand {
                         .executes(command)));
     }
 
-    private int set(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var character = (Character<?>) context.getArgument("character", Character.class);
-        var actionName = context.getArgument("action", String.class);
-        var action = character.getAction(actionName).orElse(null);
-        var permission = tryGetArgument(context, "permission", String.class).orElse(null);
+    private int set(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
+        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var actionName = context.getArgument("action", String.class);
+        final var action = character.getAction(actionName).orElse(null);
+        final var permission = tryGetArgument(context, "permission", String.class).orElse(null);
 
         if (action == null) {
             plugin.bundle().sendMessage(sender, "character.action.not_found",
@@ -45,8 +45,8 @@ final class CharacterActionPermissionCommand extends ActionCommand {
             return 0;
         }
 
-        var success = action.setPermission(permission);
-        var message = success ? permission != null
+        final var success = action.setPermission(permission);
+        final var message = success ? permission != null
                 ? "character.action.permission.set" : "character.action.permission.removed"
                 : "nothing.changed";
         plugin.bundle().sendMessage(sender, message,
@@ -57,8 +57,8 @@ final class CharacterActionPermissionCommand extends ActionCommand {
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context, Character<?> character, ClickAction<?> action, String actionName) {
-        var message = action.getPermission() != null ? "character.action.permission" : "character.action.permission.none";
+    public int run(final CommandContext<CommandSourceStack> context, final Character<?> character, final ClickAction<?> action, final String actionName) {
+        final var message = action.getPermission() != null ? "character.action.permission" : "character.action.permission.none";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("permission", String.valueOf(action.getPermission())),
                 Placeholder.unparsed("action", actionName),

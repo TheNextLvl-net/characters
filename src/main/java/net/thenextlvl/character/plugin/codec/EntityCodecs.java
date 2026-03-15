@@ -365,7 +365,7 @@ public final class EntityCodecs {
     private static final EntityCodec<?, ?> TAMED = EntityCodec.booleanCodec(Key.key("tameable", "tamed"), Tameable.class)
             .getter(Tameable::isTamed).setter(Tameable::setTamed).build();
 
-    private static <E, T extends Keyed> EntityCodec.Builder<E, T> registryCodec(Key key, Class<E> entityType, Class<T> type, RegistryKey<T> registryKey) {
+    private static <E, T extends Keyed> EntityCodec.Builder<E, T> registryCodec(final Key key, final Class<E> entityType, final Class<T> type, final RegistryKey<T> registryKey) {
         return EntityCodec.builder(key, entityType, type)
                 .argumentType(ArgumentTypes.resource(registryKey))
                 .adapter(new RegistryAdapter<>(registryKey));

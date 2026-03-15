@@ -9,7 +9,7 @@ import org.jspecify.annotations.NullMarked;
 public abstract class PaperWalkGoal extends PaperGoal implements WalkGoal {
     private final PathfindOptions options;
 
-    public PaperWalkGoal(CharacterPlugin plugin, PathfindOptions options) {
+    public PaperWalkGoal(final CharacterPlugin plugin, final PathfindOptions options) {
         super(plugin);
         this.options = options;
     }
@@ -57,54 +57,54 @@ public abstract class PaperWalkGoal extends PaperGoal implements WalkGoal {
     public static abstract class Builder<T extends WalkGoal, B extends WalkGoal.Builder<T, B>> extends PaperGoal.Builder<T> implements WalkGoal.Builder<T, B> {
         protected final PaperPathfindOptions options = new PaperPathfindOptions();
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             super(plugin);
         }
 
         @Override
-        public B avoidWater(boolean avoidWater) {
+        public B avoidWater(final boolean avoidWater) {
             options.setAvoidWater(avoidWater);
             return getSelf();
         }
 
         @Override
-        public B canFloat(boolean canFloat) {
+        public B canFloat(final boolean canFloat) {
             options.setCanFloat(canFloat);
             return getSelf();
         }
 
         @Override
-        public B canOpenDoors(boolean canOpenDoors) {
+        public B canOpenDoors(final boolean canOpenDoors) {
             options.setCanOpenDoors(canOpenDoors);
             return getSelf();
         }
 
         @Override
-        public B canPassDoors(boolean canPassDoors) {
+        public B canPassDoors(final boolean canPassDoors) {
             options.setCanPassDoors(canPassDoors);
             return getSelf();
         }
 
         @Override
-        public B distanceMargin(double margin) {
+        public B distanceMargin(final double margin) {
             options.setDistanceMargin(margin);
             return getSelf();
         }
 
         @Override
-        public B maxFallDistance(double distance) {
+        public B maxFallDistance(final double distance) {
             options.setMaxFallDistance(distance);
             return getSelf();
         }
 
         @Override
-        public B speed(double speed) {
+        public B speed(final double speed) {
             options.setSpeed(speed);
             return getSelf();
         }
 
         @Override
-        public B speedMultiplier(double multiplier) {
+        public B speedMultiplier(final double multiplier) {
             options.setSpeedMultiplier(multiplier);
             return getSelf();
         }

@@ -13,12 +13,12 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class ActionTypeAdapter implements TagAdapter<ActionType<?>> {
     @Override
-    public ActionType<?> deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public ActionType<?> deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return ActionTypeRegistry.registry().getByName(tag.getAsString()).orElseThrow();
     }
 
     @Override
-    public Tag serialize(ActionType<?> type, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final ActionType<?> type, final TagSerializationContext context) throws ParserException {
         return StringTag.of(type.name());
     }
 }

@@ -29,12 +29,12 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.mannequin
 
 @NullMarked
 public final class CharacterSkinCommand extends BrigadierCommand {
-    private CharacterSkinCommand(CharacterPlugin plugin) {
+    private CharacterSkinCommand(final CharacterPlugin plugin) {
         super(plugin, "skin", "characters.command.skin");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterSkinCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterSkinCommand(plugin);
         return command.create()
                 .then(CharacterSkinLayerCommand.create(plugin))
                 .then(command.reset())
@@ -53,18 +53,19 @@ public final class CharacterSkinCommand extends BrigadierCommand {
                 .then(urlSkinArgument()));
     }
 
-    @SuppressWarnings("unchecked")
-    private int setSkin(CommandContext<CommandSourceStack> context, @Nullable ResolvableProfile profile) {
-        var sender = context.getSource().getSender();
-        var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
+    @SuppressWarnings({"unchecked", "PatternValidation"})
+    private int setSkin(final CommandContext<CommandSourceStack> context, @Nullable final ResolvableProfile profile) {
+        final var sender = context.getSource().getSender();
+        final var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
 
-        var success = character.getEntity().map(mannequin -> {
-            var newProfile = profile != null ? profile : ResolvableProfile.resolvableProfile().name(character.getName()).build();
+        final var success = character.getEntity().map(mannequin -> {
+            final var name = character.getName().length() > 16 ? character.getName().substring(0, 16) : character.getName();
+            final var newProfile = profile != null ? profile : ResolvableProfile.resolvableProfile().name(name).build();
             if (mannequin.getProfile().equals(newProfile)) return false;
             mannequin.setProfile(newProfile);
             return true;
         }).orElse(false);
-        var message = success ? "character.skin" : "nothing.changed";
+        final var message = success ? "character.skin" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
@@ -89,9 +90,9 @@ public final class CharacterSkinCommand extends BrigadierCommand {
                 .executes(context -> setUrlSkin(context, false)));
     }
 
-    private int setFileSkin(CommandContext<CommandSourceStack> context, boolean slim) {
-        var sender = context.getSource().getSender();
-        var file = new File(context.getArgument("file", String.class));
+    private int setFileSkin(final CommandContext<CommandSourceStack> context, final boolean slim) {
+        final var sender = context.getSource().getSender();
+        final var file = new File(context.getArgument("file", String.class));
         if (!file.isFile() || !file.getName().endsWith(".png")) {
             plugin.bundle().sendMessage(sender, "character.skin.file");
             return 0;
@@ -106,9 +107,10 @@ public final class CharacterSkinCommand extends BrigadierCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private int setOfflinePlayerSkin(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var name = context.getArgument("offline-player", String.class);
+    @SuppressWarnings("PatternValidation")
+    private int setOfflinePlayerSkin(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
+        final var name = context.getArgument("offline-player", String.class);
         if (name.length() <= 16) {
             return setSkin(context, ResolvableProfile.resolvableProfile().name(name).build());
         } else {
@@ -117,16 +119,16 @@ public final class CharacterSkinCommand extends BrigadierCommand {
         }
     }
 
-    private int setPlayerSkin(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        var resolver = context.getArgument("player", PlayerSelectorArgumentResolver.class);
-        var player = resolver.resolve(context.getSource()).getFirst();
+    private int setPlayerSkin(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        final var resolver = context.getArgument("player", PlayerSelectorArgumentResolver.class);
+        final var player = resolver.resolve(context.getSource()).getFirst();
         return setSkin(context, ResolvableProfile.resolvableProfile(player.getPlayerProfile()));
     }
 
-    private int setUrlSkin(CommandContext<CommandSourceStack> context, boolean slim) {
+    private int setUrlSkin(final CommandContext<CommandSourceStack> context, final boolean slim) {
         try {
-            var path = context.getArgument("url", String.class);
-            var url = new URI(!path.startsWith("http") ? "https://" + path : path).toURL();
+            final var path = context.getArgument("url", String.class);
+            final var url = new URI(!path.startsWith("http") ? "https://" + path : path).toURL();
             plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.generating");
             plugin.skinFactory().skinFromURL(url, slim)
                     .thenAccept(textures -> setSkin(context, ResolvableProfile.resolvableProfile().addProperty(textures).build()))
@@ -135,7 +137,7 @@ public final class CharacterSkinCommand extends BrigadierCommand {
                         return null;
                     });
             return Command.SINGLE_SUCCESS;
-        } catch (MalformedURLException | URISyntaxException e) {
+        } catch (final MalformedURLException | URISyntaxException e) {
             plugin.bundle().sendMessage(context.getSource().getSender(), "character.skin.url");
             return 0;
         }

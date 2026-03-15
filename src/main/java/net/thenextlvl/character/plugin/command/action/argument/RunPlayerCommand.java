@@ -8,11 +8,11 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class RunPlayerCommand extends CharacterStringActionCommand {
-    private RunPlayerCommand(CharacterPlugin plugin) {
+    private RunPlayerCommand(final CharacterPlugin plugin) {
         super(plugin, ActionTypes.types().runCommand(), "run-command", "command");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
         return new RunPlayerCommand(plugin).create();
     }
 }

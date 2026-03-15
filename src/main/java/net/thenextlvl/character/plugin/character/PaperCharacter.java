@@ -90,8 +90,8 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     protected boolean visibleByDefault = true;
 
     @SuppressWarnings("unchecked")
-    public PaperCharacter(CharacterPlugin plugin, String name, EntityType type) {
-        var entityClass = type.getEntityClass();
+    public PaperCharacter(final CharacterPlugin plugin, final String name, final EntityType type) {
+        final var entityClass = type.getEntityClass();
         Preconditions.checkArgument(entityClass != null, "Cannot spawn entity of type %s", type);
         this.entityClass = (Class<? extends E>) entityClass;
         this.displayName = Component.text(name);
@@ -101,7 +101,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public Optional<ClickAction<?>> getAction(String name) {
+    public Optional<ClickAction<?>> getAction(final String name) {
         return Optional.ofNullable(actions.get(name));
     }
 
@@ -121,17 +121,17 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean addGoal(Goal goal) {
+    public boolean addGoal(final Goal goal) {
         return goals.add(goal);
     }
 
     @Override
-    public boolean removeGoal(Goal goal) {
+    public boolean removeGoal(final Goal goal) {
         return goals.remove(goal);
     }
 
     @Override
-    public <V> Optional<V> getEntity(Class<V> type) {
+    public <V> Optional<V> getEntity(final Class<V> type) {
         return getEntity().filter(type::isInstance).map(type::cast);
     }
 
@@ -196,27 +196,27 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public <T> boolean addAction(String name, ClickAction<T> action) {
+    public <T> boolean addAction(final String name, final ClickAction<T> action) {
         return action.getActionType().isApplicable(action.getInput(), this)
                 && !action.equals(actions.put(name, action));
     }
 
     @Override
-    public boolean addViewer(UUID player) {
+    public boolean addViewer(final UUID player) {
         if (!viewers.add(player)) return false;
         if (entity == null || isVisibleByDefault()) return true;
-        var online = plugin.getServer().getPlayer(player);
+        final var online = plugin.getServer().getPlayer(player);
         if (online != null) online.showEntity(plugin, entity);
         return true;
     }
 
     @Override
-    public boolean addViewers(Collection<UUID> players) {
+    public boolean addViewers(final Collection<UUID> players) {
         return players.stream().map(this::addViewer).reduce(false, Boolean::logicalOr);
     }
 
     @Override
-    public boolean canSee(Player player) {
+    public boolean canSee(final Player player) {
         if (entity == null || !isSpawned()) return false;
         if (!player.getWorld().equals(entity.getWorld())) return false;
         if (viewPermission != null && !player.hasPermission(viewPermission)) return false;
@@ -224,12 +224,12 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean hasAction(ClickAction<?> action) {
+    public boolean hasAction(final ClickAction<?> action) {
         return actions.containsValue(action);
     }
 
     @Override
-    public boolean hasAction(String name) {
+    public boolean hasAction(final String name) {
         return actions.containsKey(name);
     }
 
@@ -249,12 +249,12 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean isTrackedBy(Player player) {
+    public boolean isTrackedBy(final Player player) {
         return getEntity().map(entity -> entity.getTrackedBy().contains(player)).orElse(false);
     }
 
     @Override
-    public boolean isViewer(UUID player) {
+    public boolean isViewer(final UUID player) {
         return viewers.contains(player);
     }
 
@@ -266,20 +266,20 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     @Override
     public boolean persist() {
         if (!isPersistent()) return false;
-        var file = file();
-        var backup = backupFile();
+        final var file = file();
+        final var backup = backupFile();
         try {
             if (Files.isRegularFile(file)) Files.move(file, backup, StandardCopyOption.REPLACE_EXISTING);
             else Files.createDirectories(file.toAbsolutePath().getParent());
-            try (var outputStream = NBTOutputStream.create(file)) {
+            try (final var outputStream = NBTOutputStream.create(file)) {
                 outputStream.writeTag(getName(), plugin.nbt().serialize(this));
                 return true;
             }
-        } catch (Throwable t) {
+        } catch (final Throwable t) {
             if (Files.isRegularFile(backup)) try {
                 Files.copy(backup, file, StandardCopyOption.REPLACE_EXISTING);
                 plugin.getComponentLogger().warn("Recovered {} from potential data loss", getName());
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 plugin.getComponentLogger().error("Failed to restore character {}", getName(), e);
             }
             plugin.getComponentLogger().error("Failed to save character {}", getName(), t);
@@ -289,26 +289,26 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean removeAction(String name) {
+    public boolean removeAction(final String name) {
         return actions.remove(name) != null;
     }
 
     @Override
-    public boolean removeViewer(UUID player) {
+    public boolean removeViewer(final UUID player) {
         if (!viewers.remove(player)) return false;
         if (entity == null || isVisibleByDefault()) return true;
-        var online = plugin.getServer().getPlayer(player);
+        final var online = plugin.getServer().getPlayer(player);
         if (online != null) online.hideEntity(plugin, entity);
         return true;
     }
 
     @Override
-    public boolean removeViewers(Collection<UUID> players) {
+    public boolean removeViewers(final Collection<UUID> players) {
         return players.stream().map(this::removeViewer).reduce(false, Boolean::logicalOr);
     }
 
     @Override
-    public boolean setDisplayName(@Nullable Component displayName) {
+    public boolean setDisplayName(@Nullable final Component displayName) {
         if (Objects.equals(displayName, this.displayName)) return false;
         this.displayName = displayName;
         getEntity().ifPresent(this::updateTextDisplayName);
@@ -316,7 +316,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean setDisplayNameVisible(boolean visible) {
+    public boolean setDisplayNameVisible(final boolean visible) {
         if (visible == displayNameVisible) return false;
         this.displayNameVisible = visible;
         getEntity().ifPresent(this::updateTextDisplayName);
@@ -324,21 +324,21 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean setPersistent(boolean persistent) {
+    public boolean setPersistent(final boolean persistent) {
         if (persistent == this.persistent) return false;
         this.persistent = persistent;
         return true;
     }
 
     @Override
-    public boolean setSpawnLocation(@Nullable Location location) {
+    public boolean setSpawnLocation(@Nullable final Location location) {
         if (Objects.equals(location, spawnLocation)) return false;
         this.spawnLocation = location;
         return true;
     }
 
     @Override
-    public boolean setTeamColor(@Nullable NamedTextColor color) {
+    public boolean setTeamColor(@Nullable final NamedTextColor color) {
         if (color == this.teamColor) return false;
         this.teamColor = color;
         textDisplayName().ifPresent(this::updateTextDisplayNameText);
@@ -347,7 +347,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean setViewPermission(@Nullable String permission) {
+    public boolean setViewPermission(@Nullable final String permission) {
         if (Objects.equals(permission, viewPermission)) return false;
         this.viewPermission = permission;
         getEntity().ifPresent(entity -> plugin.getServer().getOnlinePlayers()
@@ -356,7 +356,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public boolean setVisibleByDefault(boolean visible) {
+    public boolean setVisibleByDefault(final boolean visible) {
         if (visible == visibleByDefault) return false;
         this.visibleByDefault = visible;
         getEntity().ifPresent(entity -> {
@@ -376,7 +376,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         return true;
     }
 
-    public void loadCharacter(Player player) {
+    public void loadCharacter(final Player player) {
         getEntity().ifPresent(entity -> {
             updateTeamOptions(getCharacterSettingsTeam(entity, player));
             updateVisibility(entity, player);
@@ -390,7 +390,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public E spawn(Location location) throws IllegalStateException {
+    public E spawn(final Location location) throws IllegalStateException {
         Preconditions.checkState(!isSpawned(), "Character '%s' is already spawned", name);
         Preconditions.checkState(location.isChunkLoaded(), "Chunk at %s, %s in %s is not loaded",
                 location.getBlockX() >> 4, location.getBlockZ() >> 4, location.getWorld().key());
@@ -413,7 +413,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public E respawn(Location location) throws IllegalStateException {
+    public E respawn(final Location location) throws IllegalStateException {
         remove();
         return spawn(location);
     }
@@ -424,7 +424,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         try {
             Files.deleteIfExists(backupFile());
             Files.deleteIfExists(file());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             plugin.getComponentLogger().error("Failed to delete character {}", getName(), e);
             plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             CharacterPlugin.ERROR_TRACKER.trackError(e);
@@ -441,13 +441,13 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     public void invalidate() {
         removeTextDisplayName();
         if (entity != null) plugin.getServer().getOnlinePlayers().forEach(player -> {
-            var team = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
+            final var team = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
             if (team != null) team.unregister();
         });
         entity = null;
     }
 
-    public void updateVisibility(E entity, Player player) {
+    public void updateVisibility(final E entity, final Player player) {
         if (canSee(player)) {
             if (textDisplayName != null) player.showEntity(plugin, textDisplayName);
             player.showEntity(plugin, entity);
@@ -461,10 +461,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         return Optional.ofNullable(textDisplayName);
     }
 
-    protected void preSpawn(E entity) {
+    protected void preSpawn(final E entity) {
         try {
             internalPreSpawn(entity);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             plugin.getComponentLogger().error("Failed to spawn character {}", getName(), e);
             plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
             CharacterPlugin.ERROR_TRACKER.trackError(e);
@@ -473,44 +473,44 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @SuppressWarnings("PatternValidation")
-    protected void internalPreSpawn(E entity) {
+    protected void internalPreSpawn(final E entity) {
         entity.setVisibleByDefault(visibleByDefault);
         entity.setGravity(false);
         entity.setInvulnerable(true);
         entity.setSilent(true);
         entity.setPersistent(false);
 
-        if (entity instanceof Mannequin mannequin) {
+        if (entity instanceof final Mannequin mannequin) {
             final var name = this.name.length() > 16 ? this.name.substring(0, 16) : this.name;
             mannequin.setProfile(ResolvableProfile.resolvableProfile().name(name).build());
             mannequin.setImmovable(true);
         }
 
-        if (entity instanceof TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
+        if (entity instanceof final TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
-        if (entity instanceof LivingEntity living) {
+        if (entity instanceof final LivingEntity living) {
             living.setAI(false);
             living.setCanPickupItems(false);
             living.setRemoveWhenFarAway(false);
-            var instance = living.getAttribute(MAX_HEALTH);
+            final var instance = living.getAttribute(MAX_HEALTH);
             if (instance != null) living.setHealth(instance.getValue());
         }
 
-        if (entity instanceof Mob mob) {
+        if (entity instanceof final Mob mob) {
             mob.setLootTable(EmptyLootTable.INSTANCE);
             mob.setDespawnInPeacefulOverride(TriState.FALSE);
         }
 
-        if (entity instanceof Attributable attributable) {
-            var attribute = attributable.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE);
+        if (entity instanceof final Attributable attributable) {
+            final var attribute = attributable.getAttribute(Attribute.WAYPOINT_TRANSMIT_RANGE);
             if (attribute != null) attribute.setBaseValue(0);
         }
 
         if (entityData != null) EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
             if (!entityCodec.entityType().isInstance(entity)) return;
-            @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
+            @SuppressWarnings("unchecked") final var codec = (EntityCodec<Object, Object>) entityCodec;
             entityData.optional(entityCodec.key().asString())
-                    .map(tag1 -> tag1 instanceof ByteTag byteTag && byteTag.getAsByte() == -1
+                    .map(tag1 -> tag1 instanceof final ByteTag byteTag && byteTag.getAsByte() == -1
                             ? null : codec.adapter().deserialize(tag1, plugin.nbt()))
                     .ifPresent(data -> codec.setter().test(entity, data));
         });
@@ -521,7 +521,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
     }
 
-    protected Team getCharacterSettingsTeam(Entity entity, Player player) {
+    protected Team getCharacterSettingsTeam(final Entity entity, final Player player) {
         var characterSettings = player.getScoreboard().getTeam(entity.getScoreboardEntryName());
         if (characterSettings != null) return characterSettings;
         characterSettings = player.getScoreboard().registerNewTeam(entity.getScoreboardEntryName());
@@ -535,7 +535,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         textDisplayName = null;
     }
 
-    private void updateTextDisplayName(TextDisplay display) {
+    private void updateTextDisplayName(final TextDisplay display) {
         display.setAlignment(tagOptions.getAlignment());
         display.setBackgroundColor(tagOptions.getBackgroundColor());
         display.setBillboard(tagOptions.getBillboard());
@@ -557,16 +557,16 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         updateTextDisplayNameText(display);
     }
 
-    private void updateTextDisplayNameText(TextDisplay display) {
-        var component = displayName == null ? Component.text(getName()) : displayName;
+    private void updateTextDisplayNameText(final TextDisplay display) {
+        final var component = displayName == null ? Component.text(getName()) : displayName;
         display.text(component.colorIfAbsent(teamColor));
     }
 
-    private void updateTextDisplayNameOpacity(TextDisplay display) {
+    private void updateTextDisplayNameOpacity(final TextDisplay display) {
         display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
     }
 
-    protected void updateTextDisplayName(E entity) {
+    protected void updateTextDisplayName(final E entity) {
         if (textDisplayName == null && showDisplayName()) {
             textDisplayName = entity.getWorld().spawn(entity.getLocation(), TextDisplay.class, display -> {
                 entity.addPassenger(display);
@@ -583,13 +583,13 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         return displayName != null && displayNameVisible;
     }
 
-    public void updateTeamOptions(E entity) {
+    public void updateTeamOptions(final E entity) {
         entity.getTrackedBy().forEach(player -> updateTeamOptions(getCharacterSettingsTeam(entity, player)));
     }
 
-    protected void updateTeamOptions(Team team) {
+    protected void updateTeamOptions(final Team team) {
         team.color(teamColor);
-        var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable).orElse(false);
+        final var collidable = getEntity(LivingEntity.class).map(LivingEntity::isCollidable).orElse(false);
         team.setOption(Team.Option.COLLISION_RULE, collidable ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }
@@ -604,7 +604,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
 
     @Override
     public CompoundTag serialize() throws ParserException {
-        var tag = CompoundTag.builder();
+        final var tag = CompoundTag.builder();
         getDisplayName().ifPresent(displayName -> tag.put("displayName", plugin.nbt().serialize(displayName)));
         getSpawnLocation().ifPresent(spawnLocation -> tag.put("location", plugin.nbt().serialize(spawnLocation)));
         getTeamColor().ifPresent(teamColor -> tag.put("teamColor", plugin.nbt().serialize(teamColor)));
@@ -613,14 +613,14 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         tag.put("tagOptions", getTagOptions().serialize());
         tag.put("type", plugin.nbt().serialize(getType()));
         tag.put("visibleByDefault", isVisibleByDefault());
-        var actions = CompoundTag.builder();
+        final var actions = CompoundTag.builder();
         getActions().forEach((name, clickAction) -> actions.put(name, plugin.nbt().serialize(clickAction)));
-        var data = getEntity().map(entity -> {
-            var entityData = CompoundTag.builder();
+        final var data = getEntity().map(entity -> {
+            final var entityData = CompoundTag.builder();
             EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
                 if (!entityCodec.entityType().isInstance(entity)) return;
-                @SuppressWarnings("unchecked") var codec = (EntityCodec<Object, Object>) entityCodec;
-                var object = codec.getter().apply(entity);
+                @SuppressWarnings("unchecked") final var codec = (EntityCodec<Object, Object>) entityCodec;
+                final var object = codec.getter().apply(entity);
                 if (object == null) entityData.put(codec.key().asString(), ByteTag.of((byte) -1));
                 else entityData.put(codec.key().asString(), codec.adapter().serialize(object, plugin.nbt()));
             });
@@ -633,7 +633,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
 
     @Override
     @SuppressWarnings("unchecked")
-    public void deserialize(CompoundTag tag) throws ParserException {
+    public void deserialize(final CompoundTag tag) throws ParserException {
         tag.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> this.entityData = entityData);
         tag.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, (ClickAction<@NonNull Object>) plugin.nbt().deserialize(action, ClickAction.class))));
@@ -648,7 +648,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
             tag.optional("location")
                     .map(location -> plugin.nbt().deserialize(location, Location.class))
                     .ifPresent(this::setSpawnLocation);
-        } catch (ParserException e) {
+        } catch (final ParserException e) {
             plugin.getComponentLogger().warn("Failed to read location of character '{}': {}", name, e.getMessage());
         }
     }
@@ -724,7 +724,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setAlignment(TextAlignment alignment) {
+        public boolean setAlignment(final TextAlignment alignment) {
             if (Objects.equals(alignment, this.alignment)) return false;
             textDisplayName().ifPresent(display -> display.setAlignment(alignment));
             this.alignment = alignment;
@@ -732,7 +732,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setBackgroundColor(@Nullable Color color) {
+        public boolean setBackgroundColor(@Nullable final Color color) {
             if (Objects.equals(color, this.backgroundColor)) return false;
             textDisplayName().ifPresent(display -> display.setBackgroundColor(color));
             this.backgroundColor = color;
@@ -740,7 +740,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setBillboard(Billboard billboard) {
+        public boolean setBillboard(final Billboard billboard) {
             if (Objects.equals(billboard, this.billboard)) return false;
             textDisplayName().ifPresent(display -> display.setBillboard(billboard));
             this.billboard = billboard;
@@ -748,7 +748,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setBrightness(@Nullable Brightness brightness) {
+        public boolean setBrightness(@Nullable final Brightness brightness) {
             if (Objects.equals(brightness, this.brightness)) return false;
             textDisplayName().ifPresent(display -> display.setBrightness(brightness));
             this.brightness = brightness;
@@ -756,7 +756,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setDefaultBackground(boolean enabled) {
+        public boolean setDefaultBackground(final boolean enabled) {
             if (enabled == defaultBackground) return false;
             textDisplayName().ifPresent(display -> display.setDefaultBackground(enabled));
             this.defaultBackground = enabled;
@@ -764,7 +764,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setLeftRotation(Quaternionf rotation) {
+        public boolean setLeftRotation(final Quaternionf rotation) {
             if (Objects.equals(rotation, this.leftRotation)) return false;
             this.leftRotation = rotation;
             textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
@@ -772,7 +772,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setLineWidth(int width) {
+        public boolean setLineWidth(final int width) {
             if (width == lineWidth) return false;
             textDisplayName().ifPresent(display -> display.setLineWidth(width));
             this.lineWidth = width;
@@ -780,7 +780,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setOffset(Vector3f offset) {
+        public boolean setOffset(final Vector3f offset) {
             if (Objects.equals(offset, this.offset)) return false;
             this.offset = offset;
             textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
@@ -788,22 +788,22 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setOffsetX(float offset) {
+        public boolean setOffsetX(final float offset) {
             return setOffset(new Vector3f(offset, this.offset.y(), this.offset.z()));
         }
 
         @Override
-        public boolean setOffsetY(float offset) {
+        public boolean setOffsetY(final float offset) {
             return setOffset(new Vector3f(this.offset.x(), offset, this.offset.z()));
         }
 
         @Override
-        public boolean setOffsetZ(float offset) {
+        public boolean setOffsetZ(final float offset) {
             return setOffset(new Vector3f(this.offset.x(), this.offset.y(), offset));
         }
 
         @Override
-        public boolean setRightRotation(Quaternionf rotation) {
+        public boolean setRightRotation(final Quaternionf rotation) {
             if (Objects.equals(rotation, this.rightRotation)) return false;
             this.rightRotation = rotation;
             textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
@@ -811,7 +811,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setScale(Vector3f scale) {
+        public boolean setScale(final Vector3f scale) {
             if (Objects.equals(scale, this.scale)) return false;
             this.scale = scale;
             textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
@@ -823,12 +823,12 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setScale(float scale) {
+        public boolean setScale(final float scale) {
             return setScale(new Vector3f(scale));
         }
 
         @Override
-        public boolean setSeeThrough(boolean seeThrough) {
+        public boolean setSeeThrough(final boolean seeThrough) {
             if (seeThrough == this.seeThrough) return false;
             textDisplayName().ifPresent(display -> display.setSeeThrough(seeThrough));
             this.seeThrough = seeThrough;
@@ -836,7 +836,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setTextOpacity(float opacity) {
+        public boolean setTextOpacity(final float opacity) {
             if (opacity == textOpacity) return false;
             this.textOpacity = opacity;
             textDisplayName().ifPresent(PaperCharacter.this::updateTextDisplayNameOpacity);
@@ -844,7 +844,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setTextShadow(boolean enabled) {
+        public boolean setTextShadow(final boolean enabled) {
             if (enabled == textShadow) return false;
             textDisplayName().ifPresent(display -> display.setShadowed(enabled));
             this.textShadow = enabled;
@@ -863,7 +863,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
 
         @Override
         public CompoundTag serialize() throws ParserException {
-            var tag = CompoundTag.builder();
+            final var tag = CompoundTag.builder();
             if (backgroundColor != null) tag.put("backgroundColor", backgroundColor.asARGB());
             if (brightness != null) tag.put("brightness", plugin.nbt().serialize(brightness));
             tag.put("alignment", alignment.name());
@@ -881,7 +881,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public void deserialize(CompoundTag tag) throws ParserException {
+        public void deserialize(final CompoundTag tag) throws ParserException {
             tag.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
             tag.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
             tag.optional("defaultBackground").map(Tag::getAsBoolean).ifPresent(this::setDefaultBackground);

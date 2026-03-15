@@ -28,12 +28,12 @@ public final class EquipmentSlotGroupAdapter implements TagAdapter<EquipmentSlot
     );
 
     @Override
-    public EquipmentSlotGroup deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
+    public EquipmentSlotGroup deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         return NAMES.get(tag.getAsString());
     }
 
     @Override
-    public Tag serialize(EquipmentSlotGroup group, TagSerializationContext context) throws ParserException {
+    public Tag serialize(final EquipmentSlotGroup group, final TagSerializationContext context) throws ParserException {
         return NAMES.entrySet().stream()
                 .filter(entry -> entry.getValue() == group)
                 .findAny()

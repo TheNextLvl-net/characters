@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 public class PaperWalkToGoal extends PaperWalkGoal implements WalkToGoal {
     private final Location goal;
 
-    private PaperWalkToGoal(CharacterPlugin plugin, PathfindOptions options, Location goal) {
+    private PaperWalkToGoal(final CharacterPlugin plugin, final PathfindOptions options, final Location goal) {
         super(plugin, options);
         this.goal = goal;
     }
@@ -30,12 +30,12 @@ public class PaperWalkToGoal extends PaperWalkGoal implements WalkToGoal {
     public static class Builder extends PaperWalkGoal.Builder<WalkToGoal, WalkToGoal.Builder> implements WalkToGoal.Builder {
         private @Nullable Location goal;
 
-        public Builder(CharacterPlugin plugin) {
+        public Builder(final CharacterPlugin plugin) {
             super(plugin);
         }
 
         @Override
-        public WalkToGoal.Builder goal(Location goal) {
+        public WalkToGoal.Builder goal(final Location goal) {
             this.goal = goal;
             return this;
         }

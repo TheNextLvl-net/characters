@@ -66,7 +66,7 @@ public sealed interface ClickAction<T> permits SimpleClickAction {
      * @since 0.5.0
      */
     @Contract(value = "_, _, _ -> new", pure = true)
-    static <T> ClickAction<T> create(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input) {
+    static <T> ClickAction<T> create(final ActionType<T> actionType, final EnumSet<ClickType> clickTypes, final T input) {
         return new SimpleClickAction<>(actionType, clickTypes, input);
     }
 
@@ -74,8 +74,8 @@ public sealed interface ClickAction<T> permits SimpleClickAction {
      * @since 0.5.0
      */
     @Contract(value = "_, _, _, _ -> new", pure = true)
-    static <T> ClickAction<T> create(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input, Consumer<ClickAction<T>> configurator) {
-        var action = create(actionType, clickTypes, input);
+    static <T> ClickAction<T> create(final ActionType<T> actionType, final EnumSet<ClickType> clickTypes, final T input, final Consumer<ClickAction<T>> configurator) {
+        final var action = create(actionType, clickTypes, input);
         configurator.accept(action);
         return action;
     }

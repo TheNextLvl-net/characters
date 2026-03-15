@@ -14,12 +14,12 @@ import java.util.concurrent.CompletableFuture;
 @NullMarked
 public final class NamedTextColorArgumentType implements CustomArgumentType.Converted<NamedTextColor, String> {
     @Override
-    public NamedTextColor convert(String nativeType) {
+    public NamedTextColor convert(final String nativeType) {
         return NamedTextColor.NAMES.valueOrThrow(nativeType);
     }
 
     @Override
-    public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
+    public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
         NamedTextColor.NAMES.keys().stream()
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
                 .forEach(builder::suggest);

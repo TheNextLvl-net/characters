@@ -20,12 +20,12 @@ import static net.thenextlvl.character.plugin.command.action.CharacterActionComm
 
 @NullMarked
 final class CharacterActionCooldownCommand extends ActionCommand {
-    private CharacterActionCooldownCommand(CharacterPlugin plugin) {
+    private CharacterActionCooldownCommand(final CharacterPlugin plugin) {
         super(plugin, "cooldown", "characters.command.action.cooldown");
     }
 
-    static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterActionCooldownCommand(plugin);
+    static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterActionCooldownCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .suggests(new CharacterWithActionSuggestionProvider<>(plugin))
                 .then(actionArgument(plugin)
@@ -38,10 +38,10 @@ final class CharacterActionCooldownCommand extends ActionCommand {
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context, Character<?> character, ClickAction<?> action, String actionName) {
-        var cooldown = tryGetArgument(context, "cooldown", int.class).map(Tick::of).orElse(null);
-        var success = cooldown != null && action.setCooldown(cooldown);
-        var message = cooldown == null ? "character.action.cooldown"
+    public int run(final CommandContext<CommandSourceStack> context, final Character<?> character, final ClickAction<?> action, final String actionName) {
+        final var cooldown = tryGetArgument(context, "cooldown", int.class).map(Tick::of).orElse(null);
+        final var success = cooldown != null && action.setCooldown(cooldown);
+        final var message = cooldown == null ? "character.action.cooldown"
                 : success ? cooldown.isZero() ? "character.action.cooldown.removed"
                 : "character.action.cooldown.set"
                 : "nothing.changed";

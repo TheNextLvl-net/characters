@@ -13,18 +13,18 @@ import static net.thenextlvl.character.plugin.command.CharacterCommand.character
 
 @NullMarked
 final class CharacterDeleteCommand extends SimpleCommand {
-    private CharacterDeleteCommand(CharacterPlugin plugin) {
+    private CharacterDeleteCommand(final CharacterPlugin plugin) {
         super(plugin, "delete", "characters.command.delete");
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterDeleteCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterDeleteCommand(plugin);
         return command.create().then(characterArgument(plugin).executes(command));
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
         character.delete();
         plugin.bundle().sendMessage(context.getSource().getSender(), "character.deleted",
                 Placeholder.unparsed("character", character.getName()));

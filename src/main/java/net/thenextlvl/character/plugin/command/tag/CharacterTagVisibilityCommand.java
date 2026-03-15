@@ -13,30 +13,30 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagVisibilityCommand extends SimpleCommand {
-    private CharacterTagVisibilityCommand(CharacterPlugin plugin) {
+    private CharacterTagVisibilityCommand(final CharacterPlugin plugin) {
         super(plugin, "visibility", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagVisibilityCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagVisibilityCommand(plugin);
         return command.create().then(Commands.argument(
                 "visible", BoolArgumentType.bool()
         ).executes(command));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagVisibilityCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagVisibilityCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var sender = context.getSource().getSender();
-        var character = context.getArgument("character", Character.class);
-        var visible = tryGetArgument(context, "visible", boolean.class).orElse(true);
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var sender = context.getSource().getSender();
+        final var character = context.getArgument("character", Character.class);
+        final var visible = tryGetArgument(context, "visible", boolean.class).orElse(true);
 
-        var success = character.setDisplayNameVisible(visible);
-        var message = !success ? "nothing.changed" : visible ? "character.tag.visible" : "character.tag.invisible";
+        final var success = character.setDisplayNameVisible(visible);
+        final var message = !success ? "nothing.changed" : visible ? "character.tag.visible" : "character.tag.invisible";
 
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? SINGLE_SUCCESS : 0;

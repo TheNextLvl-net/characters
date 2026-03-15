@@ -13,27 +13,27 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class EntityEquipmentAdapter implements TagAdapter<PaperEntityEquipment> {
     @Override
-    public PaperEntityEquipment deserialize(Tag tag, TagDeserializationContext context) throws ParserException {
-        var root = tag.getAsCompound();
-        var itemInMainHand = root.optional("itemInMainHand").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
-        var itemInOffHand = root.optional("itemInOffHand").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
-        var helmet = root.optional("helmet").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
-        var chestplate = root.optional("chestplate").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
-        var leggings = root.optional("leggings").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
-        var boots = root.optional("boots").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
-        var itemInMainHandDropChance = root.optional("itemInMainHandDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
-        var itemInOffHandDropChance = root.optional("itemInOffHandDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
-        var helmetDropChance = root.optional("helmetDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
-        var chestplateDropChance = root.optional("chestplateDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
-        var leggingsDropChance = root.optional("leggingsDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
-        var bootsDropChance = root.optional("bootsDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
+    public PaperEntityEquipment deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
+        final var root = tag.getAsCompound();
+        final var itemInMainHand = root.optional("itemInMainHand").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
+        final var itemInOffHand = root.optional("itemInOffHand").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
+        final var helmet = root.optional("helmet").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
+        final var chestplate = root.optional("chestplate").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
+        final var leggings = root.optional("leggings").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
+        final var boots = root.optional("boots").map(tag1 -> context.deserialize(tag1, ItemStack.class)).orElse(null);
+        final var itemInMainHandDropChance = root.optional("itemInMainHandDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
+        final var itemInOffHandDropChance = root.optional("itemInOffHandDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
+        final var helmetDropChance = root.optional("helmetDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
+        final var chestplateDropChance = root.optional("chestplateDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
+        final var leggingsDropChance = root.optional("leggingsDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
+        final var bootsDropChance = root.optional("bootsDropChance").map(tag1 -> context.deserialize(tag1, float.class)).orElse(1f);
         return new PaperEntityEquipment(itemInMainHand, itemInOffHand, helmet, chestplate, leggings, boots,
                 itemInMainHandDropChance, itemInOffHandDropChance, helmetDropChance, chestplateDropChance, leggingsDropChance, bootsDropChance);
     }
 
     @Override
-    public Tag serialize(PaperEntityEquipment equipment, TagSerializationContext context) throws ParserException {
-        var tag = CompoundTag.builder();
+    public Tag serialize(final PaperEntityEquipment equipment, final TagSerializationContext context) throws ParserException {
+        final var tag = CompoundTag.builder();
         if (equipment.itemInMainHand != null && !equipment.itemInMainHand.isEmpty())
             tag.put("itemInMainHand", context.serialize(equipment.itemInMainHand));
         if (equipment.itemInOffHand != null && !equipment.itemInOffHand.isEmpty())

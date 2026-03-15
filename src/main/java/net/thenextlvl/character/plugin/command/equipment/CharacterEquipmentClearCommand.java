@@ -17,37 +17,37 @@ import static net.thenextlvl.character.plugin.command.equipment.CharacterEquipme
 
 @NullMarked
 final class CharacterEquipmentClearCommand extends BrigadierCommand {
-    private CharacterEquipmentClearCommand(CharacterPlugin plugin) {
+    private CharacterEquipmentClearCommand(final CharacterPlugin plugin) {
         super(plugin, "clear", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> create(CharacterPlugin plugin) {
-        var command = new CharacterEquipmentClearCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> create(final CharacterPlugin plugin) {
+        final var command = new CharacterEquipmentClearCommand(plugin);
         return command.create().then(characterArgument(plugin)
                 .then(equipmentSlotArgument().executes(command::clearSlot))
                 .executes(command::clearEquipment));
     }
 
-    private int clearEquipment(CommandContext<CommandSourceStack> context) {
-        var character = (Character<?>) context.getArgument("character", Character.class);
-        var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
+    private int clearEquipment(final CommandContext<CommandSourceStack> context) {
+        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
             equipment.clear();
             return true;
         }).orElse(false);
-        var message = success ? "character.equipment.cleared" : "nothing.changed";
+        final var message = success ? "character.equipment.cleared" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
     }
 
-    private int clearSlot(CommandContext<CommandSourceStack> context) {
-        var character = (Character<?>) context.getArgument("character", Character.class);
-        var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
-        var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
+    private int clearSlot(final CommandContext<CommandSourceStack> context) {
+        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
+        final var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
             equipment.setItem(slot, null, true);
             return true;
         }).orElse(false);
-        var message = success ? "character.equipment.slot.cleared" : "nothing.changed";
+        final var message = success ? "character.equipment.slot.cleared" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),
                 Placeholder.unparsed("slot", slot.name().toLowerCase().replace("_", "-")));

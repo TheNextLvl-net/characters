@@ -33,7 +33,7 @@ public sealed interface ActionType<T> permits SimpleActionType {
      * @since 0.5.0
      */
     @Contract(value = "_, _ -> new", pure = true)
-    static <T> Builder<T> builder(@KeyPattern.Value String name, Class<T> type) {
+    static <T> Builder<T> builder(@KeyPattern.Value final String name, final Class<T> type) {
         return new SimpleActionType.Builder<>(type, name);
     }
 

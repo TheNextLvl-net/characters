@@ -14,12 +14,12 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 final class CharacterTagBrightnessCommand extends SimpleCommand {
-    private CharacterTagBrightnessCommand(CharacterPlugin plugin) {
+    private CharacterTagBrightnessCommand(final CharacterPlugin plugin) {
         super(plugin, "brightness", null);
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> set(CharacterPlugin plugin) {
-        var command = new CharacterTagBrightnessCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> set(final CharacterPlugin plugin) {
+        final var command = new CharacterTagBrightnessCommand(plugin);
         return command.create().then(Commands.argument(
                 "block-light", IntegerArgumentType.integer(0, 15)
         ).then(Commands.argument(
@@ -27,19 +27,19 @@ final class CharacterTagBrightnessCommand extends SimpleCommand {
         ).executes(command)));
     }
 
-    public static LiteralArgumentBuilder<CommandSourceStack> reset(CharacterPlugin plugin) {
-        var command = new CharacterTagBrightnessCommand(plugin);
+    public static LiteralArgumentBuilder<CommandSourceStack> reset(final CharacterPlugin plugin) {
+        final var command = new CharacterTagBrightnessCommand(plugin);
         return command.create().executes(command);
     }
 
     @Override
-    public int run(CommandContext<CommandSourceStack> context) {
-        var character = context.getArgument("character", Character.class);
-        var blockLight = tryGetArgument(context, "block-light", int.class).orElse(null);
-        var skyLight = tryGetArgument(context, "sky-light", int.class).orElse(null);
-        var brightness = blockLight != null && skyLight != null ? new Display.Brightness(blockLight, skyLight) : null;
-        var success = character.getTagOptions().setBrightness(brightness);
-        var message = success ? "character.tag.brightness" : "nothing.changed";
+    public int run(final CommandContext<CommandSourceStack> context) {
+        final var character = context.getArgument("character", Character.class);
+        final var blockLight = tryGetArgument(context, "block-light", int.class).orElse(null);
+        final var skyLight = tryGetArgument(context, "sky-light", int.class).orElse(null);
+        final var brightness = blockLight != null && skyLight != null ? new Display.Brightness(blockLight, skyLight) : null;
+        final var success = character.getTagOptions().setBrightness(brightness);
+        final var message = success ? "character.tag.brightness" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("block_light", String.valueOf(blockLight)),
                 Placeholder.unparsed("sky_light", String.valueOf(skyLight)),

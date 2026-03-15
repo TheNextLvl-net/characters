@@ -26,7 +26,7 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     private Duration cooldown = Duration.ZERO;
     private @Nullable String permission = null;
 
-    public SimpleClickAction(ActionType<T> actionType, EnumSet<ClickType> clickTypes, T input) {
+    public SimpleClickAction(final ActionType<T> actionType, final EnumSet<ClickType> clickTypes, final T input) {
         this.actionType = actionType;
         this.clickTypes = clickTypes;
         this.input = input;
@@ -43,14 +43,14 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public boolean setClickTypes(EnumSet<ClickType> clickTypes) {
+    public boolean setClickTypes(final EnumSet<ClickType> clickTypes) {
         if (Objects.equals(this.clickTypes, clickTypes)) return false;
         this.clickTypes = clickTypes;
         return true;
     }
 
     @Override
-    public boolean isSupportedClickType(ClickType type) {
+    public boolean isSupportedClickType(final ClickType type) {
         return clickTypes.contains(type);
     }
 
@@ -60,7 +60,7 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public boolean setInput(T input) {
+    public boolean setInput(final T input) {
         if (Objects.equals(this.input, input)) return false;
         this.input = input;
         return true;
@@ -72,7 +72,7 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public boolean setChance(@Range(from = 0, to = 100) int chance) {
+    public boolean setChance(@Range(from = 0, to = 100) final int chance) {
         if (this.chance == chance) return false;
         this.chance = Math.clamp(chance, 0, 100);
         return true;
@@ -84,7 +84,7 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public boolean setPermission(@Nullable String permission) {
+    public boolean setPermission(@Nullable final String permission) {
         if (Objects.equals(this.permission, permission)) return false;
         this.permission = permission;
         return true;
@@ -96,14 +96,14 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public boolean setCooldown(Duration cooldown) {
+    public boolean setCooldown(final Duration cooldown) {
         if (Objects.equals(this.cooldown, cooldown)) return false;
         this.cooldown = cooldown;
         return true;
     }
 
     @Override
-    public boolean isOnCooldown(Player player) {
+    public boolean isOnCooldown(final Player player) {
         return cooldown.isPositive() && cooldowns.computeIfPresent(player.getUniqueId(), (ignored, lastUsed) -> {
             if (System.currentTimeMillis() - cooldown.toMillis() > lastUsed) return null;
             return lastUsed;
@@ -111,17 +111,17 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public boolean resetCooldown(Player player) {
+    public boolean resetCooldown(final Player player) {
         return cooldowns.remove(player.getUniqueId()) != null;
     }
 
     @Override
-    public boolean canInvoke(Player player) {
+    public boolean canInvoke(final Player player) {
         return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
     }
 
     @Override
-    public boolean invoke(Player player, Entity character) {
+    public boolean invoke(final Player player, final Entity character) {
         if (!canInvoke(player)) return false;
         if (cooldown.isPositive()) cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
         if (ThreadLocalRandom.current().nextInt(100) > chance) return false;
