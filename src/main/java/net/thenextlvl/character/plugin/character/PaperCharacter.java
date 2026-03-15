@@ -481,6 +481,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         entity.setPersistent(false);
 
         if (entity instanceof Mannequin mannequin) {
+            final var name = this.name.length() > 16 ? this.name.substring(0, 16) : this.name;
             mannequin.setProfile(ResolvableProfile.resolvableProfile().name(name).build());
             mannequin.setImmovable(true);
         }
