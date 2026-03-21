@@ -214,7 +214,6 @@ public final class EntityCodecs {
             .adapter(new AttributeAdapter())
             .build();
 
-
     private static final EntityCodec<?, ?> HEAD_UP = EntityCodec.booleanCodec(Key.key("cat", "head_up"), Cat.class)
             .getter(Cat::isHeadUp).setter(Cat::setHeadUp).build();
 
