@@ -12,11 +12,11 @@ plugins {
 group = "net.thenextlvl.characters"
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
 tasks.compileJava {
-    options.release.set(21)
+    options.release.set(25)
 }
 
 repositories {
@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("1.21.11-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("26.1.1.build.+")
 
     implementation("net.thenextlvl.core:paper:3.0.0-pre4")
     implementation("net.thenextlvl.version-checker:modrinth-paper:1.0.1")
@@ -61,7 +61,7 @@ tasks.shadowJar {
 paper {
     name = "Characters"
     main = "net.thenextlvl.character.plugin.CharacterPlugin"
-    apiVersion = "1.21.9"
+    apiVersion = "26.1"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
     // foliaSupported = true
