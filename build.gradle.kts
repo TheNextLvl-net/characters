@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    paperweight.paperDevBundle("26.1.2.build.7-alpha")
+    paperweight.paperDevBundle("26.1.2.build.12-alpha")
 
     implementation("net.thenextlvl.core:paper:3.0.0-pre4")
     implementation("net.thenextlvl.version-checker:modrinth-paper:1.0.1")
