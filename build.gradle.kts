@@ -44,7 +44,7 @@ dependencies {
     implementation(project(":api"))
 
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(platform("org.junit:junit-bom:6.1.0-SNAPSHOT"))
+    testImplementation(platform("org.junit:junit-bom:6.2.0-SNAPSHOT"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
