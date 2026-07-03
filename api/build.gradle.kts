@@ -28,7 +28,7 @@ repositories {
 dependencies {
     api("net.thenextlvl:nbt:4.3.6")
     api("net.thenextlvl.core:paper:3.0.0-pre4")
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:26.2.build.+")
 }
 
 tasks.withType<JavaCompile>().configureEach {

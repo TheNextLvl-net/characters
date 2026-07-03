@@ -12,7 +12,6 @@ module net.thenextlvl.characters {
     requires core.paper;
     requires net.kyori.adventure.key;
     requires net.kyori.adventure.text.minimessage;
-    requires net.kyori.adventure;
     requires net.thenextlvl.nbt;
     requires org.bukkit;
     requires org.joml;
