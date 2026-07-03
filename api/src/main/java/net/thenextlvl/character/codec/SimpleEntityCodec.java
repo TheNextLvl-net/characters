@@ -94,7 +94,7 @@ final class SimpleEntityCodec<E, T> implements EntityCodec<E, T> {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(@Nullable final Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         final SimpleEntityCodec<?, ?> that = (SimpleEntityCodec<?, ?>) o;
         return Objects.equals(key, that.key);
