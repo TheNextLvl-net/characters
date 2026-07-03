@@ -9,13 +9,17 @@ version = rootProject.version
 
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
     withSourcesJar()
     withJavadocJar()
 }
 
 tasks.compileJava {
     options.release.set(21)
+}
+
+configurations.compileClasspath {
+    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
 }
 
 repositories {
