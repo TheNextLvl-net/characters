@@ -34,7 +34,7 @@ repositories {
 dependencies {
     paperweight.paperDevBundle("26.2.build.+")
 
-    implementation("net.thenextlvl.core:paper:3.0.0-pre4")
+    implementation("net.thenextlvl.core:paper:3.0.0-pre5")
     implementation("net.thenextlvl.version-checker:modrinth-paper:1.0.1")
     implementation("net.thenextlvl:i18n:1.2.0")
     implementation("org.mineskin:java-client-java11:3.2.6") {
