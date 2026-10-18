@@ -272,7 +272,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
             if (Files.isRegularFile(file)) Files.move(file, backup, StandardCopyOption.REPLACE_EXISTING);
             else Files.createDirectories(file.toAbsolutePath().getParent());
             try (final var outputStream = NBTOutputStream.create(file)) {
-                outputStream.writeTag(getName(), plugin.nbt().serialize(this));
+                outputStream.writeTag(getName(), serialize());
                 return true;
             }
         } catch (final Throwable t) {
