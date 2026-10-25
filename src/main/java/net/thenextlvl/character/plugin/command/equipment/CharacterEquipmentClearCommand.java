@@ -8,9 +8,10 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EquipmentSlot;
 import org.jspecify.annotations.NullMarked;
+import net.thenextlvl.character.property.EntityProperties;
+import net.thenextlvl.character.property.EquipmentSnapshot;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 import static net.thenextlvl.character.plugin.command.equipment.CharacterEquipmentCommand.equipmentSlotArgument;
@@ -29,11 +30,8 @@ final class CharacterEquipmentClearCommand extends BrigadierCommand {
     }
 
     private int clearEquipment(final CommandContext<CommandSourceStack> context) {
-        final var character = (Character<?>) context.getArgument("character", Character.class);
-        final var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
-            equipment.clear();
-            return true;
-        }).orElse(false);
+        final var character = context.getArgument("character", Character.class);
+        final var success = character.setProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT, EquipmentSnapshot.empty());
         final var message = success ? "character.equipment.cleared" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()));
@@ -41,12 +39,10 @@ final class CharacterEquipmentClearCommand extends BrigadierCommand {
     }
 
     private int clearSlot(final CommandContext<CommandSourceStack> context) {
-        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
         final var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
-        final var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
-            equipment.setItem(slot, null, true);
-            return true;
-        }).orElse(false);
+        final var success = character.setProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT, character.getProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT)
+                .orElseGet(EquipmentSnapshot::empty).with(slot, null));
         final var message = success ? "character.equipment.slot.cleared" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),

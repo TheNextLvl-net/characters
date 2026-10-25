@@ -25,9 +25,10 @@ final class CharacterDeleteCommand extends SimpleCommand {
     @Override
     public int run(final CommandContext<CommandSourceStack> context) {
         final var character = context.getArgument("character", Character.class);
-        character.delete();
-        plugin.bundle().sendMessage(context.getSource().getSender(), "character.deleted",
+        final var success = plugin.characterProvider().deleteCharacter(character);
+        final var message = success ? "character.deleted" : "nothing.changed";
+        plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()));
-        return SINGLE_SUCCESS;
+        return success ? SINGLE_SUCCESS : 0;
     }
 }

@@ -35,6 +35,8 @@ dependencies {
     paperweight.paperDevBundle("26.3.build.+")
 
     implementation("net.thenextlvl.core:paper:3.0.0-pre5")
+    implementation("net.thenextlvl:nbt:4.3.6")
+    implementation("net.thenextlvl:static-binder:0.1.3")
     implementation("net.thenextlvl.version-checker:modrinth-paper:1.0.1")
     implementation("net.thenextlvl:i18n:1.2.0")
     implementation("org.mineskin:java-client-java11:3.2.7") {

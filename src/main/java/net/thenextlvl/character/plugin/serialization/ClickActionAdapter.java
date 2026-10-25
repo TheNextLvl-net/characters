@@ -33,7 +33,7 @@ public final class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(ClickType.class)));
         final var input = context.deserialize(root.get("input"), actionType.type());
         final var chance = root.optional("chance").map(Tag::getAsInt).orElse(100);
-        final var action = ClickAction.create(actionType, clickTypes, input);
+        final var action = ClickAction.factory().create(actionType, clickTypes, input);
         action.setChance(chance);
         action.setCooldown(cooldown);
         action.setPermission(permission);
@@ -43,7 +43,7 @@ public final class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
     @Override
     public Tag serialize(final ClickAction<?> action, final TagSerializationContext context) throws ParserException {
         final var builder = CompoundTag.builder();
-        if (action.getPermission() != null) builder.put("permission", action.getPermission());
+        action.getPermission().ifPresent(permission -> builder.put("permission", permission));
         if (!action.getCooldown().isZero()) builder.put("cooldown", action.getCooldown().toMillis());
         builder.put("actionType", context.serialize(action.getActionType()));
         final var types = ListTag.<StringTag>builder().contentType(StringTag.ID);

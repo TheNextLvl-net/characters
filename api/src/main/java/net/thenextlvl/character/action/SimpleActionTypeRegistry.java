@@ -1,17 +1,15 @@
 package net.thenextlvl.character.action;
 
 import org.jetbrains.annotations.Unmodifiable;
-import org.jspecify.annotations.NullMarked;
 
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
-@NullMarked
 final class SimpleActionTypeRegistry implements ActionTypeRegistry {
     public static final ActionTypeRegistry INSTANCE = new SimpleActionTypeRegistry();
 
-    private final Set<ActionType<?>> actionTypes = new HashSet<>(Set.of(
+    private final Set<ActionType<?>> actionTypes = new CopyOnWriteArraySet<>(Set.of(
             ActionTypes.types().sendActionbar(),
             ActionTypes.types().sendMessage(),
             ActionTypes.types().sendEntityEffect(),

@@ -9,14 +9,12 @@ import io.papermc.paper.command.brigadier.argument.CustomArgumentType;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Mannequin;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class MannequinCharacterArgumentType implements CustomArgumentType.Converted<Character<Mannequin>, String> {
+public final class MannequinCharacterArgumentType implements CustomArgumentType.Converted<Character, String> {
     private final CharacterPlugin plugin;
 
     public MannequinCharacterArgumentType(final CharacterPlugin plugin) {
@@ -24,17 +22,15 @@ public final class MannequinCharacterArgumentType implements CustomArgumentType.
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Character<Mannequin> convert(final String nativeType) {
-        return plugin.characterController().getCharacter(nativeType)
+    public Character convert(final String nativeType) {
+        return plugin.characterProvider().getCharacter(nativeType)
                 .filter(character -> character.getType().equals(EntityType.MANNEQUIN))
-                .map(character -> (Character<@NonNull Mannequin>) character)
                 .orElseThrow(() -> new IllegalArgumentException("No player character was found"));
     }
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
-        plugin.characterController().getCharacters()
+        plugin.characterProvider().getCharacters()
                 .filter(character -> character.getType().equals(EntityType.MANNEQUIN))
                 .map(Character::getName)
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))

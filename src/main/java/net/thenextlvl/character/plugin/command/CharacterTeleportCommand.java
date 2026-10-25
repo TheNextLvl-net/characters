@@ -62,10 +62,10 @@ final class CharacterTeleportCommand extends BrigadierCommand {
             return 0;
         }
 
-        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
 
-        character.getEntity().map(Entity::getLocation).or(character::getSpawnLocation)
-                .ifPresent(location -> player.teleportAsync(location, COMMAND));
+        final var location = character.getEntity().map(Entity::getLocation).orElseGet(character::getLocation);
+        player.teleportAsync(location, COMMAND);
 
         plugin.bundle().sendMessage(sender, "character.teleported.self",
                 Placeholder.unparsed("character", character.getName()));
@@ -88,20 +88,19 @@ final class CharacterTeleportCommand extends BrigadierCommand {
 
     private int teleport(final CommandContext<CommandSourceStack> context, final Location location) {
         final var sender = context.getSource().getSender();
-        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
 
-        character.getEntity().ifPresent(entity -> entity.teleportAsync(location, COMMAND));
-        final var success = character.setSpawnLocation(location);
-        final var message = success ? "character.teleported" : "nothing.changed";
-
-        plugin.bundle().sendMessage(sender, message,
-                Placeholder.unparsed("world", location.getWorld().getName()),
-                Formatter.number("x", location.x()),
-                Formatter.number("y", location.y()),
-                Formatter.number("z", location.z()),
-                Formatter.number("yaw", location.getYaw()),
-                Formatter.number("pitch", location.getPitch()),
-                Placeholder.unparsed("character", character.getName()));
-        return success ? Command.SINGLE_SUCCESS : 0;
+        character.teleportAsync(location).thenAccept(success -> {
+            final var message = success ? "character.teleported" : "nothing.changed";
+            plugin.bundle().sendMessage(sender, message,
+                    Placeholder.unparsed("world", location.getWorld().key().asString()),
+                    Formatter.number("x", location.x()),
+                    Formatter.number("y", location.y()),
+                    Formatter.number("z", location.z()),
+                    Formatter.number("yaw", location.getYaw()),
+                    Formatter.number("pitch", location.getPitch()),
+                    Placeholder.unparsed("character", character.getName()));
+        });
+        return Command.SINGLE_SUCCESS;
     }
 }

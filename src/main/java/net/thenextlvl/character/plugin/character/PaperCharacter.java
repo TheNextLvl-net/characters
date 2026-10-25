@@ -8,18 +8,22 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickAction;
-import net.thenextlvl.character.codec.EntityCodec;
-import net.thenextlvl.character.codec.EntityCodecRegistry;
+import net.thenextlvl.character.event.CharacterTeleportEvent;
+import net.thenextlvl.character.event.CharacterViewerAddEvent;
+import net.thenextlvl.character.event.CharacterViewerRemoveEvent;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
+import net.thenextlvl.character.plugin.property.PropertyAccessor;
+import net.thenextlvl.character.plugin.property.PropertyAccessors;
+import net.thenextlvl.character.property.EntityProperty;
 import net.thenextlvl.character.tag.TagOptions;
 import net.thenextlvl.nbt.NBTOutputStream;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.serialization.TagSerializable;
-import net.thenextlvl.nbt.tag.ByteTag;
 import net.thenextlvl.nbt.tag.CompoundTag;
 import net.thenextlvl.nbt.tag.Tag;
+import org.bukkit.Chunk;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -42,7 +46,6 @@ import org.bukkit.util.Transformation;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -58,30 +61,37 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.stream.Stream;
 
 import static net.thenextlvl.character.plugin.CharacterPlugin.ISSUES;
 import static org.bukkit.attribute.Attribute.MAX_HEALTH;
+import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 
 @NullMarked
-public class PaperCharacter<E extends Entity> implements Character<E>, TagSerializable<CompoundTag> {
-    protected final Class<? extends E> entityClass;
+public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
+    protected final Class<? extends Entity> entityClass;
     protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
     protected final Set<Goal> goals = new HashSet<>();
     protected final Set<UUID> viewers = new HashSet<>();
-    protected final TagOptions tagOptions = new PaperTagOptions();
+    protected final Map<String, Tag> properties = new ConcurrentHashMap<>();
+    protected final PaperTagOptions tagOptions = new PaperTagOptions();
 
     protected final CharacterPlugin plugin;
     protected final EntityType type;
     protected final String name;
 
-    protected @Nullable E entity = null;
+    protected @Nullable Entity entity = null;
     protected @Nullable Component displayName;
-    protected @Nullable Location spawnLocation = null;
     protected @Nullable NamedTextColor teamColor = null;
     protected @Nullable String viewPermission = null;
     protected @Nullable TextDisplay textDisplayName = null;
 
-    public @Nullable CompoundTag entityData = null;
+    protected Location location;
+    protected Path dataFile;
+    protected Path backupFile;
 
     protected Pose pose = Pose.STANDING;
 
@@ -89,15 +99,20 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     protected boolean persistent = true;
     protected boolean visibleByDefault = true;
 
-    @SuppressWarnings("unchecked")
-    public PaperCharacter(final CharacterPlugin plugin, final String name, final EntityType type) {
+    public PaperCharacter(final CharacterPlugin plugin, final String name, final Location location, final EntityType type) {
         final var entityClass = type.getEntityClass();
-        Preconditions.checkArgument(entityClass != null, "Cannot spawn entity of type %s", type);
-        this.entityClass = (Class<? extends E>) entityClass;
+        Preconditions.checkArgument(entityClass != null && type.isSpawnable(), "Entity type %s is not spawnable", type);
+        Preconditions.checkArgument(location.getWorld() != null, "World cannot be null");
+        this.entityClass = entityClass;
         this.displayName = Component.text(name);
+        this.location = location.clone();
         this.name = name;
         this.plugin = plugin;
         this.type = type;
+
+        final var dataFolder = plugin.characterProvider().getDataFolder(location.getWorld());
+        this.dataFile = dataFolder.resolve(name + ".dat");
+        this.backupFile = dataFolder.resolve(name + ".dat_old");
     }
 
     @Override
@@ -136,12 +151,12 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public Optional<E> getEntity() {
+    public Optional<Entity> getEntity() {
         return Optional.ofNullable(entity);
     }
 
     @Override
-    public Class<? extends E> getEntityClass() {
+    public Class<? extends Entity> getEntityClass() {
         return entityClass;
     }
 
@@ -151,8 +166,8 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public Optional<Location> getLocation() {
-        return getEntity().map(Entity::getLocation);
+    public Location getLocation() {
+        return location.clone();
     }
 
     @Override
@@ -163,11 +178,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     @Override
     public Optional<String> getViewPermission() {
         return Optional.ofNullable(viewPermission);
-    }
-
-    @Override
-    public Optional<Location> getSpawnLocation() {
-        return Optional.ofNullable(spawnLocation);
     }
 
     @Override
@@ -186,8 +196,57 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public Optional<World> getWorld() {
-        return getEntity().map(Entity::getWorld);
+    public World getWorld() {
+        return location.getWorld();
+    }
+
+    public boolean isInChunk(final Chunk chunk) {
+        if (!chunk.getWorld().equals(getWorld())) return false;
+        final var chunkX = location.getBlockX() >> 4;
+        final var chunkZ = location.getBlockZ() >> 4;
+        return chunkX == chunk.getX() && chunkZ == chunk.getZ();
+    }
+
+    @Override
+    public CompletableFuture<Boolean> teleportAsync(final Location location) {
+        Preconditions.checkArgument(location.getWorld() != null, "World cannot be null");
+        final var previous = this.location;
+        final var event = new CharacterTeleportEvent(this, previous, location);
+        if (!event.callEvent()) return CompletableFuture.completedFuture(false);
+        final var destination = event.getTo();
+        if (previous.equals(destination)) return CompletableFuture.completedFuture(false);
+
+        if (!previous.getWorld().equals(destination.getWorld())) {
+            if (!updatePaths(destination.getWorld())) return CompletableFuture.completedFuture(false);
+            this.location = destination;
+            return despawn().thenCompose(ignored -> spawn()).thenApply(ignored -> true);
+        }
+
+        this.location = destination;
+        if (entity == null) return spawn().thenApply(ignored -> true);
+        if (!destination.isChunkLoaded()) return despawn().thenApply(ignored -> true);
+        return entity.teleportAsync(destination, PLUGIN).thenApply(ignored -> true);
+    }
+
+    private boolean updatePaths(final World world) {
+        final var dataFolder = plugin.characterProvider().getDataFolder(world);
+        final var dataFile = dataFolder.resolve(name + ".dat");
+        final var backupFile = dataFolder.resolve(name + ".dat_old");
+
+        try {
+            Files.createDirectories(dataFolder);
+            if (Files.isRegularFile(this.dataFile)) Files.move(this.dataFile, dataFile, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.isRegularFile(this.backupFile)) Files.move(this.backupFile, backupFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (final IOException e) {
+            plugin.getComponentLogger().warn("Failed to move character data files for: {}", getName(), e);
+            plugin.getComponentLogger().warn("Please look for similar issues or report this on GitHub: {}", ISSUES);
+            CharacterPlugin.ERROR_TRACKER.trackError(e);
+            return false;
+        }
+
+        this.dataFile = dataFile;
+        this.backupFile = backupFile;
+        return true;
     }
 
     @Override
@@ -196,13 +255,22 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public <T> boolean addAction(final String name, final ClickAction<T> action) {
-        return action.getActionType().isApplicable(action.getInput(), this)
-                && !action.equals(actions.put(name, action));
+    public boolean addAction(final String name, final ClickAction<?> action) {
+        return isApplicable(action) && !action.equals(actions.put(name, action));
+    }
+
+    private <T> boolean isApplicable(final ClickAction<T> action) {
+        return action.getActionType().isApplicable(action.getInput(), this);
+    }
+
+    @Override
+    public void forEachAction(final BiConsumer<String, ? super ClickAction<?>> action) {
+        actions.forEach(action);
     }
 
     @Override
     public boolean addViewer(final UUID player) {
+        if (!new CharacterViewerAddEvent(this, player).callEvent()) return false;
         if (!viewers.add(player)) return false;
         if (entity == null || isVisibleByDefault()) return true;
         final var online = plugin.getServer().getPlayer(player);
@@ -217,8 +285,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
 
     @Override
     public boolean canSee(final Player player) {
-        if (entity == null || !isSpawned()) return false;
-        if (!player.getWorld().equals(entity.getWorld())) return false;
+        if (!player.getWorld().equals(getWorld())) return false;
         if (viewPermission != null && !player.hasPermission(viewPermission)) return false;
         return isVisibleByDefault() || isViewer(player.getUniqueId());
     }
@@ -234,6 +301,11 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
+    public boolean hasActions() {
+        return !actions.isEmpty();
+    }
+
+    @Override
     public boolean isDisplayNameVisible() {
         return displayNameVisible;
     }
@@ -246,6 +318,16 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     @Override
     public boolean isSpawned() {
         return entity != null && entity.isValid();
+    }
+
+    @Override
+    public boolean isPart(final Entity entity) {
+        return entity.equals(this.entity) || entity.equals(textDisplayName);
+    }
+
+    @Override
+    public Stream<Player> getTrackedBy() {
+        return getEntity().map(entity -> entity.getTrackedBy().stream()).orElseGet(Stream::empty);
     }
 
     @Override
@@ -266,8 +348,8 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     @Override
     public boolean persist() {
         if (!isPersistent()) return false;
-        final var file = file();
-        final var backup = backupFile();
+        final var file = getDataFile();
+        final var backup = getBackupFile();
         try {
             if (Files.isRegularFile(file)) Files.move(file, backup, StandardCopyOption.REPLACE_EXISTING);
             else Files.createDirectories(file.toAbsolutePath().getParent());
@@ -295,6 +377,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
 
     @Override
     public boolean removeViewer(final UUID player) {
+        if (!new CharacterViewerRemoveEvent(this, player).callEvent()) return false;
         if (!viewers.remove(player)) return false;
         if (entity == null || isVisibleByDefault()) return true;
         final var online = plugin.getServer().getPlayer(player);
@@ -327,13 +410,6 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     public boolean setPersistent(final boolean persistent) {
         if (persistent == this.persistent) return false;
         this.persistent = persistent;
-        return true;
-    }
-
-    @Override
-    public boolean setSpawnLocation(@Nullable final Location location) {
-        if (Objects.equals(location, spawnLocation)) return false;
-        this.spawnLocation = location;
         return true;
     }
 
@@ -384,58 +460,33 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @Override
-    public @Nullable E spawn() throws IllegalStateException {
-        if (spawnLocation == null) return null;
-        return spawn(spawnLocation);
+    public CompletableFuture<Boolean> spawn() {
+        return plugin.supply(() -> {
+            if (isSpawned() || !location.isChunkLoaded()) return false;
+            if (entity != null) invalidate();
+
+            final var entity = location.getWorld().spawn(location, entityClass, this::preSpawn);
+            if (!entity.isValid()) return false;
+            this.entity = entity;
+
+            if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers()
+                    .forEach(player -> updateVisibility(entity, player));
+
+            updateTextDisplayName(entity);
+            updateTeamOptions(entity);
+            return true;
+        });
     }
 
     @Override
-    public E spawn(final Location location) throws IllegalStateException {
-        Preconditions.checkState(!isSpawned(), "Character '%s' is already spawned", name);
-        Preconditions.checkState(location.isChunkLoaded(), "Chunk at %s, %s in %s is not loaded",
-                location.getBlockX() >> 4, location.getBlockZ() >> 4, location.getWorld().key());
-
-        this.spawnLocation = location;
-        this.entity = location.getWorld().spawn(location, entityClass, this::preSpawn);
-
-        if (viewPermission != null || !visibleByDefault) plugin.getServer().getOnlinePlayers()
-                .forEach(player -> updateVisibility(entity, player));
-
-        updateTextDisplayName(entity);
-        updateTeamOptions(entity);
-        return entity;
-    }
-
-    @Override
-    public @Nullable E respawn() throws IllegalStateException {
-        if (spawnLocation == null) return null;
-        return respawn(spawnLocation);
-    }
-
-    @Override
-    public E respawn(final Location location) throws IllegalStateException {
-        remove();
-        return spawn(location);
-    }
-
-    @Override
-    public void delete() {
-        remove();
-        try {
-            Files.deleteIfExists(backupFile());
-            Files.deleteIfExists(file());
-        } catch (final IOException e) {
-            plugin.getComponentLogger().error("Failed to delete character {}", getName(), e);
-            plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
-            CharacterPlugin.ERROR_TRACKER.trackError(e);
-        }
-        plugin.characterController().unregister(name);
-    }
-
-    @Override
-    public void remove() {
-        if (entity != null) entity.remove();
-        invalidate();
+    public CompletableFuture<Boolean> despawn() {
+        return plugin.supply(() -> {
+            final var entity = this.entity;
+            if (entity == null) return false;
+            invalidate();
+            entity.remove();
+            return true;
+        });
     }
 
     public void invalidate() {
@@ -447,7 +498,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         entity = null;
     }
 
-    public void updateVisibility(final E entity, final Player player) {
+    public void updateVisibility(final Entity entity, final Player player) {
         if (canSee(player)) {
             if (textDisplayName != null) player.showEntity(plugin, textDisplayName);
             player.showEntity(plugin, entity);
@@ -461,7 +512,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         return Optional.ofNullable(textDisplayName);
     }
 
-    protected void preSpawn(final E entity) {
+    protected void preSpawn(final Entity entity) {
         try {
             internalPreSpawn(entity);
         } catch (final Exception e) {
@@ -473,7 +524,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
     }
 
     @SuppressWarnings("PatternValidation")
-    protected void internalPreSpawn(final E entity) {
+    protected void internalPreSpawn(final Entity entity) {
         entity.setVisibleByDefault(visibleByDefault);
         entity.setGravity(false);
         entity.setInvulnerable(true);
@@ -506,15 +557,10 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
             if (attribute != null) attribute.setBaseValue(0);
         }
 
-        if (entityData != null) EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
-            if (!entityCodec.entityType().isInstance(entity)) return;
-            @SuppressWarnings("unchecked") final var codec = (EntityCodec<Object, Object>) entityCodec;
-            entityData.optional(entityCodec.key().asString())
-                    .map(tag1 -> tag1 instanceof final ByteTag byteTag && byteTag.getAsByte() == -1
-                            ? null : codec.adapter().deserialize(tag1, plugin.nbt()))
-                    .ifPresent(data -> codec.setter().test(entity, data));
+        PropertyAccessors.ALL.forEach(accessor -> {
+            final var value = properties.get(accessor.key().asString());
+            if (value != null) accessor.apply(entity, value, plugin.nbt());
         });
-        entityData = null;
 
         if (entity.getPose().equals(Pose.DYING)) {
             entity.setPose(Pose.STANDING, true);
@@ -537,15 +583,15 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
 
     private void updateTextDisplayName(final TextDisplay display) {
         display.setAlignment(tagOptions.getAlignment());
-        display.setBackgroundColor(tagOptions.getBackgroundColor());
+        display.setBackgroundColor(tagOptions.getBackgroundColor().orElse(null));
         display.setBillboard(tagOptions.getBillboard());
-        display.setBrightness(tagOptions.getBrightness());
+        display.setBrightness(tagOptions.getBrightness().orElse(null));
         display.setDefaultBackground(tagOptions.isDefaultBackground());
         display.setLineWidth(tagOptions.getLineWidth());
         display.setGravity(false);
         display.setPersistent(false);
         display.setSeeThrough(tagOptions.isSeeThrough());
-        display.setShadowed(tagOptions.hasTextShadow());
+        display.setShadowed(tagOptions.isShadowed());
         display.setTransformation(new Transformation(
                 tagOptions.getOffset(),
                 tagOptions.getLeftRotation(),
@@ -566,7 +612,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
     }
 
-    protected void updateTextDisplayName(final E entity) {
+    protected void updateTextDisplayName(final Entity entity) {
         if (textDisplayName == null && showDisplayName()) {
             textDisplayName = entity.getWorld().spawn(entity.getLocation(), TextDisplay.class, display -> {
                 entity.addPassenger(display);
@@ -583,7 +629,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         return displayName != null && displayNameVisible;
     }
 
-    public void updateTeamOptions(final E entity) {
+    public void updateTeamOptions(final Entity entity) {
         entity.getTrackedBy().forEach(player -> updateTeamOptions(getCharacterSettingsTeam(entity, player)));
     }
 
@@ -594,49 +640,77 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
     }
 
-    private Path backupFile() {
-        return plugin.savesFolder().resolve(this.name + ".dat_old");
+    @Override
+    public Path getBackupFile() {
+        return backupFile;
     }
 
-    private Path file() {
-        return plugin.savesFolder().resolve(this.name + ".dat");
+    @Override
+    public Path getDataFile() {
+        return dataFile;
+    }
+
+    @Override
+    public <T> Optional<T> getProperty(final EntityProperty<?, T> property) {
+        return PropertyAccessors.of(property).flatMap(this::getProperty);
+    }
+
+    private <T> Optional<T> getProperty(final PropertyAccessor<?, T> accessor) {
+        final var value = properties.get(accessor.key().asString());
+        if (value != null) return Optional.ofNullable(accessor.deserialize(value, plugin.nbt()));
+        return getEntity().map(accessor::get);
+    }
+
+    @Override
+    public <T> boolean setProperty(final EntityProperty<?, T> property, final T value) {
+        if (!property.isApplicable(entityClass)) return false;
+        return PropertyAccessors.of(property).map(accessor -> {
+            if (Objects.equals(getProperty(accessor).orElse(null), value)) return false;
+            final var tag = accessor.serialize(value, plugin.nbt());
+            properties.put(accessor.key().asString(), tag);
+            getEntity().ifPresent(entity -> plugin.supply(() -> {
+                accessor.apply(entity, tag, plugin.nbt());
+                return null;
+            }));
+            return true;
+        }).orElse(false);
     }
 
     @Override
     public CompoundTag serialize() throws ParserException {
         final var tag = CompoundTag.builder();
         getDisplayName().ifPresent(displayName -> tag.put("displayName", plugin.nbt().serialize(displayName)));
-        getSpawnLocation().ifPresent(spawnLocation -> tag.put("location", plugin.nbt().serialize(spawnLocation)));
+        tag.put("position", CompoundTag.builder()
+                .put("x", location.getX())
+                .put("y", location.getY())
+                .put("z", location.getZ())
+                .build());
+        tag.put("rotation", CompoundTag.builder()
+                .put("yaw", location.getYaw())
+                .put("pitch", location.getPitch())
+                .build());
         getTeamColor().ifPresent(teamColor -> tag.put("teamColor", plugin.nbt().serialize(teamColor)));
         getViewPermission().ifPresent(viewPermission -> tag.put("viewPermission", viewPermission));
         tag.put("displayNameVisible", isDisplayNameVisible());
-        tag.put("tagOptions", getTagOptions().serialize());
+        tag.put("tagOptions", tagOptions.serialize());
         tag.put("type", plugin.nbt().serialize(getType()));
         tag.put("visibleByDefault", isVisibleByDefault());
         final var actions = CompoundTag.builder();
         getActions().forEach((name, clickAction) -> actions.put(name, plugin.nbt().serialize(clickAction)));
-        final var data = getEntity().map(entity -> {
-            final var entityData = CompoundTag.builder();
-            EntityCodecRegistry.registry().codecs().forEach(entityCodec -> {
-                if (!entityCodec.entityType().isInstance(entity)) return;
-                @SuppressWarnings("unchecked") final var codec = (EntityCodec<Object, Object>) entityCodec;
-                final var object = codec.getter().apply(entity);
-                if (object == null) entityData.put(codec.key().asString(), ByteTag.of((byte) -1));
-                else entityData.put(codec.key().asString(), codec.adapter().serialize(object, plugin.nbt()));
-            });
-            return this.entityData = entityData.build();
-        }).orElseGet(() -> this.entityData);
-        if (data != null) tag.put("entityData", data);
+        if (!properties.isEmpty()) {
+            final var data = CompoundTag.builder();
+            properties.forEach(data::put);
+            tag.put("entityData", data.build());
+        }
         tag.put("clickActions", actions.build());
         return tag.build();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void deserialize(final CompoundTag tag) throws ParserException {
-        tag.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> this.entityData = entityData);
+        tag.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> entityData.forEach(properties::put));
         tag.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
-                addAction(name, (ClickAction<@NonNull Object>) plugin.nbt().deserialize(action, ClickAction.class))));
+                addAction(name, plugin.nbt().deserialize(action, ClickAction.class))));
         tag.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class))
                 .ifPresentOrElse(this::setDisplayName, () -> this.setDisplayName(null));
         tag.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
@@ -644,16 +718,21 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         tag.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         tag.optional("viewPermission").map(Tag::getAsString).ifPresent(this::setViewPermission);
         tag.optional("visibleByDefault").map(Tag::getAsBoolean).ifPresent(this::setVisibleByDefault);
-        try {
-            tag.optional("location")
-                    .map(location -> plugin.nbt().deserialize(location, Location.class))
-                    .ifPresent(this::setSpawnLocation);
-        } catch (final ParserException e) {
-            plugin.getComponentLogger().warn("Failed to read location of character '{}': {}", name, e.getMessage());
-        }
+        // the world is implied by the data folder, legacy files stored the location with its world
+        final var position = tag.optional("position").or(() -> tag.optional("location")).map(Tag::getAsCompound);
+        final var rotation = tag.optional("rotation").or(() -> tag.optional("location")).map(Tag::getAsCompound);
+        position.ifPresent(compound -> {
+            location.setX(compound.get("x").getAsDouble());
+            location.setY(compound.get("y").getAsDouble());
+            location.setZ(compound.get("z").getAsDouble());
+        });
+        rotation.ifPresent(compound -> {
+            compound.optional("yaw").map(Tag::getAsFloat).ifPresent(location::setYaw);
+            compound.optional("pitch").map(Tag::getAsFloat).ifPresent(location::setPitch);
+        });
     }
 
-    private class PaperTagOptions implements TagOptions {
+    protected class PaperTagOptions implements TagOptions {
         private @Nullable Brightness brightness = null;
         private @Nullable Color backgroundColor = null;
         private Billboard billboard = Billboard.CENTER;
@@ -674,13 +753,13 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public @Nullable Brightness getBrightness() {
-            return brightness;
+        public Optional<Brightness> getBrightness() {
+            return Optional.ofNullable(brightness);
         }
 
         @Override
-        public @Nullable Color getBackgroundColor() {
-            return backgroundColor;
+        public Optional<Color> getBackgroundColor() {
+            return Optional.ofNullable(backgroundColor);
         }
 
         @Override
@@ -709,7 +788,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean hasTextShadow() {
+        public boolean isShadowed() {
             return textShadow;
         }
 
@@ -844,7 +923,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
         }
 
         @Override
-        public boolean setTextShadow(final boolean enabled) {
+        public boolean setShadowed(final boolean enabled) {
             if (enabled == textShadow) return false;
             textDisplayName().ifPresent(display -> display.setShadowed(enabled));
             this.textShadow = enabled;
@@ -861,8 +940,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
             return lineWidth;
         }
 
-        @Override
-        public CompoundTag serialize() throws ParserException {
+        private CompoundTag serialize() throws ParserException {
             final var tag = CompoundTag.builder();
             if (backgroundColor != null) tag.put("backgroundColor", backgroundColor.asARGB());
             if (brightness != null) tag.put("brightness", plugin.nbt().serialize(brightness));
@@ -880,8 +958,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
             return tag.build();
         }
 
-        @Override
-        public void deserialize(final CompoundTag tag) throws ParserException {
+        private void deserialize(final CompoundTag tag) throws ParserException {
             tag.optional("alignment").map(Tag::getAsString).map(TextAlignment::valueOf).ifPresent(this::setAlignment);
             tag.optional("billboard").map(Tag::getAsString).map(Billboard::valueOf).ifPresent(this::setBillboard);
             tag.optional("defaultBackground").map(Tag::getAsBoolean).ifPresent(this::setDefaultBackground);
@@ -892,7 +969,7 @@ public class PaperCharacter<E extends Entity> implements Character<E>, TagSerial
             tag.optional("scale").map(t -> plugin.nbt().deserialize(t, Vector3f.class)).ifPresent(this::setScale);
             tag.optional("seeThrough").map(Tag::getAsBoolean).ifPresent(this::setSeeThrough);
             tag.optional("textOpacity").map(Tag::getAsFloat).ifPresent(this::setTextOpacity);
-            tag.optional("textShadow").map(Tag::getAsBoolean).ifPresent(this::setTextShadow);
+            tag.optional("textShadow").map(Tag::getAsBoolean).ifPresent(this::setShadowed);
             setBackgroundColor(tag.optional("backgroundColor").map(Tag::getAsInt).map(Color::fromARGB).orElse(null));
             setBrightness(tag.optional("brightness").map(t -> plugin.nbt().deserialize(t, Brightness.class)).orElse(null));
         }

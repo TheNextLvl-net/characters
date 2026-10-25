@@ -37,7 +37,7 @@ final class CharacterActionChanceCommand extends ActionCommand {
     }
 
     @Override
-    public int run(final CommandContext<CommandSourceStack> context, final Character<?> character, final ClickAction<?> action, final String actionName) {
+    public int run(final CommandContext<CommandSourceStack> context, final Character character, final ClickAction<?> action, final String actionName) {
         final var chance = tryGetArgument(context, "chance", int.class).orElse(null);
         final var success = chance != null && action.setChance(chance);
         final var message = chance == null ? "character.action.chance"

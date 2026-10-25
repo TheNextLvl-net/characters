@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.CompletableFuture;
 
 @NullMarked
-public final class CharacterArgumentType implements CustomArgumentType.Converted<Character<?>, String> {
+public final class CharacterArgumentType implements CustomArgumentType.Converted<Character, String> {
     private final CharacterPlugin plugin;
 
     public CharacterArgumentType(final CharacterPlugin plugin) {
@@ -21,14 +21,14 @@ public final class CharacterArgumentType implements CustomArgumentType.Converted
     }
 
     @Override
-    public Character<?> convert(final String nativeType) {
-        return plugin.characterController().getCharacter(nativeType)
+    public Character convert(final String nativeType) {
+        return plugin.characterProvider().getCharacter(nativeType)
                 .orElseThrow(() -> new NullPointerException("No character was found"));
     }
 
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
-        plugin.characterController().getCharacterNames().stream()
+        plugin.characterProvider().getCharacterNames()
                 .map(StringArgumentType::escapeIfRequired)
                 .filter(name -> name.toLowerCase().contains(builder.getRemainingLowerCase()))
                 .forEach(builder::suggest);

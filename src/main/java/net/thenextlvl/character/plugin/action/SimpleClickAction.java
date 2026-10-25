@@ -1,6 +1,9 @@
-package net.thenextlvl.character.action;
+package net.thenextlvl.character.plugin.action;
 
-import org.bukkit.entity.Entity;
+import net.thenextlvl.character.Character;
+import net.thenextlvl.character.action.ActionType;
+import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.action.ClickType;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
@@ -8,27 +11,28 @@ import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 @NullMarked
 final class SimpleClickAction<T> implements ClickAction<T> {
-    private final Map<UUID, Long> cooldowns = new HashMap<>();
+    private final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
 
     private final ActionType<T> actionType;
-    private EnumSet<ClickType> clickTypes;
-    private T input;
+    private volatile EnumSet<ClickType> clickTypes;
+    private volatile T input;
 
-    private @Range(from = 0, to = 100) int chance = 100;
-    private Duration cooldown = Duration.ZERO;
-    private @Nullable String permission = null;
+    private volatile @Nullable String permission = null;
+    private volatile @Range(from = 0, to = 100) int chance = 100;
+    private volatile Duration cooldown = Duration.ZERO;
 
     public SimpleClickAction(final ActionType<T> actionType, final EnumSet<ClickType> clickTypes, final T input) {
         this.actionType = actionType;
-        this.clickTypes = clickTypes;
+        this.clickTypes = EnumSet.copyOf(clickTypes);
         this.input = input;
     }
 
@@ -39,13 +43,13 @@ final class SimpleClickAction<T> implements ClickAction<T> {
 
     @Override
     public EnumSet<ClickType> getClickTypes() {
-        return clickTypes;
+        return clickTypes.clone();
     }
 
     @Override
     public boolean setClickTypes(final EnumSet<ClickType> clickTypes) {
         if (Objects.equals(this.clickTypes, clickTypes)) return false;
-        this.clickTypes = clickTypes;
+        this.clickTypes = clickTypes.clone();
         return true;
     }
 
@@ -79,8 +83,8 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public @Nullable String getPermission() {
-        return permission;
+    public Optional<String> getPermission() {
+        return Optional.ofNullable(permission);
     }
 
     @Override
@@ -116,16 +120,23 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public boolean canInvoke(final Player player) {
-        return (permission == null || player.hasPermission(permission)) && !isOnCooldown(player);
+    public boolean invoke(final Character character, final Player player) {
+        final var permission1 = permission;
+        if (permission1 != null && !player.hasPermission(permission1)) return false;
+        if (isOnCooldown(player)) return false;
+        if (cooldown.isPositive()) cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
+        if (ThreadLocalRandom.current().nextInt(100) >= chance) return false;
+        actionType.action().invoke(character, player, input);
+        return true;
     }
 
     @Override
-    public boolean invoke(final Player player, final Entity character) {
-        if (!canInvoke(player)) return false;
-        if (cooldown.isPositive()) cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
-        if (ThreadLocalRandom.current().nextInt(100) > chance) return false;
-        actionType.action().invoke(player, character, input);
-        return true;
+    public ClickAction<T> copyFrom(final ClickAction<T> other) {
+        clickTypes = other.getClickTypes();
+        input = other.getInput();
+        chance = other.getChance();
+        cooldown = other.getCooldown();
+        permission = other.getPermission().orElse(null);
+        return this;
     }
 }

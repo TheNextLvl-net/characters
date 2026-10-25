@@ -20,7 +20,7 @@ abstract class ActionCommand extends SimpleCommand {
     @Override
     public final int run(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         final var sender = context.getSource().getSender();
-        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
         final var actionName = context.getArgument("action", String.class);
         final var action = character.getAction(actionName).orElse(null);
         if (action == null) {
@@ -32,5 +32,5 @@ abstract class ActionCommand extends SimpleCommand {
         return run(context, character, action, actionName);
     }
 
-    public abstract int run(CommandContext<CommandSourceStack> context, Character<?> character, ClickAction<?> action, String actionName) throws CommandSyntaxException;
+    public abstract int run(CommandContext<CommandSourceStack> context, Character character, ClickAction<?> action, String actionName) throws CommandSyntaxException;
 }

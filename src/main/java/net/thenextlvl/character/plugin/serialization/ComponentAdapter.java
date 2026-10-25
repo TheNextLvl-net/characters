@@ -2,6 +2,8 @@ package net.thenextlvl.character.plugin.serialization;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.ParsingException;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.serialization.TagAdapter;
 import net.thenextlvl.nbt.serialization.TagDeserializationContext;
@@ -14,7 +16,11 @@ import org.jspecify.annotations.NullMarked;
 public final class ComponentAdapter implements TagAdapter<Component> {
     @Override
     public Component deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
-        return MiniMessage.miniMessage().deserialize(tag.getAsString());
+        try {
+            return MiniMessage.miniMessage().deserialize(tag.getAsString());
+        } catch (final ParsingException e) {
+            return LegacyComponentSerializer.legacySection().deserialize(tag.getAsString());
+        }
     }
 
     @Override

@@ -14,7 +14,7 @@ import org.jspecify.annotations.NullMarked;
 import java.util.UUID;
 
 @NullMarked
-public class ResolvableProfileAdapter implements TagAdapter<ResolvableProfile> {
+public final class ResolvableProfileAdapter implements TagAdapter<ResolvableProfile> {
     @Override
     public ResolvableProfile deserialize(final Tag tag, final TagDeserializationContext context) throws ParserException {
         final var root = tag.getAsCompound();

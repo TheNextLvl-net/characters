@@ -14,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 public final class CharacterActionSuggestionProvider implements SuggestionProvider<CommandSourceStack> {
     @Override
     public CompletableFuture<Suggestions> getSuggestions(final CommandContext<CommandSourceStack> context, final SuggestionsBuilder builder) {
-        final var character = (Character<?>) context.getLastChild().getArgument("character", Character.class);
+        final var character = context.getLastChild().getArgument("character", Character.class);
         character.getActions().keySet().stream()
                 .filter(string -> string.contains(builder.getRemaining()))
                 .forEach(builder::suggest);

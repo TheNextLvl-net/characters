@@ -30,9 +30,8 @@ repositories {
 }
 
 dependencies {
-    api("net.thenextlvl:nbt:4.3.6")
-    api("net.thenextlvl.core:paper:3.0.0-pre5")
     compileOnly("io.papermc.paper:paper-api:26.3.build.+")
+    implementation("net.thenextlvl:static-binder:0.1.3")
 }
 
 tasks.withType<JavaCompile>().configureEach {

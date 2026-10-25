@@ -15,8 +15,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
-import org.bukkit.entity.Mannequin;
-import org.jspecify.annotations.NonNull;
+import net.thenextlvl.character.property.EntityProperties;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -53,18 +52,14 @@ public final class CharacterSkinCommand extends BrigadierCommand {
                 .then(urlSkinArgument()));
     }
 
-    @SuppressWarnings({"unchecked", "PatternValidation"})
+    @SuppressWarnings("PatternValidation")
     private int setSkin(final CommandContext<CommandSourceStack> context, @Nullable final ResolvableProfile profile) {
         final var sender = context.getSource().getSender();
-        final var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
 
-        final var success = character.getEntity().map(mannequin -> {
-            final var name = character.getName().length() > 16 ? character.getName().substring(0, 16) : character.getName();
-            final var newProfile = profile != null ? profile : ResolvableProfile.resolvableProfile().name(name).build();
-            if (mannequin.getProfile().equals(newProfile)) return false;
-            mannequin.setProfile(newProfile);
-            return true;
-        }).orElse(false);
+        final var name = character.getName().length() > 16 ? character.getName().substring(0, 16) : character.getName();
+        final var newProfile = profile != null ? profile : ResolvableProfile.resolvableProfile().name(name).build();
+        final var success = character.setProperty(EntityProperties.MANNEQUIN_PROFILE, newProfile);
         final var message = success ? "character.skin" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;

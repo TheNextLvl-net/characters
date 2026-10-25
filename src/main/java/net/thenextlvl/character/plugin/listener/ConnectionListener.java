@@ -32,14 +32,14 @@ public final class ConnectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(final PlayerQuitEvent event) {
-        plugin.characterController().getCharacters().forEach(character ->
+        plugin.characterProvider().getCharacters().forEach(character ->
                 character.getActions().values().forEach(action ->
                         action.resetCooldown(event.getPlayer())));
     }
 
     private void loadCharacters(final World world, final Player player) {
-        plugin.characterController().getCharacters(world)
-                .map(character -> (PaperCharacter<?>) character)
+        plugin.characterProvider().getCharacters(world)
+                .map(character -> (PaperCharacter) character)
                 .forEach(character -> character.loadCharacter(player));
     }
 }

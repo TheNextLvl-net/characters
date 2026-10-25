@@ -33,7 +33,7 @@ final class CharacterTagTextShadowCommand extends SimpleCommand {
     public int run(final CommandContext<CommandSourceStack> context) {
         final var character = context.getArgument("character", Character.class);
         final var enabled = tryGetArgument(context, "enabled", boolean.class).orElse(false);
-        final var success = character.getTagOptions().setTextShadow(enabled);
+        final var success = character.getTagOptions().setShadowed(enabled);
         final var message = success ? "character.tag.text-shadow" : "nothing.changed";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
                 Placeholder.unparsed("character", character.getName()),

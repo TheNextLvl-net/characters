@@ -1,6 +1,5 @@
 package net.thenextlvl.character.plugin.command.skin;
 
-import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -16,9 +15,8 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.model.SkinLayer;
-import org.bukkit.entity.Mannequin;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
+import net.thenextlvl.character.property.EntityProperties;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.mannequinCharacterArgument;
 
@@ -46,17 +44,11 @@ class CharacterSkinLayerCommand extends BrigadierCommand {
 
     @SuppressWarnings("unchecked")
     private int toggle(final CommandContext<CommandSourceStack> context, final boolean visible) {
-        final var character = (Character<@NonNull Mannequin>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
 
         final var layer = context.getArgument("layer", SkinLayer.class);
-        final var raw = character.getEntity().map(Mannequin::getSkinParts).orElseGet(SkinParts::allParts).getRaw();
-        final var skinParts = new PaperSkinParts(visible ? raw | layer.getMask() : raw & ~layer.getMask());
-
-        final var success = character.getEntity().map(mannequin -> {
-            if (mannequin.getSkinParts().getRaw() == skinParts.getRaw()) return false;
-            mannequin.setSkinParts(skinParts);
-            return true;
-        }).orElse(false);
+        final var raw = character.getProperty(EntityProperties.MANNEQUIN_SKIN_PARTS).orElseGet(() -> SkinParts.allParts().getRaw());
+        final var success = character.setProperty(EntityProperties.MANNEQUIN_SKIN_PARTS, visible ? raw | layer.getMask() : raw & ~layer.getMask());
         final var message = !success ? "nothing.changed" : visible
                 ? "character.skin_layer.shown" : "character.skin_layer.hidden";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,

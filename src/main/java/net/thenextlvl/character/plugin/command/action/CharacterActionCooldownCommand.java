@@ -38,7 +38,7 @@ final class CharacterActionCooldownCommand extends ActionCommand {
     }
 
     @Override
-    public int run(final CommandContext<CommandSourceStack> context, final Character<?> character, final ClickAction<?> action, final String actionName) {
+    public int run(final CommandContext<CommandSourceStack> context, final Character character, final ClickAction<?> action, final String actionName) {
         final var cooldown = tryGetArgument(context, "cooldown", int.class).map(Tick::of).orElse(null);
         final var success = cooldown != null && action.setCooldown(cooldown);
         final var message = cooldown == null ? "character.action.cooldown"

@@ -9,10 +9,11 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
+import net.thenextlvl.character.property.EntityProperties;
+import net.thenextlvl.character.property.EquipmentSnapshot;
 
 import static net.thenextlvl.character.plugin.command.CharacterCommand.characterArgument;
 import static net.thenextlvl.character.plugin.command.equipment.CharacterEquipmentCommand.equipmentSlotArgument;
@@ -33,13 +34,11 @@ final class CharacterEquipmentSetCommand extends SimpleCommand {
 
     @Override
     public int run(final CommandContext<CommandSourceStack> context) {
-        final var character = (net.thenextlvl.character.Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
         final var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         final var item = context.getArgument("item", ItemStack.class);
-        final var success = character.getEntity(LivingEntity.class).map(LivingEntity::getEquipment).map(equipment -> {
-            equipment.setItem(slot, item, true);
-            return true;
-        }).orElse(false);
+        final var success = character.setProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT, character.getProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT)
+                .orElseGet(EquipmentSnapshot::empty).with(slot, item));
         final var message = !success ? "nothing.changed" : item.isEmpty()
                 ? "character.equipment.slot.cleared" : "character.equipment.slot";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,

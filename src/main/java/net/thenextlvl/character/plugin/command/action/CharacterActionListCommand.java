@@ -28,7 +28,7 @@ final class CharacterActionListCommand extends SimpleCommand {
     @Override
     public int run(final CommandContext<CommandSourceStack> context) {
         final var sender = context.getSource().getSender();
-        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
         if (character.getActions().isEmpty()) {
             plugin.bundle().sendMessage(sender, "character.action.list.empty",
                     Placeholder.unparsed("character", character.getName()));

@@ -3,21 +3,19 @@ package net.thenextlvl.character.action;
 import com.google.common.base.Preconditions;
 import net.kyori.adventure.key.KeyPattern;
 import net.thenextlvl.character.Character;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiPredicate;
 
-@NullMarked
 final class SimpleActionType<T> implements ActionType<T> {
     private final @KeyPattern.Value String name;
     private final Class<T> type;
     private final Action<T> action;
-    private final @Nullable BiPredicate<T, Character<?>> applicable;
+    private final @Nullable BiPredicate<T, Character> applicable;
 
     SimpleActionType(
             @KeyPattern.Value final String name, final Class<T> type, final Action<T> action,
-            @Nullable final BiPredicate<T, Character<?>> applicable
+            final @Nullable BiPredicate<T, Character> applicable
     ) {
         this.name = name;
         this.type = type;
@@ -41,7 +39,7 @@ final class SimpleActionType<T> implements ActionType<T> {
     }
 
     @Override
-    public boolean isApplicable(final T input, final Character<?> character) {
+    public boolean isApplicable(final T input, final Character character) {
         return applicable == null || applicable.test(input, character);
     }
 
@@ -49,19 +47,19 @@ final class SimpleActionType<T> implements ActionType<T> {
         private final Class<T> type;
         private final @KeyPattern.Value String name;
         private @Nullable Action<T> action;
-        private @Nullable BiPredicate<T, Character<?>> applicable = null;
+        private @Nullable BiPredicate<T, Character> applicable = null;
 
         Builder(final Class<T> type, @KeyPattern.Value final String name) {
             this.type = type;
             this.name = name;
         }
 
-        public Builder<T> action(@Nullable final Action<T> action) {
+        public Builder<T> action(final Action<T> action) {
             this.action = action;
             return this;
         }
 
-        public Builder<T> applicable(final BiPredicate<T, Character<?>> applicable) {
+        public Builder<T> applicable(final BiPredicate<T, Character> applicable) {
             this.applicable = applicable;
             return this;
         }

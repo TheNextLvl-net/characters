@@ -36,12 +36,12 @@ final class CharacterCreateCommand extends SimpleCommand {
     public int run(final CommandContext<CommandSourceStack> context) {
         final var sender = context.getSource().getSender();
         final var name = context.getArgument("name", String.class);
-        if (plugin.characterController().characterExists(name)) {
+        if (plugin.characterProvider().hasCharacter(name)) {
             plugin.bundle().sendMessage(sender, "character.exists", Placeholder.unparsed("name", name));
             return 0;
         } else {
             final var type = tryGetArgument(context, "type", EntityType.class).orElse(EntityType.MANNEQUIN);
-            plugin.characterController().spawnCharacter(name, context.getSource().getLocation(), type);
+            plugin.characterProvider().createCharacter(name, context.getSource().getLocation(), type);
             plugin.bundle().sendMessage(sender, "character.created", Placeholder.unparsed("name", name),
                     Placeholder.unparsed("type", type.key().asString()));
             return SINGLE_SUCCESS;

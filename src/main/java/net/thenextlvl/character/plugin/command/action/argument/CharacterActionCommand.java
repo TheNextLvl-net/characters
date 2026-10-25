@@ -25,16 +25,16 @@ abstract class CharacterActionCommand<T> extends SimpleCommand {
 
     protected int addAction(final CommandContext<CommandSourceStack> context, final T input) {
         final var sender = context.getSource().getSender();
-        final var character = (net.thenextlvl.character.Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
         final var actionName = context.getArgument("action", String.class);
         final var clickTypes = context.getArgument("click-types", ClickTypes.class);
 
         final var previous = character.getAction(actionName);
         final var cooldown = previous.map(ClickAction::getCooldown).orElse(Duration.ZERO);
-        final var permission = previous.map(ClickAction::getPermission).orElse(null);
+        final var permission = previous.flatMap(ClickAction::getPermission).orElse(null);
         final var chance = previous.map(ClickAction::getChance).orElse(100);
 
-        final var success = character.addAction(actionName, ClickAction.create(actionType, clickTypes.getClickTypes(), input, action -> {
+        final var success = character.addAction(actionName, ClickAction.factory().create(actionType, clickTypes.getClickTypes(), input, action -> {
             action.setChance(chance);
             action.setCooldown(cooldown);
             action.setPermission(permission);

@@ -33,7 +33,7 @@ final class CharacterActionPermissionCommand extends ActionCommand {
 
     private int set(final CommandContext<CommandSourceStack> context) {
         final var sender = context.getSource().getSender();
-        final var character = (Character<?>) context.getArgument("character", Character.class);
+        final var character = context.getArgument("character", Character.class);
         final var actionName = context.getArgument("action", String.class);
         final var action = character.getAction(actionName).orElse(null);
         final var permission = tryGetArgument(context, "permission", String.class).orElse(null);
@@ -57,10 +57,11 @@ final class CharacterActionPermissionCommand extends ActionCommand {
     }
 
     @Override
-    public int run(final CommandContext<CommandSourceStack> context, final Character<?> character, final ClickAction<?> action, final String actionName) {
-        final var message = action.getPermission() != null ? "character.action.permission" : "character.action.permission.none";
+    public int run(final CommandContext<CommandSourceStack> context, final Character character, final ClickAction<?> action, final String actionName) {
+        final var permission = action.getPermission();
+        final var message = permission.isPresent() ? "character.action.permission" : "character.action.permission.none";
         plugin.bundle().sendMessage(context.getSource().getSender(), message,
-                Placeholder.unparsed("permission", String.valueOf(action.getPermission())),
+                Placeholder.unparsed("permission", permission.orElse("null")),
                 Placeholder.unparsed("action", actionName),
                 Placeholder.unparsed("character", character.getName()));
         return SINGLE_SUCCESS;
