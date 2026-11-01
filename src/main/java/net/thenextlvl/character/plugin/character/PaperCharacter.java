@@ -465,7 +465,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             if (isSpawned() || !location.isChunkLoaded()) return false;
             if (entity != null) invalidate();
 
-            final var entity = location.getWorld().spawn(location, entityClass, this::preSpawn);
+            final var entity = location.getWorld().spawn(location, entityClass, false, this::preSpawn);
             if (!entity.isValid()) return false;
             this.entity = entity;
 
