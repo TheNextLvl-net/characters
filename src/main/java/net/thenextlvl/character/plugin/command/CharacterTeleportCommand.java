@@ -64,7 +64,7 @@ final class CharacterTeleportCommand extends BrigadierCommand {
 
         final var character = context.getArgument("character", Character.class);
 
-        final var location = character.getEntity().map(Entity::getLocation).orElseGet(character::getLocation);
+        final var location = character.getEntity(player).map(Entity::getLocation).orElseGet(character::getLocation);
         player.teleportAsync(location, COMMAND);
 
         plugin.bundle().sendMessage(sender, "character.teleported.self",

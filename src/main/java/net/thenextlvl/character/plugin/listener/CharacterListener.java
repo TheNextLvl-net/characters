@@ -12,7 +12,7 @@ public final class CharacterListener implements Listener {
     public void onPlayerCharacterInteract(final PlayerCharacterInteractEvent event) {
         // todo: remove, this is just for testing
         if (event.getClickType().isLeftClick()) {
-            event.getCharacter().getPathfinder().ifPresent(pathfinder -> {
+            event.getCharacter().getPathfinder(event.getPlayer()).ifPresent(pathfinder -> {
                 pathfinder.setCanFloat(true);
                 pathfinder.setCanOpenDoors(true);
                 pathfinder.setCanPassDoors(true);

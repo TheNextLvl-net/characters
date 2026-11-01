@@ -38,7 +38,7 @@ final class CharacterEquipmentSetCommand extends SimpleCommand {
         final var character = context.getArgument("character", Character.class);
         final var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         final var item = context.getArgument("item", ItemStack.class);
-        final var usable = character.getEntity(LivingEntity.class).map(entity -> entity.canUseEquipmentSlot(slot)).orElse(true);
+        final var usable = character.getEntities().filter(LivingEntity.class::isInstance).map(LivingEntity.class::cast).findAny().map(entity -> entity.canUseEquipmentSlot(slot)).orElse(true);
         final var success = usable && character.setProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT, character.getProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT)
                 .orElseGet(EquipmentSnapshot::empty).with(slot, item));
         final var message = !success ? "nothing.changed" : item.isEmpty()

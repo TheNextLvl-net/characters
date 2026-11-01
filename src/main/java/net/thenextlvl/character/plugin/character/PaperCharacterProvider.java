@@ -48,9 +48,8 @@ public final class PaperCharacterProvider implements CharacterProvider {
 
     @Override
     public Optional<Character> getCharacter(final Entity entity) {
-        return getCharacters().filter(character -> character.getEntity()
-                .filter(entity::equals)
-                .isPresent()
+        return getCharacters().filter(character -> character.getEntities()
+                .anyMatch(entity::equals)
         ).findAny();
     }
 
@@ -61,10 +60,9 @@ public final class PaperCharacterProvider implements CharacterProvider {
 
     @Override
     public Optional<Character> getCharacter(final UUID uuid) {
-        return getCharacters().filter(character -> character.getEntity()
+        return getCharacters().filter(character -> character.getEntities()
                 .map(Entity::getUniqueId)
-                .filter(uuid::equals)
-                .isPresent()
+                .anyMatch(uuid::equals)
         ).findAny();
     }
 

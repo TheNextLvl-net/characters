@@ -64,23 +64,22 @@ public final class EntityListener implements Listener {
         event.setCancelled(event.getEntity().isMarkedInvulnerable());
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onEntityDeath(final EntityDeathEvent event) {
         plugin.characterProvider().getCharacter(event.getEntity()).ifPresent(character -> {
+            final var owner = ((PaperCharacter) character).getOwner(event.getEntity());
+            if (owner == null) return;
             if (!event.getEntity().getWorld().getGameRuleValue(GameRules.IMMEDIATE_RESPAWN)) {
-                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.despawn(), 20);
-                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.spawn(), 75);
-            } else character.despawn().thenCompose(ignored -> character.spawn());
+                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.despawn(owner), 20);
+                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.spawn(owner), 75);
+            } else character.despawn(owner).thenCompose(ignored -> character.spawn(owner));
         });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityRemove(final EntityRemoveEvent event) {
-        plugin.characterProvider().getCharacter(event.getEntity()).ifPresent(character -> {
-            ((PaperCharacter) character).invalidate();
-            // the entity may have walked into another chunk, respawn it if its own chunk is still loaded
-            if (event.getCause() == EntityRemoveEvent.Cause.UNLOAD) plugin.getServer().getGlobalRegionScheduler()
-                    .runDelayed(plugin, task -> character.spawn(), 1);
-        });
+        plugin.characterProvider().getCharacter(event.getEntity())
+                .map(character -> (PaperCharacter) character)
+                .ifPresent(character -> character.invalidate(event.getEntity()));
     }
 }

@@ -34,7 +34,7 @@ public final class SimpleActionTypes implements ActionTypes {
             .build();
 
     private final ActionType<EntityEffect> sendEntityEffect = ActionType.builder("send_entity_effect", EntityEffect.class)
-            .action((character, player, effect) -> character.getEntity().ifPresent(entity -> player.sendEntityEffect(effect, entity)))
+            .action((character, player, effect) -> character.getEntity(player).ifPresent(entity -> player.sendEntityEffect(effect, entity)))
             .applicable((effect, character) -> effect.isApplicableTo(character.getEntityClass()) && !isDeprecated(effect))
             .build();
 

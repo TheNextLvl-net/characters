@@ -22,6 +22,8 @@ public final class ConnectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerChangedWorld(final PlayerChangedWorldEvent event) {
+        plugin.characterProvider().getCharacters(event.getFrom())
+                .forEach(character -> character.despawn(event.getPlayer()));
         loadCharacters(event.getPlayer().getWorld(), event.getPlayer());
     }
 
@@ -32,9 +34,11 @@ public final class ConnectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(final PlayerQuitEvent event) {
-        plugin.characterProvider().getCharacters().forEach(character ->
-                character.getActions().values().forEach(action ->
-                        action.resetCooldown(event.getPlayer())));
+        plugin.characterProvider().getCharacters().forEach(character -> {
+            character.despawn(event.getPlayer());
+            character.getActions().values().forEach(action ->
+                    action.resetCooldown(event.getPlayer()));
+        });
     }
 
     private void loadCharacters(final World world, final Player player) {

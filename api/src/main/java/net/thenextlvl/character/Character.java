@@ -63,36 +63,50 @@ public interface Character {
     Class<? extends Entity> getEntityClass();
 
     /**
-     * Returns the entity of the character.
+     * Returns the entity of the character that is shown to the given player.
      * <p>
-     * The entity only exists while the character is spawned, which requires its chunk to be loaded.
+     * Every player that can see the character has their own entity, which is only visible to them.
+     * The entity only exists while the character is spawned for the player,
+     * which requires its chunk to be loaded and sent to the player.
      * Changes made directly to the entity are not persisted.
      *
-     * @return the entity, or empty if the character is not spawned
+     * @param player the player to get the entity for
+     * @return the entity, or empty if the character is not spawned for the player
      * @since 0.9.0
      */
     @Contract(pure = true)
-    Optional<Entity> getEntity();
+    Optional<Entity> getEntity(Player player);
 
     /**
-     * Returns the entity of the character if it is of the given type.
+     * Returns the entity of the character that is shown to the given player if it is of the given type.
      *
-     * @param type entity type
-     * @param <T>  entity type
-     * @return the entity, or empty if the character is not spawned or not of the given type
-     * @since 0.1.0
+     * @param player the player to get the entity for
+     * @param type   entity type
+     * @param <T>    entity type
+     * @return the entity, or empty if the character is not spawned for the player or not of the given type
+     * @since 0.9.0
      */
     @Contract(pure = true)
-    <T> Optional<T> getEntity(Class<T> type);
+    <T> Optional<T> getEntity(Player player, Class<T> type);
 
     /**
-     * Returns the pathfinder of the character's entity.
+     * Returns the entities of the character, one per player it is spawned for.
      *
-     * @return the pathfinder, or empty if the character is not spawned or not a mob
-     * @since 0.1.0
+     * @return the entities of the character
+     * @since 0.9.0
      */
     @Contract(pure = true)
-    Optional<Pathfinder> getPathfinder();
+    Stream<Entity> getEntities();
+
+    /**
+     * Returns the pathfinder of the entity that is shown to the given player.
+     *
+     * @param player the player to get the pathfinder for
+     * @return the pathfinder, or empty if the character is not spawned for the player or not a mob
+     * @since 0.9.0
+     */
+    @Contract(pure = true)
+    Optional<Pathfinder> getPathfinder(Player player);
 
     /**
      * Returns the location of the character.
@@ -118,7 +132,7 @@ public interface Character {
     /**
      * Teleports the character to the given location.
      * <p>
-     * The new location is applied immediately, the entity is moved once it exists.
+     * The new location is applied immediately, the entities are moved once they exist.
      * Calling this method may involve moving the character's data files.
      *
      * @param location new character location
@@ -169,13 +183,13 @@ public interface Character {
     boolean setDisplayNameVisible(boolean visible);
 
     /**
-     * Returns the value of the given property.
+     * Returns the persisted value of the given property.
      * <p>
-     * If no value was set, the value of the character's entity is returned, if it is spawned.
+     * The state of the character's entities is never taken into account.
      *
      * @param property the property to get
      * @param <T>      the value type of the property
-     * @return the value of the given property
+     * @return the persisted value of the given property, or empty if no value was set
      * @see EntityProperties
      * @since 0.9.0
      */
@@ -186,7 +200,7 @@ public interface Character {
      * Sets the value of the given property.
      * <p>
      * The value is cached and persisted with the character
-     * and applied to its entity immediately if it is spawned, or as soon as it spawns.
+     * and applied to its entities immediately if it is spawned, or as soon as it spawns.
      *
      * @param property the property to set
      * @param value    the new value
@@ -520,18 +534,28 @@ public interface Character {
     Path getBackupFile();
 
     /**
-     * Checks if this character is spawned.
+     * Checks if this character is spawned for any player.
      *
-     * @return {@code true} if this character is spawned, {@code false} otherwise
+     * @return {@code true} if this character is spawned for any player, {@code false} otherwise
      * @since 0.1.0
      */
     @Contract(pure = true)
     boolean isSpawned();
 
     /**
+     * Checks if this character is spawned for the given player.
+     *
+     * @param player the player to check for
+     * @return {@code true} if this character is spawned for the given player, {@code false} otherwise
+     * @since 0.9.0
+     */
+    @Contract(pure = true)
+    boolean isSpawned(Player player);
+
+    /**
      * Checks if the given entity is part of this character.
      * <p>
-     * This includes the character's entity and its name tag.
+     * This includes the character's entities and its name tag.
      *
      * @param entity the entity to check for
      * @return {@code true} if the given entity is part of this character, {@code false} otherwise
@@ -541,22 +565,37 @@ public interface Character {
     boolean isPart(Entity entity);
 
     /**
-     * Spawns this character.
+     * Spawns this character for all players that can see it and have its chunk loaded.
      * <p>
      * Spawning only succeeds if the chunk at the character's location is loaded.
-     * Characters are spawned automatically once their chunk loads.
+     * Characters are spawned automatically once their chunk is sent to a player.
      *
      * @return a {@link CompletableFuture} that completes with {@code true}
-     * if the character was spawned, {@code false} otherwise
+     * if the character was spawned for any player, {@code false} otherwise
      * @since 0.9.0
      */
     @Contract(mutates = "this")
     CompletableFuture<Boolean> spawn();
 
     /**
-     * Despawns this character.
+     * Spawns this character for the given player.
      * <p>
-     * This removes the character's entity from the world, but does not delete the character.
+     * Spawning only succeeds if the player can see the character
+     * and the chunk at the character's location is loaded.
+     *
+     * @param player the player to spawn the character for
+     * @return a {@link CompletableFuture} that completes with {@code true}
+     * if the character was spawned for the player, {@code false} otherwise
+     * @see #canSee(Player)
+     * @since 0.9.0
+     */
+    @Contract(mutates = "this")
+    CompletableFuture<Boolean> spawn(Player player);
+
+    /**
+     * Despawns this character for all players.
+     * <p>
+     * This removes the character's entities from the world, but does not delete the character.
      *
      * @return a {@link CompletableFuture} that completes with {@code true}
      * if the character was despawned, {@code false} otherwise
@@ -565,4 +604,17 @@ public interface Character {
      */
     @Contract(mutates = "this")
     CompletableFuture<Boolean> despawn();
+
+    /**
+     * Despawns this character for the given player.
+     * <p>
+     * The name tag is removed along with the last entity of the character.
+     *
+     * @param player the player to despawn the character for
+     * @return a {@link CompletableFuture} that completes with {@code true}
+     * if the character was despawned for the player, {@code false} otherwise
+     * @since 0.9.0
+     */
+    @Contract(mutates = "this")
+    CompletableFuture<Boolean> despawn(Player player);
 }
