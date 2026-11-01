@@ -373,9 +373,9 @@ public interface Character {
     boolean setViewPermission(@Nullable String permission);
 
     /**
-     * Returns the players that are tracking this character.
+     * Returns the players this character is spawned for.
      *
-     * @return players that are tracking this character
+     * @return players this character is spawned for
      * @since 0.9.0
      */
     @Contract(pure = true)
@@ -459,10 +459,10 @@ public interface Character {
     boolean canSee(Player player);
 
     /**
-     * Checks if this character is tracked by the given player.
+     * Checks if this character is spawned for the given player.
      *
      * @param player the player to check for
-     * @return {@code true} if this character is tracked by the given player, {@code false} otherwise
+     * @return {@code true} if this character is spawned for the given player, {@code false} otherwise
      * @since 0.1.0
      */
     @Contract(pure = true)

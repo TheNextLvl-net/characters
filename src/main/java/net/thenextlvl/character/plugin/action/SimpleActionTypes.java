@@ -50,13 +50,6 @@ public final class SimpleActionTypes implements ActionTypes {
             .action((character, player, sound) -> player.playSound(sound))
             .build();
 
-    private final ActionType<String> runConsoleCommand = ActionType.builder("run_console_command", String.class)
-            .action((character, player, input) -> {
-                var command = input.replace("<player>", player.getName());
-                player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command);
-            })
-            .build();
-
     private final ActionType<String> runCommand = ActionType.builder("run_command", String.class)
             .action((character, player, input) -> player.performCommand(input.replace("<player>", player.getName())))
             .build();
@@ -66,8 +59,15 @@ public final class SimpleActionTypes implements ActionTypes {
             .build();
 
     private final ActionType<String> connect;
+    private final ActionType<String> runConsoleCommand;
 
     public SimpleActionTypes(final CharacterPlugin plugin) {
+        this.runConsoleCommand = ActionType.builder("run_console_command", String.class)
+                .action((character, player, input) -> {
+                    var command = input.replace("<player>", player.getName());
+                    plugin.supply(() -> player.getServer().dispatchCommand(player.getServer().getConsoleSender(), command));
+                })
+                .build();
         this.connect = ActionType.builder("connect", String.class)
                 .action((character, player, server) -> {
                     var dataOutput = ByteStreams.newDataOutput();

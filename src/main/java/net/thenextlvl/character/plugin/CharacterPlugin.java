@@ -3,6 +3,7 @@ package net.thenextlvl.character.plugin;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import dev.faststats.bukkit.BukkitMetrics;
 import dev.faststats.core.ErrorTracker;
+import io.papermc.paper.ServerBuildInfo;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryKey;
@@ -76,6 +77,7 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Display.Brightness;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Pose;
@@ -103,6 +105,7 @@ import java.util.function.Supplier;
 public final class CharacterPlugin extends JavaPlugin {
     public static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware();
     public static final String ISSUES = "https://github.com/TheNextLvl-net/characters/issues/new?template=bug_report.yml";
+    public static final boolean RUNNING_FOLIA = ServerBuildInfo.buildInfo().isBrandCompatible(Key.key("papermc", "folia"));
 
     private final Metrics metrics = new Metrics(this, 24223);
     private final dev.faststats.core.Metrics fastStats = BukkitMetrics.factory()
@@ -266,11 +269,7 @@ public final class CharacterPlugin extends JavaPlugin {
     }
 
     public <T> CompletableFuture<T> supply(final Supplier<T> supplier) {
-        if (getServer().isPrimaryThread()) try {
-            return CompletableFuture.completedFuture(supplier.get());
-        } catch (final Throwable t) {
-            return CompletableFuture.failedFuture(t);
-        }
+        if (getServer().isGlobalTickThread()) return supplyNow(supplier);
 
         if (!isEnabled()) {
             final var disabled = new IllegalStateException("Plugin is disabled");
@@ -278,14 +277,71 @@ public final class CharacterPlugin extends JavaPlugin {
         }
 
         final var future = new CompletableFuture<T>();
-        getServer().getGlobalRegionScheduler().execute(this, () -> {
-            try {
-                future.complete(supplier.get());
-            } catch (final Throwable t) {
-                future.completeExceptionally(t);
-            }
-        });
+        getServer().getGlobalRegionScheduler().execute(this, () -> complete(future, supplier));
         return future;
+    }
+
+    public CompletableFuture<@Nullable Void> supply(final Entity entity, final Runnable runnable) {
+        return this.supply(entity, () -> {
+            runnable.run();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the supplier on the region that owns the given entity.
+     *
+     * @return a future that completes with the result, or with {@code null} if the entity was retired before it ran
+     */
+    public <T> CompletableFuture<@Nullable T> supply(final Entity entity, final Supplier<@Nullable T> supplier) {
+        if (getServer().isOwnedByCurrentRegion(entity)) return supplyNow(supplier);
+
+        if (!isEnabled()) {
+            final var disabled = new IllegalStateException("Plugin is disabled");
+            return CompletableFuture.failedFuture(disabled);
+        }
+
+        final var future = new CompletableFuture<@Nullable T>();
+        final var task = entity.getScheduler().run(this, ignored -> complete(future, supplier), () -> future.complete(null));
+        if (task == null) future.complete(null);
+        return future;
+    }
+
+    public CompletableFuture<@Nullable Void> supply(final Location location, final Runnable runnable) {
+        return this.supply(location, () -> {
+            runnable.run();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the supplier on the region that owns the given location.
+     */
+    public <T> CompletableFuture<@Nullable T> supply(final Location location, final Supplier<@Nullable T> supplier) {
+        if (getServer().isOwnedByCurrentRegion(location)) return supplyNow(supplier);
+
+        if (!isEnabled()) {
+            final var disabled = new IllegalStateException("Plugin is disabled");
+            return CompletableFuture.failedFuture(disabled);
+        }
+
+        final var future = new CompletableFuture<@Nullable T>();
+        getServer().getRegionScheduler().run(this, location, ignored -> complete(future, supplier));
+        return future;
+    }
+
+    private <T> CompletableFuture<T> supplyNow(final Supplier<@Nullable T> supplier) {
+        final var future = new CompletableFuture<T>();
+        complete(future, supplier);
+        return future;
+    }
+
+    private <T> void complete(final CompletableFuture<@Nullable T> future, final Supplier<@Nullable T> supplier) {
+        try {
+            future.complete(supplier.get());
+        } catch (final Throwable t) {
+            future.completeExceptionally(t);
+        }
     }
 
     public ComponentBundle bundle() {

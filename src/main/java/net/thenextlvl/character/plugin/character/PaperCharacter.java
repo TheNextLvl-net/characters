@@ -53,8 +53,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -64,6 +65,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static net.thenextlvl.character.plugin.CharacterPlugin.ISSUES;
@@ -73,9 +76,10 @@ import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 @NullMarked
 public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected final Class<? extends Entity> entityClass;
-    protected final Map<String, ClickAction<?>> actions = new LinkedHashMap<>();
-    protected final Set<Goal> goals = new HashSet<>();
-    protected final Set<UUID> viewers = new HashSet<>();
+    protected final Map<String, ClickAction<?>> actions = Collections.synchronizedMap(new LinkedHashMap<>());
+    protected final Set<Goal> goals = ConcurrentHashMap.newKeySet();
+    protected final Set<UUID> viewers = ConcurrentHashMap.newKeySet();
+    protected final Set<UUID> spawning = ConcurrentHashMap.newKeySet();
     protected final Map<String, Tag> properties = new ConcurrentHashMap<>();
     protected final Map<UUID, Entity> entities = new ConcurrentHashMap<>();
     protected final PaperTagOptions tagOptions = new PaperTagOptions();
@@ -84,20 +88,20 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected final EntityType type;
     protected final String name;
 
-    protected @Nullable Component displayName;
-    protected @Nullable NamedTextColor teamColor = null;
-    protected @Nullable String viewPermission = null;
-    protected @Nullable TextDisplay textDisplayName = null;
+    protected volatile @Nullable Component displayName;
+    protected volatile @Nullable NamedTextColor teamColor = null;
+    protected volatile @Nullable String viewPermission = null;
+    protected volatile @Nullable TextDisplay textDisplayName = null;
 
-    protected Location location;
-    protected Path dataFile;
-    protected Path backupFile;
+    protected volatile Location location;
+    protected volatile Path dataFile;
+    protected volatile Path backupFile;
 
-    protected Pose pose = Pose.STANDING;
+    protected volatile Pose pose = Pose.STANDING;
 
-    protected boolean displayNameVisible = true;
-    protected boolean persistent = true;
-    protected boolean visibleByDefault = true;
+    protected volatile boolean displayNameVisible = true;
+    protected volatile boolean persistent = true;
+    protected volatile boolean visibleByDefault = true;
 
     public PaperCharacter(final CharacterPlugin plugin, final String name, final Location location, final EntityType type) {
         final var entityClass = type.getEntityClass();
@@ -237,27 +241,34 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
         this.location = destination;
         if (!destination.isChunkLoaded()) return despawn().thenApply(ignored -> true);
-        return plugin.supply(() -> {
-            final var chunk = destination.getChunk();
-            Set.copyOf(entities.keySet()).forEach(uuid -> {
-                final var player = plugin.getServer().getPlayer(uuid);
-                if (player == null || !player.isChunkSent(chunk)) removeEntity(uuid);
-            });
-            final var teleports = entities.values().stream().map(entity -> entity.teleportAsync(destination, PLUGIN));
-            final var tag = textDisplayName != null ? anyEntity().map(entity -> textDisplayName.teleportAsync(getTagLocation(entity), PLUGIN)).stream() : Stream.<CompletableFuture<Boolean>>empty();
-            return CompletableFuture.allOf(Stream.concat(teleports, tag).toArray(CompletableFuture[]::new));
-        }).thenCompose(future -> future).thenCompose(ignored -> spawn()).thenApply(ignored -> true);
+
+        final var chunkKey = Chunk.getChunkKey(destination);
+        final var teleports = new ArrayList<CompletableFuture<Boolean>>();
+        entities.forEach((uuid, entity) -> {
+            final var player = plugin.getServer().getPlayer(uuid);
+            teleports.add(player == null ? removeEntity(uuid) : compose(player, () -> player.isChunkSent(chunkKey)
+                    ? entity.teleportAsync(destination, PLUGIN)
+                    : removeEntity(uuid)));
+        });
+        final var display = textDisplayName;
+        if (display != null) anyEntity().ifPresent(entity ->
+                teleports.add(display.teleportAsync(getTagLocation(entity), PLUGIN)));
+        return CompletableFuture.allOf(teleports.toArray(CompletableFuture[]::new))
+                .thenCompose(ignored -> spawn())
+                .thenApply(ignored -> true);
     }
 
-    private boolean updatePaths(final World world) {
+    private synchronized boolean updatePaths(final World world) {
         final var dataFolder = plugin.characterProvider().getDataFolder(world);
         final var dataFile = dataFolder.resolve(name + ".dat");
         final var backupFile = dataFolder.resolve(name + ".dat_old");
 
         try {
             Files.createDirectories(dataFolder);
-            if (Files.isRegularFile(this.dataFile)) Files.move(this.dataFile, dataFile, StandardCopyOption.REPLACE_EXISTING);
-            if (Files.isRegularFile(this.backupFile)) Files.move(this.backupFile, backupFile, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.isRegularFile(this.dataFile))
+                Files.move(this.dataFile, dataFile, StandardCopyOption.REPLACE_EXISTING);
+            if (Files.isRegularFile(this.backupFile))
+                Files.move(this.backupFile, backupFile, StandardCopyOption.REPLACE_EXISTING);
         } catch (final IOException e) {
             plugin.getComponentLogger().warn("Failed to move character data files for: {}", getName(), e);
             plugin.getComponentLogger().warn("Please look for similar issues or report this on GitHub: {}", ISSUES);
@@ -307,6 +318,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     @Override
     public boolean canSee(final Player player) {
         if (!player.getWorld().equals(getWorld())) return false;
+        final var viewPermission = this.viewPermission;
         if (viewPermission != null && !player.hasPermission(viewPermission)) return false;
         return isVisibleByDefault() || isViewer(player.getUniqueId());
     }
@@ -353,12 +365,12 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     @Override
     public Stream<Player> getTrackedBy() {
-        return entities.values().stream().flatMap(entity -> entity.getTrackedBy().stream());
+        return entities.keySet().stream().map(plugin.getServer()::getPlayer).filter(Objects::nonNull);
     }
 
     @Override
     public boolean isTrackedBy(final Player player) {
-        return getEntity(player).map(entity -> entity.getTrackedBy().contains(player)).orElse(false);
+        return entities.containsKey(player.getUniqueId());
     }
 
     @Override
@@ -372,7 +384,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     @Override
-    public boolean persist() {
+    public synchronized boolean persist() {
         if (!isPersistent()) return false;
         final var file = getDataFile();
         final var backup = getBackupFile();
@@ -443,7 +455,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     public boolean setTeamColor(@Nullable final NamedTextColor color) {
         if (color == this.teamColor) return false;
         this.teamColor = color;
-        textDisplayName().ifPresent(this::updateTextDisplayNameText);
+        editTextDisplayName(this::updateTextDisplayNameText);
         entities.values().forEach(this::updateTeamOptions);
         return true;
     }
@@ -470,85 +482,112 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     @Override
     public CompletableFuture<Boolean> spawn() {
-        return plugin.supply(() -> {
-            if (!location.isChunkLoaded()) return false;
-            final var chunk = location.getChunk();
-            return getWorld().getPlayers().stream()
-                    .filter(player -> player.isChunkSent(chunk))
-                    .map(this::spawnEntity)
-                    .reduce(false, Boolean::logicalOr);
-        });
+        return anyMatch(plugin.getServer().getOnlinePlayers().stream().map(this::updateVisibility));
     }
 
     @Override
     public CompletableFuture<Boolean> spawn(final Player player) {
-        return plugin.supply(() -> spawnEntity(player));
+        return compose(player, () -> spawnEntity(player));
     }
 
     @Override
     public CompletableFuture<Boolean> despawn() {
-        return plugin.supply(() -> Set.copyOf(entities.keySet()).stream()
-                .map(this::removeEntity)
-                .reduce(false, Boolean::logicalOr));
+        return anyMatch(Set.copyOf(entities.keySet()).stream().map(this::removeEntity));
     }
 
     @Override
     public CompletableFuture<Boolean> despawn(final Player player) {
-        return plugin.supply(() -> removeEntity(player.getUniqueId()));
+        return removeEntity(player.getUniqueId());
     }
 
-    private boolean spawnEntity(final Player player) {
-        if (!player.isConnected() || !location.isChunkLoaded()) return false;
-        if (!canSee(player)) {
-            removeEntity(player.getUniqueId());
-            return false;
-        }
+    // must be called on the region of the player
+    private CompletableFuture<Boolean> spawnEntity(final Player player) {
+        updateTextDisplayNameVisibility(player);
 
-        final var existing = entities.get(player.getUniqueId());
-        if (existing != null && existing.isValid()) return false;
-        if (existing != null) invalidate(existing);
+        final var uuid = player.getUniqueId();
+        final var location = getLocation();
+        if (!player.isConnected() || !location.isChunkLoaded()) return CompletableFuture.completedFuture(false);
+        if (!canSee(player)) return removeEntity(uuid).thenApply(ignored -> false);
 
-        final var entity = location.getWorld().spawn(location, entityClass, false, this::preSpawn);
-        if (!entity.isValid()) return false;
-        entities.put(player.getUniqueId(), entity);
+        final var existing = entities.get(uuid);
+        if (existing != null && existing.isValid()) return CompletableFuture.completedFuture(false);
+        if (!spawning.add(uuid)) return CompletableFuture.completedFuture(false);
 
-        updateTeamOptions(getCharacterSettingsTeam(entity, player), entity);
-        player.showEntity(plugin, entity);
-        updateTextDisplayName(entity);
-        return true;
+        return plugin.supply(location, () -> {
+            if (existing != null) invalidate(existing);
+            if (!location.isChunkLoaded()) return null;
+
+            final var entity = location.getWorld().spawn(location, entityClass, false, this::preSpawn);
+            if (!entity.isValid()) return null;
+            entities.put(uuid, entity);
+
+            updateTextDisplayName(entity);
+            updateTeamOptions(entity);
+            return entity;
+        }).thenCompose(entity -> entity != null
+                ? showEntity(player, entity)
+                : CompletableFuture.completedFuture(false)
+        ).whenComplete((ignored, throwable) -> spawning.remove(uuid));
     }
 
-    private boolean removeEntity(final UUID player) {
+    private CompletableFuture<Boolean> showEntity(final Player player, final Entity entity) {
+        return plugin.supply(player, () -> {
+            if (!player.isConnected()) return false;
+            if (plugin.getServer().isOwnedByCurrentRegion(entity)) player.showEntity(plugin, entity);
+            updateTextDisplayNameVisibility(player);
+            return true;
+        }).thenCompose(shown -> Boolean.TRUE.equals(shown)
+                ? CompletableFuture.completedFuture(true)
+                : removeEntity(player.getUniqueId()).thenApply(ignored -> false));
+    }
+
+    private CompletableFuture<Boolean> removeEntity(final UUID player) {
         final var entity = entities.get(player);
-        if (entity == null) return false;
+        if (entity == null) return CompletableFuture.completedFuture(false);
         invalidate(entity);
-        entity.remove();
-        return true;
+        return plugin.supply(entity, entity::remove).thenApply(ignored -> true);
     }
 
     public void invalidate(final Entity entity) {
         final var owner = getOwner(entity);
         entities.values().remove(entity);
-        if (owner != null) {
+        if (owner != null && !CharacterPlugin.RUNNING_FOLIA) {
             final var team = owner.getScoreboard().getTeam(entity.getScoreboardEntryName());
             if (team != null) team.unregister();
         }
-        if (entities.isEmpty()) removeTextDisplayName();
-    }
-
-    public void updateVisibility(final Player player) {
-        plugin.supply(() -> {
-            updateTextDisplayNameVisibility(player);
-            if (!canSee(player)) return removeEntity(player.getUniqueId());
-            if (!location.isChunkLoaded() || !player.isChunkSent(location.getChunk())) return false;
-            return spawnEntity(player);
+        // the name tag is only ever spawned and removed on the region of the character's location
+        if (entities.isEmpty()) plugin.supply(location, () -> {
+            if (entities.isEmpty()) removeTextDisplayName();
         });
     }
 
+    public CompletableFuture<Boolean> updateVisibility(final Player player) {
+        return compose(player, () -> {
+            if (!canSee(player) || player.isChunkSent(Chunk.getChunkKey(location))) return spawnEntity(player);
+            updateTextDisplayNameVisibility(player);
+            return CompletableFuture.completedFuture(false);
+        });
+    }
+
+    // must be called on the region of the player
+    // players on another region are updated once the character is spawned for them
     private void updateTextDisplayNameVisibility(final Player player) {
-        if (textDisplayName == null) return;
-        if (canSee(player)) player.showEntity(plugin, textDisplayName);
-        else player.hideEntity(plugin, textDisplayName);
+        final var display = textDisplayName;
+        if (display == null || !plugin.getServer().isOwnedByCurrentRegion(display)) return;
+        if (canSee(player)) player.showEntity(plugin, display);
+        else player.hideEntity(plugin, display);
+    }
+
+    private CompletableFuture<Boolean> compose(final Entity entity, final Supplier<CompletableFuture<Boolean>> supplier) {
+        return plugin.supply(entity, supplier).thenCompose(future -> future != null
+                ? future
+                : CompletableFuture.completedFuture(false));
+    }
+
+    private CompletableFuture<Boolean> anyMatch(final Stream<CompletableFuture<Boolean>> stream) {
+        final var futures = stream.toList();
+        return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new))
+                .thenApply(ignored -> futures.stream().anyMatch(CompletableFuture::join));
     }
 
     private Optional<Entity> anyEntity() {
@@ -556,11 +595,12 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     private Location getTagLocation(final Entity entity) {
-        return location.clone().add(0, entity.getHeight(), 0);
+        return getLocation().add(0, entity.getHeight(), 0);
     }
 
-    private Optional<TextDisplay> textDisplayName() {
-        return Optional.ofNullable(textDisplayName);
+    private void editTextDisplayName(final Consumer<TextDisplay> consumer) {
+        final var display = textDisplayName;
+        if (display != null) plugin.supply(display, () -> consumer.accept(display));
     }
 
     protected void preSpawn(final Entity entity) {
@@ -627,9 +667,10 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     protected void removeTextDisplayName() {
-        if (textDisplayName == null) return;
-        textDisplayName.remove();
+        final var display = textDisplayName;
+        if (display == null) return;
         textDisplayName = null;
+        plugin.supply(display, display::remove);
     }
 
     private void updateTextDisplayName(final TextDisplay display) {
@@ -655,7 +696,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     private void updateTextDisplayNameText(final TextDisplay display) {
-        final var component = displayName == null ? Component.text(getName()) : displayName;
+        final var displayName = this.displayName;
+        final var component = displayName != null ? displayName : Component.text(getName());
         display.text(component.colorIfAbsent(teamColor));
     }
 
@@ -664,14 +706,18 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     protected void updateTextDisplayName(final Entity entity) {
-        if (textDisplayName == null && showDisplayName()) {
-            textDisplayName = entity.getWorld().spawn(getTagLocation(entity), TextDisplay.class, this::updateTextDisplayName);
-            plugin.getServer().getOnlinePlayers().forEach(this::updateTextDisplayNameVisibility);
-        } else if (textDisplayName != null && !showDisplayName()) {
-            removeTextDisplayName();
-        } else if (textDisplayName != null) {
-            updateTextDisplayName(textDisplayName);
-        }
+        plugin.supply(location, () -> {
+            final var display = textDisplayName;
+            if (display == null && showDisplayName()) {
+                textDisplayName = location.getWorld().spawn(getTagLocation(entity), TextDisplay.class, this::updateTextDisplayName);
+                plugin.getServer().getOnlinePlayers().forEach(player ->
+                        plugin.supply(player, () -> updateTextDisplayNameVisibility(player)));
+            } else if (display != null && !showDisplayName()) {
+                removeTextDisplayName();
+            } else if (display != null) {
+                plugin.supply(display, () -> updateTextDisplayName(display));
+            }
+        });
     }
 
     protected boolean showDisplayName() {
@@ -679,6 +725,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     public void updateTeamOptions(final Entity entity) {
+        if (CharacterPlugin.RUNNING_FOLIA) return;
         final var owner = getOwner(entity);
         if (owner != null) updateTeamOptions(getCharacterSettingsTeam(entity, owner), entity);
     }
@@ -718,12 +765,11 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             if (stored != null && Objects.equals(accessor.deserialize(stored, plugin.nbt()), value)) return false;
             final var tag = accessor.serialize(value, plugin.nbt());
             properties.put(accessor.key().asString(), tag);
-            if (!entities.isEmpty()) plugin.supply(() -> {
-                entities.values().forEach(entity -> accessor.apply(entity, tag, plugin.nbt()));
-                if (textDisplayName != null) anyEntity().ifPresent(entity ->
-                        textDisplayName.teleportAsync(getTagLocation(entity), PLUGIN));
-                return null;
-            });
+            final var updates = entities.values().stream().map(entity -> plugin.supply(entity, () -> {
+                accessor.apply(entity, tag, plugin.nbt());
+            })).toArray(CompletableFuture[]::new);
+            CompletableFuture.allOf(updates).thenRun(() -> anyEntity().ifPresent(entity ->
+                    editTextDisplayName(display -> display.teleportAsync(getTagLocation(entity), PLUGIN))));
             return true;
         }).orElse(false);
     }
@@ -857,7 +903,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setAlignment(final TextAlignment alignment) {
             if (Objects.equals(alignment, this.alignment)) return false;
-            textDisplayName().ifPresent(display -> display.setAlignment(alignment));
+            editTextDisplayName(display -> display.setAlignment(alignment));
             this.alignment = alignment;
             return true;
         }
@@ -865,7 +911,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setBackgroundColor(@Nullable final Color color) {
             if (Objects.equals(color, this.backgroundColor)) return false;
-            textDisplayName().ifPresent(display -> display.setBackgroundColor(color));
+            editTextDisplayName(display -> display.setBackgroundColor(color));
             this.backgroundColor = color;
             return true;
         }
@@ -873,7 +919,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setBillboard(final Billboard billboard) {
             if (Objects.equals(billboard, this.billboard)) return false;
-            textDisplayName().ifPresent(display -> display.setBillboard(billboard));
+            editTextDisplayName(display -> display.setBillboard(billboard));
             this.billboard = billboard;
             return true;
         }
@@ -881,7 +927,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setBrightness(@Nullable final Brightness brightness) {
             if (Objects.equals(brightness, this.brightness)) return false;
-            textDisplayName().ifPresent(display -> display.setBrightness(brightness));
+            editTextDisplayName(display -> display.setBrightness(brightness));
             this.brightness = brightness;
             return true;
         }
@@ -889,7 +935,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setDefaultBackground(final boolean enabled) {
             if (enabled == defaultBackground) return false;
-            textDisplayName().ifPresent(display -> display.setDefaultBackground(enabled));
+            editTextDisplayName(display -> display.setDefaultBackground(enabled));
             this.defaultBackground = enabled;
             return true;
         }
@@ -898,14 +944,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setLeftRotation(final Quaternionf rotation) {
             if (Objects.equals(rotation, this.leftRotation)) return false;
             this.leftRotation = rotation;
-            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
+            editTextDisplayName(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
         @Override
         public boolean setLineWidth(final int width) {
             if (width == lineWidth) return false;
-            textDisplayName().ifPresent(display -> display.setLineWidth(width));
+            editTextDisplayName(display -> display.setLineWidth(width));
             this.lineWidth = width;
             return true;
         }
@@ -914,7 +960,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setOffset(final Vector3f offset) {
             if (Objects.equals(offset, this.offset)) return false;
             this.offset = offset;
-            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
+            editTextDisplayName(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
@@ -937,7 +983,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setRightRotation(final Quaternionf rotation) {
             if (Objects.equals(rotation, this.rightRotation)) return false;
             this.rightRotation = rotation;
-            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
+            editTextDisplayName(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
@@ -945,7 +991,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setScale(final Vector3f scale) {
             if (Objects.equals(scale, this.scale)) return false;
             this.scale = scale;
-            textDisplayName().ifPresent(display -> display.setTransformation(getTransformation()));
+            editTextDisplayName(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
@@ -961,7 +1007,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setSeeThrough(final boolean seeThrough) {
             if (seeThrough == this.seeThrough) return false;
-            textDisplayName().ifPresent(display -> display.setSeeThrough(seeThrough));
+            editTextDisplayName(display -> display.setSeeThrough(seeThrough));
             this.seeThrough = seeThrough;
             return true;
         }
@@ -970,14 +1016,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setTextOpacity(final float opacity) {
             if (opacity == textOpacity) return false;
             this.textOpacity = opacity;
-            textDisplayName().ifPresent(PaperCharacter.this::updateTextDisplayNameOpacity);
+            editTextDisplayName(PaperCharacter.this::updateTextDisplayNameOpacity);
             return true;
         }
 
         @Override
         public boolean setShadowed(final boolean enabled) {
             if (enabled == textShadow) return false;
-            textDisplayName().ifPresent(display -> display.setShadowed(enabled));
+            editTextDisplayName(display -> display.setShadowed(enabled));
             this.textShadow = enabled;
             return true;
         }

@@ -70,7 +70,7 @@ paper {
     apiVersion = "26.1"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
-    // foliaSupported = true
+    foliaSupported = true
 
     permissions {
         register("characters.admin") {
@@ -147,5 +147,5 @@ modrinth {
     uploadFile.set(tasks.shadowJar)
     gameVersions.set(versions)
     syncBodyFrom.set(rootProject.file("README.md").readText())
-    loaders.add("paper")
+    loaders.addAll((property("loaders") as String).split(",").map { it.trim() })
 }
