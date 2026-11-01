@@ -220,6 +220,7 @@ public interface Character {
      * @return tag options
      * @since 0.1.0
      */
+    // todo: replace with Holograms API
     @Contract(pure = true)
     TagOptions getTagOptions();
 
