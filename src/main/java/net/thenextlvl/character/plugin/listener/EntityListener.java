@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.listener;
 
+import io.papermc.paper.event.player.PlayerPickEntityEvent;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import net.thenextlvl.character.action.ClickType;
 import net.thenextlvl.character.event.PlayerCharacterInteractEvent;
@@ -34,6 +35,12 @@ public final class EntityListener implements Listener {
             characterEvent.callEvent();
             event.setCancelled(true);
         });
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onPlayerPickEntity(final PlayerPickEntityEvent event) {
+        if (!plugin.characterProvider().isCharacterPart(event.getEntity())) return;
+        event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
