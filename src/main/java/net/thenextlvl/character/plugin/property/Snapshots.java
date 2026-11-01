@@ -12,6 +12,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Set;
@@ -48,7 +49,8 @@ final class Snapshots {
         final var equipment = entity.getEquipment();
         if (equipment == null) return null;
         final var items = new EnumMap<EquipmentSlot, EquipmentSnapshot.Item>(EquipmentSlot.class);
-        EquipmentSnapshot.SLOTS.forEach(slot -> items.put(slot, new EquipmentSnapshot.Item(equipment.getItem(slot), equipment.getDropChance(slot))));
+        Arrays.stream(EquipmentSlot.values()).filter(entity::canUseEquipmentSlot).forEach(slot ->
+                items.put(slot, new EquipmentSnapshot.Item(equipment.getItem(slot), equipment.getDropChance(slot))));
         return new EquipmentSnapshot(items);
     }
 
@@ -56,6 +58,7 @@ final class Snapshots {
         final var equipment = entity.getEquipment();
         if (equipment == null || snapshot == null) return;
         snapshot.items().forEach((slot, item) -> {
+            if (!entity.canUseEquipmentSlot(slot)) return;
             equipment.setItem(slot, item.stack());
             if (entity instanceof Mob) equipment.setDropChance(slot, item.dropChance());
         });

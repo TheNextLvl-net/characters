@@ -7,10 +7,8 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Represents a snapshot of an entity's equipment.
@@ -20,16 +18,6 @@ import java.util.Set;
  * @since 0.9.0
  */
 public record EquipmentSnapshot(@Unmodifiable Map<EquipmentSlot, Item> items) {
-    /**
-     * The equipment slots captured by a snapshot.
-     *
-     * @since 0.9.0
-     */
-    public static final @Unmodifiable Set<EquipmentSlot> SLOTS = Set.copyOf(EnumSet.of(
-            EquipmentSlot.HAND, EquipmentSlot.OFF_HAND,
-            EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
-    ));
-
     public EquipmentSnapshot {
         items = Map.copyOf(items);
     }
@@ -43,7 +31,7 @@ public record EquipmentSnapshot(@Unmodifiable Map<EquipmentSlot, Item> items) {
     @Contract(value = " -> new", pure = true)
     public static EquipmentSnapshot empty() {
         final var items = new EnumMap<EquipmentSlot, Item>(EquipmentSlot.class);
-        SLOTS.forEach(slot -> items.put(slot, new Item(null, 0)));
+        for (final var slot : EquipmentSlot.values()) items.put(slot, new Item(null, 0));
         return new EquipmentSnapshot(items);
     }
 

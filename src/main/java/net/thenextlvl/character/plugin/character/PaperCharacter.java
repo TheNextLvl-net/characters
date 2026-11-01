@@ -665,7 +665,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     public <T> boolean setProperty(final EntityProperty<?, T> property, final T value) {
         if (!property.isApplicable(entityClass)) return false;
         return PropertyAccessors.of(property).map(accessor -> {
-            if (Objects.equals(getProperty(accessor).orElse(null), value)) return false;
+            final var stored = properties.get(accessor.key().asString());
+            if (stored != null && Objects.equals(accessor.deserialize(stored, plugin.nbt()), value)) return false;
             final var tag = accessor.serialize(value, plugin.nbt());
             properties.put(accessor.key().asString(), tag);
             getEntity().ifPresent(entity -> plugin.supply(() -> {

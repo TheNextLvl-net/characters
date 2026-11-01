@@ -9,6 +9,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NullMarked;
@@ -37,7 +38,8 @@ final class CharacterEquipmentSetCommand extends SimpleCommand {
         final var character = context.getArgument("character", Character.class);
         final var slot = context.getArgument("equipment-slot", EquipmentSlot.class);
         final var item = context.getArgument("item", ItemStack.class);
-        final var success = character.setProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT, character.getProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT)
+        final var usable = character.getEntity(LivingEntity.class).map(entity -> entity.canUseEquipmentSlot(slot)).orElse(true);
+        final var success = usable && character.setProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT, character.getProperty(EntityProperties.LIVING_ENTITY_EQUIPMENT)
                 .orElseGet(EquipmentSnapshot::empty).with(slot, item));
         final var message = !success ? "nothing.changed" : item.isEmpty()
                 ? "character.equipment.slot.cleared" : "character.equipment.slot";

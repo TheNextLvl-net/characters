@@ -22,7 +22,9 @@ public final class EquipmentSnapshotAdapter implements TagAdapter<EquipmentSnaps
             EquipmentSlot.HEAD, "helmet",
             EquipmentSlot.CHEST, "chestplate",
             EquipmentSlot.LEGS, "leggings",
-            EquipmentSlot.FEET, "boots"
+            EquipmentSlot.FEET, "boots",
+            EquipmentSlot.BODY, "body",
+            EquipmentSlot.SADDLE, "saddle"
     );
 
     @Override
