@@ -67,6 +67,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static net.thenextlvl.character.plugin.CharacterPlugin.ISSUES;
@@ -75,6 +76,8 @@ import static org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN;
 
 @NullMarked
 public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
+    private static final Pattern PROFILE_NAME_INVALID = Pattern.compile("[^a-zA-Z0-9_-]");
+
     protected final Class<? extends Entity> entityClass;
     protected final Map<String, ClickAction<?>> actions = Collections.synchronizedMap(new LinkedHashMap<>());
     protected final Set<Goal> goals = ConcurrentHashMap.newKeySet();
@@ -98,7 +101,6 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected volatile Path backupFile;
 
     protected volatile Pose pose = Pose.STANDING;
-
     protected volatile boolean displayNameVisible = true;
     protected volatile boolean persistent = true;
     protected volatile boolean visibleByDefault = true;
@@ -623,8 +625,10 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         entity.setPersistent(false);
 
         if (entity instanceof final Mannequin mannequin) {
-            final var name = this.name.length() > 16 ? this.name.substring(0, 16) : this.name;
-            mannequin.setProfile(ResolvableProfile.resolvableProfile().name(name).build());
+            final var profile = ResolvableProfile.resolvableProfile();
+            final var name = profileName(this.name);
+            if (!name.isEmpty()) profile.name(name);
+            mannequin.setProfile(profile.build());
             mannequin.setImmovable(true);
         }
 
@@ -656,6 +660,11 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         if (entity.getPose().equals(Pose.DYING)) {
             entity.setPose(Pose.STANDING, true);
         }
+    }
+
+    private static String profileName(final String name) {
+        final var sanitized = PROFILE_NAME_INVALID.matcher(name).replaceAll("");
+        return sanitized.length() > 16 ? sanitized.substring(0, 16) : sanitized;
     }
 
     protected Team getCharacterSettingsTeam(final Entity entity, final Player player) {

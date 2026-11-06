@@ -14,8 +14,10 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.property.EntityProperties;
+import net.thenextlvl.character.property.ViewerValues;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -49,7 +51,18 @@ public final class CharacterSkinCommand extends BrigadierCommand {
         return Commands.literal("set").then(mannequinCharacterArgument(plugin)
                 .then(fileSkinArgument())
                 .then(playerSkinArgument())
-                .then(urlSkinArgument()));
+                .then(urlSkinArgument())
+                .then(viewerSkinArgument()));
+    }
+
+    private ArgumentBuilder<CommandSourceStack, ?> viewerSkinArgument() {
+        return Commands.literal("viewer").executes(context -> {
+            final var character = context.getArgument("character", Character.class);
+            final var success = character.setViewerValue(EntityProperties.MANNEQUIN_PROFILE, ViewerValues.PROFILE);
+            final var message = success ? "character.skin" : "nothing.changed";
+            plugin.bundle().sendMessage(context.getSource().getSender(), message, Placeholder.unparsed("character", character.getName()));
+            return success ? Command.SINGLE_SUCCESS : 0;
+        });
     }
 
     @SuppressWarnings("PatternValidation")
@@ -57,9 +70,16 @@ public final class CharacterSkinCommand extends BrigadierCommand {
         final var sender = context.getSource().getSender();
         final var character = context.getArgument("character", Character.class);
 
-        final var name = character.getName().length() > 16 ? character.getName().substring(0, 16) : character.getName();
-        final var newProfile = profile != null ? profile : ResolvableProfile.resolvableProfile().name(name).build();
-        final var success = character.setProperty(EntityProperties.MANNEQUIN_PROFILE, newProfile);
+        final ResolvableProfile newProfile;
+        if (profile != null) newProfile = profile;
+        else {
+            final var name = PaperCharacter.profileName(character.getName());
+            final var builder = ResolvableProfile.resolvableProfile();
+            if (!name.isEmpty()) builder.name(name);
+            newProfile = builder.build();
+        }
+        final var changed = character.setProperty(EntityProperties.MANNEQUIN_PROFILE, newProfile);
+        final var success = character.setViewerValue(EntityProperties.MANNEQUIN_PROFILE, null) || changed;
         final var message = success ? "character.skin" : "nothing.changed";
         plugin.bundle().sendMessage(sender, message, Placeholder.unparsed("character", character.getName()));
         return success ? Command.SINGLE_SUCCESS : 0;
