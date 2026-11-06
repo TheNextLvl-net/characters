@@ -24,15 +24,26 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.AbstractCubeMob;
+import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Allay;
+import org.bukkit.entity.Animals;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
+import org.bukkit.entity.Breeze;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.CopperGolem;
+import org.bukkit.entity.Creaking;
+import org.bukkit.entity.Drowned;
 import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.Enderman;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Fox;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Ghast;
+import org.bukkit.entity.Goat;
+import org.bukkit.entity.Guardian;
 import org.bukkit.entity.HappyGhast;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.MagmaCube;
@@ -40,20 +51,31 @@ import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Phantom;
+import org.bukkit.entity.PigZombie;
+import org.bukkit.entity.PiglinAbstract;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Sittable;
+import org.bukkit.entity.Sniffer;
 import org.bukkit.entity.Spider;
+import org.bukkit.entity.Strider;
+import org.bukkit.entity.Turtle;
 import org.bukkit.entity.Vex;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.entity.Warden;
+import org.bukkit.entity.WaterMob;
 import org.bukkit.entity.Wither;
+import org.bukkit.entity.WitherSkeleton;
+import org.bukkit.entity.Wolf;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.util.Vector;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.SplittableRandom;
 import java.util.UUID;
@@ -1130,7 +1152,87 @@ public final class EntityController {
 
     private PathFinder pathFinder() {
         return new PathFinder(plugin.getServer(), entity.getWorld(), entity.getHeight(), eyeHeight(),
-                opensDoors, swimming(), followRange(), climbsWalls(), flies(), jumpsGaps());
+                opensDoors, swimming(), followRange(), climbsWalls(), flies(), jumpsGaps(), pathMalus());
+    }
+
+    private @Nullable Map<PathFinder.PathType, Float> pathMalus;
+
+    /*
+     * The path types every mob sets differently in vanilla, read from their constructors,
+     * in the order of the class hierarchy, so the specific mob overrides the general one.
+     */
+    private Map<PathFinder.PathType, Float> pathMalus() {
+        final var cached = this.pathMalus;
+        if (cached != null) return cached;
+        final var malus = new EnumMap<PathFinder.PathType, Float>(PathFinder.PathType.class);
+        if (entity instanceof Animals || entity instanceof AbstractVillager || entity instanceof PiglinAbstract) {
+            malus.put(PathFinder.PathType.FIRE, -1f);
+            malus.put(PathFinder.PathType.FIRE_IN_NEIGHBOR, 16f);
+        }
+        if (entity instanceof WaterMob || entity instanceof Axolotl || entity instanceof Turtle
+            || entity instanceof Drowned || entity instanceof Guardian || entity instanceof Chicken) {
+            malus.put(PathFinder.PathType.WATER, 0f);
+        }
+        switch (entity) {
+            case Bee ignored -> {
+                malus.put(PathFinder.PathType.FIRE, -1f);
+                malus.put(PathFinder.PathType.WATER, -1f);
+                malus.put(PathFinder.PathType.WATER_BORDER, 16f);
+            }
+            case Fox ignored -> {
+                malus.put(PathFinder.PathType.DAMAGING, 0f);
+                malus.put(PathFinder.PathType.DAMAGING_IN_NEIGHBOR, 0f);
+            }
+            case Frog ignored -> malus.put(PathFinder.PathType.WATER, 4f);
+            case Goat ignored -> malus.put(PathFinder.PathType.ON_TOP_OF_POWDER_SNOW, -1f);
+            case Wolf ignored -> malus.put(PathFinder.PathType.ON_TOP_OF_POWDER_SNOW, -1f);
+            case CopperGolem ignored -> {
+                malus.put(PathFinder.PathType.FIRE, -1f);
+                malus.put(PathFinder.PathType.FIRE_IN_NEIGHBOR, 16f);
+                malus.put(PathFinder.PathType.DAMAGING_IN_NEIGHBOR, 16f);
+            }
+            case Parrot ignored -> {
+                malus.put(PathFinder.PathType.FIRE, -1f);
+                malus.put(PathFinder.PathType.FIRE_IN_NEIGHBOR, -1f);
+            }
+            case Sniffer ignored -> {
+                malus.put(PathFinder.PathType.WATER, -1f);
+                malus.put(PathFinder.PathType.ON_TOP_OF_POWDER_SNOW, -1f);
+            }
+            case Blaze ignored -> {
+                malus.put(PathFinder.PathType.FIRE, 0f);
+                malus.put(PathFinder.PathType.FIRE_IN_NEIGHBOR, 0f);
+                malus.put(PathFinder.PathType.LAVA, 8f);
+                malus.put(PathFinder.PathType.WATER, -1f);
+            }
+            case Breeze ignored -> malus.put(PathFinder.PathType.FIRE, -1f);
+            case Creaking ignored -> {
+                malus.put(PathFinder.PathType.DAMAGING, 8f);
+                malus.put(PathFinder.PathType.FIRE, 0f);
+                malus.put(PathFinder.PathType.FIRE_IN_NEIGHBOR, 0f);
+                malus.put(PathFinder.PathType.LAVA, 8f);
+                malus.put(PathFinder.PathType.POWDER_SNOW, 8f);
+            }
+            case Warden ignored -> {
+                malus.put(PathFinder.PathType.DAMAGING, 8f);
+                malus.put(PathFinder.PathType.FIRE, 0f);
+                malus.put(PathFinder.PathType.FIRE_IN_NEIGHBOR, 0f);
+                malus.put(PathFinder.PathType.LAVA, 8f);
+                malus.put(PathFinder.PathType.POWDER_SNOW, 8f);
+            }
+            case Enderman ignored -> malus.put(PathFinder.PathType.WATER, -1f);
+            case WitherSkeleton ignored -> malus.put(PathFinder.PathType.LAVA, 8f);
+            case PigZombie ignored -> malus.put(PathFinder.PathType.LAVA, 8f);
+            case Strider ignored -> {
+                malus.put(PathFinder.PathType.FIRE, 0f);
+                malus.put(PathFinder.PathType.FIRE_IN_NEIGHBOR, 0f);
+                malus.put(PathFinder.PathType.LAVA, 0f);
+                malus.put(PathFinder.PathType.WATER, -1f);
+            }
+            default -> {
+            }
+        }
+        return this.pathMalus = malus;
     }
 
     private double eyeHeight() {

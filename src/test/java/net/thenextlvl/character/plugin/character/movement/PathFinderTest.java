@@ -274,7 +274,7 @@ class PathFinderTest {
         final var from = new Location(world.proxy(), 0.5, FLOOR + 1, 0.5);
         final var to = new Location(world.proxy(), 3.5, FLOOR + 6, 0.5);
 
-        final var spider = new PathFinder(world.server(), world.proxy(), 0.9, 0.65, false, PathFinder.Swimming.SURFACE, 48, true, false, false);
+        final var spider = new PathFinder(world.server(), world.proxy(), 0.9, 0.65, false, PathFinder.Swimming.SURFACE, 48, true, false, false, Map.of());
         final var climbing = spider.find(from, to, 0);
         assertTrue(climbing.reaches(), "did not climb the wall");
         assertEnd(climbing.nodes(), 3, FLOOR + 6, 0);
@@ -287,7 +287,7 @@ class PathFinderTest {
         final var world = new FakeWorld();
         world.floor(-10, 10);
         for (var z = -10; z <= 10; z++) for (var y = FLOOR + 1; y <= FLOOR + 5; y++) world.blocks.put(key(3, y, z), Kind.SOLID);
-        final var flyer = new PathFinder(world.server(), world.proxy(), 0.6, 0.3, false, PathFinder.Swimming.SURFACE, 48, false, true, false);
+        final var flyer = new PathFinder(world.server(), world.proxy(), 0.6, 0.3, false, PathFinder.Swimming.SURFACE, 48, false, true, false, Map.of());
         final var path = flyer.find(new Location(world.proxy(), 0.5, FLOOR + 1, 0.5), new Location(world.proxy(), 6.5, FLOOR + 1, 0.5), 0);
         assertTrue(path.reaches(), "did not fly over the wall");
         assertTrue(path.nodes().stream().anyMatch(location -> location.getY() > FLOOR + 5), "did not fly above the wall");
@@ -447,7 +447,7 @@ class PathFinderTest {
         assertEnd(path, 6, FLOOR + 1, 0);
         assertTrue(path.stream().allMatch(location -> Math.abs(location.getBlockZ()) <= 1), "walked around the gap: " + describe(path));
 
-        final var slow = new PathFinder(world.server(), world.proxy(), 1.8, 1.62, false, PathFinder.Swimming.SURFACE, 48, false, false, false)
+        final var slow = new PathFinder(world.server(), world.proxy(), 1.8, 1.62, false, PathFinder.Swimming.SURFACE, 48, false, false, false, Map.of())
                 .find(new Location(world.proxy(), 0.5, FLOOR + 1, 0.5), new Location(world.proxy(), 6.5, FLOOR + 1, 0.5));
         assertTrue(slow.stream().anyMatch(location -> location.getBlockZ() >= 8), "jumped without being fast enough: " + describe(slow));
     }
@@ -461,6 +461,34 @@ class PathFinderTest {
         assertEnd(path, 6, FLOOR + 1, 0);
         assertTrue(path.stream().allMatch(location -> Math.abs(location.getBlockZ()) <= 1), "walked around the lava: " + describe(path));
         assertTrue(path.stream().noneMatch(location -> location.getBlockX() == 3), "walked into the lava: " + describe(path));
+    }
+
+    @Test
+    void stridersWalkOnLava() {
+        final var world = new FakeWorld();
+        world.floor(-10, 10);
+        // a lava lake across the whole floor
+        for (var x = 1; x <= 5; x++) for (var z = -10; z <= 10; z++) world.blocks.put(key(x, FLOOR, z), Kind.LAVA);
+        final var strider = new PathFinder(world.server(), world.proxy(), 1.7, 1.5, false, PathFinder.Swimming.SINK, 48, false, false, false,
+                Map.of(PathFinder.PathType.LAVA, 0f, PathFinder.PathType.FIRE_IN_NEIGHBOR, 0f));
+        final var path = strider.find(new Location(world.proxy(), 0.5, FLOOR + 1, 0.5), new Location(world.proxy(), 7.5, FLOOR + 1, 0.5), 0);
+        assertTrue(path.reaches(), "did not walk on the lava: " + describe(path.nodes()));
+        assertFalse(finder(world, false).find(new Location(world.proxy(), 0.5, FLOOR + 1, 0.5),
+                new Location(world.proxy(), 7.5, FLOOR + 1, 0.5), 0).reaches(), "walked on lava without being a strider");
+    }
+
+    @Test
+    void animalsDoNotWalkThroughFire() {
+        final var world = new FakeWorld();
+        world.floor(-10, 10);
+        world.blocks.put(key(2, FLOOR + 1, 0), Kind.FIRE);
+        final var finder = finder(world, false);
+        // only a small malus for entities without overrides
+        assertTrue(finder.find(new Location(world.proxy(), 2.5, FLOOR + 1, -1.5), new Location(world.proxy(), 2.5, FLOOR + 1, 0.5), 0).reaches());
+        final var animal = new PathFinder(world.server(), world.proxy(), 1.4, 1.3, false, PathFinder.Swimming.SURFACE, 48, false, false, false,
+                Map.of(PathFinder.PathType.FIRE, -1f, PathFinder.PathType.FIRE_IN_NEIGHBOR, 16f));
+        assertFalse(animal.find(new Location(world.proxy(), 2.5, FLOOR + 1, -1.5), new Location(world.proxy(), 2.5, FLOOR + 1, 0.5), 0).reaches(),
+                "walked into fire");
     }
 
     @Test
@@ -489,7 +517,7 @@ class PathFinderTest {
 
     private static PathFinder finder(final FakeWorld world, final boolean openDoors, final PathFinder.Swimming swimming) {
         // a larger follow range than the default, as the test worlds are mostly open floor
-        return new PathFinder(world.server(), world.proxy(), 1.8, 1.62, openDoors, swimming, 48, false, false, true);
+        return new PathFinder(world.server(), world.proxy(), 1.8, 1.62, openDoors, swimming, 48, false, false, true, Map.of());
     }
 
     private static void assertEnd(final List<Location> path, final int x, final int y, final int z) {
@@ -504,7 +532,7 @@ class PathFinderTest {
         return ((long) x & 0x3FFFFFF) << 38 | ((long) z & 0x3FFFFFF) << 12 | (long) y & 0xFFF;
     }
 
-    private enum Kind {SOLID, WATER, LAVA, DOOR, OPEN_DOOR, IRON_DOOR, LADDER, VINE}
+    private enum Kind {SOLID, WATER, LAVA, DOOR, OPEN_DOOR, IRON_DOOR, LADDER, VINE, FIRE}
 
     // a world of full solid blocks, liquids, doors and air, every chunk loaded and owned
     private static final class FakeWorld {
@@ -563,6 +591,7 @@ class PathFinderTest {
                             case IRON_DOOR -> Material.IRON_DOOR;
                             case LADDER -> Material.LADDER;
                             case VINE -> Material.TWISTING_VINES_PLANT;
+                            case FIRE -> Material.FIRE;
                         };
                         case "getBlockData" -> door;
                         case "getBoundingBox" -> collides ? new BoundingBox(x, y, z, x + 1, y + 1, z + 1) : new BoundingBox();

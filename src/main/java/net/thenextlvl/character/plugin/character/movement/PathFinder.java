@@ -12,12 +12,14 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Set;
 
 /**
  * A* pathfinding over the blocks of a world, modelled after vanilla's {@code WalkNodeEvaluator},
@@ -50,23 +52,46 @@ public final class PathFinder {
     // the height of the water surface within the topmost water block
     private static final double WATER_SURFACE = 0.9;
 
-    // the malus of the vanilla path types
     private static final float BLOCKED = -1;
-    private static final float WATER = 8;
-    // less than vanilla's 8, being close to danger is no reason to take a much longer way
-    private static final float DANGER = 2;
+
     // a jump is a bit more effort than walking, so it is only taken when it saves a detour
     private static final double JUMP_COST = 1;
-    private static final float DAMAGE_OTHER = 8;
-    private static final float DAMAGE_FIRE = 16;
-    private static final float STICKY_HONEY = 8;
 
     private static final int[][] DIRECTIONS = {
             {1, 0}, {-1, 0}, {0, 1}, {0, -1},
             {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
     };
 
+    /**
+     * The path types of vanilla that are taken into account, with their default malus.
+     * <p>
+     * Like in vanilla, every mob can override the malus of a type, see the overrides passed to the constructor.
+     * A negative malus blocks the type, blocked.
+     */
+    public enum PathType {
+        FIRE(16),
+        // less than vanilla's 8, being close to danger is no reason to take a much longer way
+        FIRE_IN_NEIGHBOR(2),
+        // vanilla blocks damaging blocks, entities that can jump over them would rather walk around otherwise
+        DAMAGING(8),
+        DAMAGING_IN_NEIGHBOR(2),
+        LAVA(-1),
+        // for entities that do not dive, divers swim through water at no cost
+        WATER(8),
+        WATER_BORDER(0),
+        POWDER_SNOW(-1),
+        ON_TOP_OF_POWDER_SNOW(0),
+        STICKY_HONEY(8);
+
+        private final float malus;
+
+        PathType(final float malus) {
+            this.malus = malus;
+        }
+    }
+
     private final Map<Long, Float> malus = new HashMap<>();
+    private final Map<PathType, Float> overrides;
     private final Server server;
     private final World world;
     private final int height;
@@ -107,10 +132,11 @@ public final class PathFinder {
      * @param climbs       whether the entity climbs walls, like spiders
      * @param flies        whether the entity flies
      * @param jumps        whether the entity is fast enough to jump over gaps and damaging blocks
+     * @param overrides    the malus of path types that differ for the entity, like in vanilla
      */
     public PathFinder(final Server server, final World world, final double entityHeight, final double eyeHeight,
                       final boolean openDoors, final Swimming swimming, final double followRange,
-                      final boolean climbs, final boolean flies, final boolean jumps) {
+                      final boolean climbs, final boolean flies, final boolean jumps, final Map<PathType, Float> overrides) {
         this.server = server;
         this.world = world;
         this.height = Math.max(1, (int) Math.ceil(entityHeight));
@@ -121,6 +147,19 @@ public final class PathFinder {
         this.climbs = climbs;
         this.flies = flies;
         this.jumps = jumps;
+        this.overrides = overrides;
+    }
+
+    // the malus of the type for this entity, divers swim through water at no cost unless overridden
+    private float malus(final PathType type) {
+        final var override = overrides.get(type);
+        if (override != null) return override;
+        if (type == PathType.WATER && swimming == Swimming.DIVE) return 0;
+        return type.malus;
+    }
+
+    private boolean isBlocked(final PathType type) {
+        return malus(type) < 0;
     }
 
     /**
@@ -221,6 +260,8 @@ public final class PathFinder {
             }
         }
         final var below = world.getBlockAt(x, y - 1, z);
+        // striders walk on lava, which vanilla lets them stand on
+        if (below.getType() == Material.LAVA && malus(PathType.LAVA) == 0) return (double) y;
         if (below.isPassable() || below.isLiquid()) return null;
         // ladders and vines have a collision box, but nothing to stand on, an entity on top of one hangs in it
         if (isClimbable(below)) return null;
@@ -298,6 +339,8 @@ public final class PathFinder {
 
     // whether an entity can be inside the given block
     private boolean canOccupy(final Block block) {
+        // fire immune mobs like wither skeletons or wardens may walk through lava
+        if (block.getType() == Material.LAVA) return !isBlocked(PathType.LAVA);
         if (block.isLiquid()) return isWater(block);
         if (isClimbable(block)) return true;
         if (block.isPassable() || isOpen(block)) return true;
@@ -376,8 +419,8 @@ public final class PathFinder {
             if (!isClear(mx, y, mz) || !isClear(mx, y + 1, mz)) continue;
             // only worth a jump if there is nothing to walk on, or it hurts
             final var gap = standingHeight(mx, y, mz) == null && standingHeight(mx, y - 1, mz) == null;
-            final var harmful = malus(node(mx, y, mz)) >= DAMAGE_OTHER || malus(node(mx, y, mz)) == BLOCKED
-                                || isDangerousFloor(mx, y - 1, mz);
+            final var mid = malus(node(mx, y, mz));
+            final var harmful = mid >= malus(PathType.DAMAGING) || mid == BLOCKED || isDangerousFloor(mx, y - 1, mz);
             if (!gap && !harmful) continue;
             final var lx = x + direction[0] * 2;
             final var lz = z + direction[1] * 2;
@@ -451,37 +494,54 @@ public final class PathFinder {
         return malus.computeIfAbsent(node, key -> pathMalus(x(key), y(key), z(key)));
     }
 
+    // the highest malus of the path types of the node, like vanilla, or blocked if any of them is
     private float pathMalus(final int x, final int y, final int z) {
         var malus = 0f;
         for (var i = 0; i < height; i++) {
             final var block = world.getBlockAt(x, y + i, z);
             final var type = block.getType();
-            if (type == Material.LAVA || type == Material.POWDER_SNOW) return BLOCKED;
-            if (isFire(type)) malus = Math.max(malus, DAMAGE_FIRE);
-            else if (isDamaging(type)) malus = Math.max(malus, DAMAGE_OTHER);
-            else if (isWater(block) && swimming != Swimming.DIVE) malus = Math.max(malus, WATER);
+            final PathType pathType;
+            if (type == Material.LAVA) pathType = PathType.LAVA;
+            else if (type == Material.POWDER_SNOW) pathType = PathType.POWDER_SNOW;
+            else if (isFire(type)) pathType = PathType.FIRE;
+            else if (isDamaging(type)) pathType = PathType.DAMAGING;
+            else if (isWater(block)) pathType = PathType.WATER;
+            else continue;
+            if (isBlocked(pathType)) return BLOCKED;
+            malus = Math.max(malus, malus(pathType));
         }
         final var below = world.getBlockAt(x, y - 1, z).getType();
-        if (below == Material.MAGMA_BLOCK) malus = Math.max(malus, DAMAGE_FIRE);
-        else if (below == Material.HONEY_BLOCK) malus = Math.max(malus, STICKY_HONEY);
-        if (malus > 0) return malus;
-        return isNearDanger(x, y, z) ? DANGER : 0;
+        final var floor = below == Material.MAGMA_BLOCK ? PathType.FIRE
+                : below == Material.HONEY_BLOCK ? PathType.STICKY_HONEY
+                : below == Material.POWDER_SNOW ? PathType.ON_TOP_OF_POWDER_SNOW : null;
+        if (floor != null) {
+            if (isBlocked(floor)) return BLOCKED;
+            malus = Math.max(malus, malus(floor));
+        }
+        for (final var neighbor : neighborTypes(x, y, z)) {
+            if (isBlocked(neighbor)) return BLOCKED;
+            malus = Math.max(malus, malus(neighbor));
+        }
+        return malus;
     }
 
-    // like vanilla, blocks next to fire, lava and damaging blocks are dangerous
-    private boolean isNearDanger(final int x, final int y, final int z) {
+    // like vanilla, blocks next to fire, lava, damaging blocks or water have their own path types
+    private Set<PathType> neighborTypes(final int x, final int y, final int z) {
+        final var types = EnumSet.noneOf(PathType.class);
         for (var dx = -1; dx <= 1; dx++) {
             for (var dz = -1; dz <= 1; dz++) {
                 if (!isAccessible(x + dx, z + dz)) continue;
                 for (var dy = -1; dy <= 1; dy++) {
                     if (dx == 0 && dy == 0 && dz == 0) continue;
-                    final var type = world.getBlockAt(x + dx, y + dy, z + dz).getType();
-                    if (type == Material.LAVA || type == Material.MAGMA_BLOCK || isFire(type) || isDamaging(type))
-                        return true;
+                    final var block = world.getBlockAt(x + dx, y + dy, z + dz);
+                    final var type = block.getType();
+                    if (type == Material.LAVA || type == Material.MAGMA_BLOCK || isFire(type)) types.add(PathType.FIRE_IN_NEIGHBOR);
+                    else if (isDamaging(type)) types.add(PathType.DAMAGING_IN_NEIGHBOR);
+                    else if (dy == 0 && isWater(block)) types.add(PathType.WATER_BORDER);
                 }
             }
         }
-        return false;
+        return types;
     }
 
     /**
