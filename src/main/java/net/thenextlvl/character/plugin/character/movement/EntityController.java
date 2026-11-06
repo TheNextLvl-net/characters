@@ -20,6 +20,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Ladder;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
@@ -326,12 +327,20 @@ public final class EntityController {
             living.attack(target);
             return;
         }
-        final var damage = attackDamage(living);
+        final var weapon = living.getEquipment() != null ? living.getEquipment().getItemInMainHand() : null;
+        final var sharpness = weapon != null ? weapon.getEnchantmentLevel(Enchantment.SHARPNESS) : 0;
+        final var fireAspect = weapon != null ? weapon.getEnchantmentLevel(Enchantment.FIRE_ASPECT) : 0;
+        final var knockback = weapon != null ? weapon.getEnchantmentLevel(Enchantment.KNOCKBACK) : 0;
+        final var damage = attackDamage(living) + (sharpness > 0 ? 0.5 * sharpness + 0.5 : 0);
         final var source = DamageSource.builder(DamageType.MOB_ATTACK).withCausingEntity(living).withDirectEntity(living).build();
-        plugin.supply(target, () -> target.damage(damage, source));
+        final var yaw = Math.toRadians(living.getYaw());
+        plugin.supply(target, () -> {
+            target.damage(damage, source);
+            if (fireAspect > 0) target.setFireTicks(Math.max(target.getFireTicks(), fireAspect * 80));
+            if (knockback > 0) target.knockback(knockback * 0.5, Math.sin(yaw), -Math.cos(yaw));
+        });
     }
 
-    // the attack damage attribute, which entities like mannequins get to apply the modifiers of their weapon
     private double attackDamage(final LivingEntity living) {
         var attribute = living.getAttribute(Attribute.ATTACK_DAMAGE);
         if (attribute == null) {
@@ -1110,14 +1119,14 @@ public final class EntityController {
     // like resolve, but only players
     private @Nullable Player resolvePlayer(final Target target, @Nullable final Player viewer, final Location origin) {
         return switch (target) {
-            case Target.Viewer ignored -> viewer;
+            case final Target.Viewer ignored -> viewer;
             case final Target.OfPlayer ofPlayer -> plugin.getServer().getPlayer(ofPlayer.player());
             case final Target.NearestPlayer nearest -> viewer == null ? null : origin.getNearbyPlayers(nearest.radius()).stream()
                     .filter(player -> player.getGameMode() != GameMode.SPECTATOR)
                     .filter(player -> player.equals(viewer) || viewer.canSee(player))
                     .min(Comparator.comparingDouble(player -> player.getLocation().distanceSquared(origin)))
                     .orElse(null);
-            case Target.Position ignored -> null;
+            case final Target.Position ignored -> null;
         };
     }
 

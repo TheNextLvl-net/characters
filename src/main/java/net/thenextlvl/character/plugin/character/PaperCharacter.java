@@ -931,6 +931,11 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             if (attribute != null) attribute.setBaseValue(0);
         }
 
+        if (entity instanceof final LivingEntity living && !(entity instanceof Mob)
+            && living.getAttribute(Attribute.ATTACK_DAMAGE) == null) {
+            living.registerAttribute(Attribute.ATTACK_DAMAGE);
+        }
+
         PropertyAccessors.ALL.forEach(accessor -> {
             final var value = properties.get(accessor.key().asString());
             if (value != null) accessor.apply(entity, value, plugin.nbt());
