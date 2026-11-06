@@ -25,6 +25,8 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.Creeper;
+import org.bukkit.entity.Cat;
+import org.bukkit.entity.Ocelot;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Animals;
@@ -134,6 +136,8 @@ public final class EntityController {
     private static final double JUMP_VELOCITY = 0.42;
     // like vanilla, climbing ladders: vanilla sets 0.2 after the move, gravity and drag leave (0.2 - 0.08) * 0.98 for the next one
     private static final double CLIMBING_VELOCITY = (0.2 - 0.08) * 0.98;
+    // vanilla checks a leap every other tick with a chance of one in three
+    private static final int LEAP_CHANCE = 6;
     private static final double LADDER_THICKNESS = 3 / 16d;
     // how far below the wanted position the feet may be when stepping off a ladder or vine
     private static final double CLIMB_TOLERANCE = 0.05;
@@ -267,6 +271,8 @@ public final class EntityController {
         final var interaction = interaction(current);
         final var action = interaction != null ? interaction : action(goals, home, current, player);
         if (attackCooldown > 0) attackCooldown--;
+        // the leap ends once it lands, with a tick to hit the target it lands on
+        if (leaping && entity.isOnGround() && leapLandedTicks++ > 0) leaping = false;
         setAggressive(action.attack() != null);
         if (action == Action.IDLE) {
             rotate(null, current, false, home);
@@ -292,7 +298,10 @@ public final class EntityController {
             climbing = false;
             if (physics) {
                 final var velocity = isAirborne(current) ? entity.getVelocity() : new Vector();
-                entity.setVelocity(velocity.setY(flies() ? 0 : vertical(current, null)));
+                velocity.setY(flies() ? 0 : vertical(current, null));
+                // mobs that leap at their target only attack with a leap, even if it is already in reach
+                if (action.attack() != null) leap(velocity, current, action.attack(), true);
+                entity.setVelocity(velocity);
             }
             character.doors().close();
             rotate(action.look(), current, false, home);
@@ -307,6 +316,7 @@ public final class EntityController {
         if (!flies()) velocity.setY(vertical(current, movement));
         if (hops()) hop(velocity, moving);
         else if (entity instanceof Frog) longJump(velocity, moving, movement.target(), current);
+        else if (action.attack() != null) leap(velocity, current, action.attack(), false);
         // like vanilla, an entity keeps its momentum in mid air and can only steer a little,
         // which is still enough to get onto a block it jumps up to once it is high enough
         // hoppers fly only as far as their hop carries them
@@ -341,6 +351,9 @@ public final class EntityController {
     // vanilla's melee attack range, how far the attack box reaches beyond the hitbox
     private static final double ATTACK_REACH = 0.828;
     private int attackCooldown;
+    // whether the entity is in the middle of a leap at its target, and for how many ticks it is on the ground again
+    private boolean leaping;
+    private int leapLandedTicks;
     private boolean aggressive;
 
     // whether the hitboxes are within vanilla's melee attack range
@@ -357,6 +370,8 @@ public final class EntityController {
      */
     private void attack(final Player target, final Location current) {
         if (attackCooldown > 0 || !isInReach(current, target)) return;
+        // mobs that leap at their target only hit it with a leap, coming down on it or as they land, not on the way up
+        if (leapHeight() > 0 && !isLeapLanding()) return;
         attackCooldown = ATTACK_INTERVAL;
         if (!(entity instanceof final LivingEntity living)) return;
         living.swingMainHand();
@@ -1123,6 +1138,43 @@ public final class EntityController {
             return JUMP_VELOCITY;
         }
         return velocity;
+    }
+
+    /*
+     * Like vanilla's LeapAtTargetGoal, some mobs leap at the target they attack,
+     * once they are on the ground two to four blocks away from it, vanilla tries it every other tick with a chance of one in three.
+     * In mid air they keep the momentum of the leap.
+     * They only hit their target with a leap, so they also leap at it once it is in reach, but not before they can attack again.
+     */
+    private void leap(final Vector velocity, final Location current, final Player target, final boolean inReach) {
+        final var height = leapHeight();
+        if (height == 0 || leaping || attackCooldown > 0 || !entity.isOnGround()) return;
+        final var distance = current.distanceSquared(target.getLocation());
+        if ((!inReach && distance < 4) || distance > 16 || ThreadLocalRandom.current().nextInt(LEAP_CHANCE) != 0) return;
+        final var leap = target.getLocation().toVector().subtract(current.toVector()).setY(0);
+        if (leap.lengthSquared() > 1.0E-7) leap.normalize().multiply(0.4).add(entity.getVelocity().setY(0).multiply(0.2));
+        velocity.setX(leap.getX()).setY(height).setZ(leap.getZ());
+        jumping = false;
+        leaping = true;
+        leapLandedTicks = 0;
+    }
+
+    // whether the entity is past the top of its leap or just landed from it
+    private boolean isLeapLanding() {
+        if (!leaping) return false;
+        return entity.isOnGround() ? leapLandedTicks > 0 : entity.getVelocity().getY() <= 0;
+    }
+
+    // the vertical velocity of vanilla's LeapAtTargetGoal of the mob, zero if it does not leap
+    private double leapHeight() {
+        return switch (entity) {
+            case final Spider ignored -> 0.4;
+            case final Wolf ignored -> 0.4;
+            case final Fox ignored -> 0.4;
+            case final Ocelot ignored -> 0.3;
+            case final Cat ignored -> 0.3;
+            default -> 0;
+        };
     }
 
     // whether the current node is a jump of the pathfinder, two blocks straight after the previous node
