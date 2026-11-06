@@ -1,4 +1,12 @@
-## Characters – The Ultimate NPC Plugin
+[![Banner](https://raw.githubusercontent.com/TheNextLvl-net/characters/refs/heads/main/assets/banner.png)](https://thenextlvl.net/docs/characters)
+
+<p align="center" style="text-align: center;">
+  <a href="https://thenextlvl.net/discord"><img src="https://tr7zw.github.io/uikit/social_buttons_icon/Discord-Button-64.png"></img></a>
+  <a href="https://modrinth.com/project/oeBa7ep1"><img src="https://tr7zw.github.io/uikit/social_buttons_icon/Modrinth-Button-64.png"></img></a>
+  <a href="https://github.com/TheNextLvl-net/characters"><img src="https://tr7zw.github.io/uikit/social_buttons_icon/Github-Button-64.png"></img></a>
+</p>
+
+## The Ultimate NPC Plugin for Paper & Folia
 
 Characters is a powerful yet easy-to-use NPC plugin for Minecraft servers,
 offering full in-game customization and seamless API integration.
