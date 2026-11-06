@@ -7,6 +7,8 @@ import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.property.EntityProperties;
 import net.thenextlvl.character.property.EntityProperty;
+import net.thenextlvl.character.property.ViewerValue;
+import net.thenextlvl.character.property.ViewerValues;
 import net.thenextlvl.character.tag.TagOptions;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -213,6 +215,52 @@ public interface Character {
      */
     @Contract(mutates = "this")
     <T> boolean setProperty(EntityProperty<?, T> property, T value);
+
+    /**
+     * Returns the value of the given property as the given viewer sees it.
+     * <p>
+     * A {@link #getViewerValue(EntityProperty) viewer value} takes precedence over the
+     * {@link #getProperty(EntityProperty) persisted value}.
+     *
+     * @param property the property to get
+     * @param viewer   the viewer to resolve the value for
+     * @param <T>      the value type of the property
+     * @return the value the given viewer sees, or empty if no value was set
+     * @since 0.9.0
+     */
+    @Contract(pure = true)
+    <T> Optional<T> getProperty(EntityProperty<?, T> property, Player viewer);
+
+    /**
+     * Returns the viewer value of the given property.
+     *
+     * @param property the property to get the viewer value for
+     * @param <T>      the value type of the property
+     * @return the viewer value, or empty if none is set or it is not registered
+     * @see ViewerValues
+     * @since 0.9.0
+     */
+    @Contract(pure = true)
+    <T> Optional<ViewerValue<T>> getViewerValue(EntityProperty<?, T> property);
+
+    /**
+     * Sets the viewer value of the given property.
+     * <p>
+     * The value is resolved separately for every viewer and takes precedence over the
+     * {@link #getProperty(EntityProperty) persisted value}.
+     * The reference to the viewer value is persisted with the character.
+     * Removing the viewer value restores the persisted value.
+     *
+     * @param property the property to set the viewer value for
+     * @param value    the viewer value, or {@code null} to remove it
+     * @param <T>      the value type of the property
+     * @return {@code true} if the viewer value was changed, {@code false} if it is unchanged
+     * or the property does not apply to the character's entity type
+     * @see ViewerValues
+     * @since 0.9.0
+     */
+    @Contract(mutates = "this")
+    <T> boolean setViewerValue(EntityProperty<?, T> property, @Nullable ViewerValue<T> value);
 
     /**
      * Returns the options of the character's name tag.

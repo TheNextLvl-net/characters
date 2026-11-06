@@ -3,6 +3,7 @@ package net.thenextlvl.character.plugin.character;
 import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.util.TriState;
@@ -17,6 +18,8 @@ import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.plugin.property.PropertyAccessor;
 import net.thenextlvl.character.plugin.property.PropertyAccessors;
 import net.thenextlvl.character.property.EntityProperty;
+import net.thenextlvl.character.property.ViewerValue;
+import net.thenextlvl.character.property.ViewerValues;
 import net.thenextlvl.character.tag.TagOptions;
 import net.thenextlvl.nbt.NBTOutputStream;
 import net.thenextlvl.nbt.serialization.ParserException;
@@ -84,6 +87,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected final Set<UUID> viewers = ConcurrentHashMap.newKeySet();
     protected final Set<UUID> spawning = ConcurrentHashMap.newKeySet();
     protected final Map<String, Tag> properties = new ConcurrentHashMap<>();
+    protected final Map<String, Key> viewerValues = new ConcurrentHashMap<>();
     protected final Map<UUID, Entity> entities = new ConcurrentHashMap<>();
     protected final PaperTagOptions tagOptions = new PaperTagOptions();
 
@@ -514,11 +518,12 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         if (existing != null && existing.isValid()) return CompletableFuture.completedFuture(false);
         if (!spawning.add(uuid)) return CompletableFuture.completedFuture(false);
 
+        final var resolved = resolveViewerValues(player);
         return plugin.supply(location, () -> {
             if (existing != null) invalidate(existing);
             if (!location.isChunkLoaded()) return null;
 
-            final var entity = location.getWorld().spawn(location, entityClass, false, this::preSpawn);
+            final var entity = location.getWorld().spawn(location, entityClass, false, spawned -> preSpawn(spawned, resolved));
             if (!entity.isValid()) return null;
             entities.put(uuid, entity);
 
@@ -604,9 +609,9 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         if (display != null) plugin.supply(display, () -> consumer.accept(display));
     }
 
-    protected void preSpawn(final Entity entity) {
+    protected void preSpawn(final Entity entity, final Map<PropertyAccessor<?, ?>, @Nullable Object> viewerValues) {
         try {
-            internalPreSpawn(entity);
+            internalPreSpawn(entity, viewerValues);
         } catch (final Exception e) {
             plugin.getComponentLogger().error("Failed to spawn character {}", getName(), e);
             plugin.getComponentLogger().error("Please look for similar issues or report this on GitHub: {}", ISSUES);
@@ -616,7 +621,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     @SuppressWarnings("PatternValidation")
-    protected void internalPreSpawn(final Entity entity) {
+    protected void internalPreSpawn(final Entity entity, final Map<PropertyAccessor<?, ?>, @Nullable Object> viewerValues) {
         entity.setVisibleByDefault(false);
         entity.setGravity(false);
         entity.setInvulnerable(true);
@@ -655,13 +660,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             final var value = properties.get(accessor.key().asString());
             if (value != null) accessor.apply(entity, value, plugin.nbt());
         });
+        viewerValues.forEach((accessor, value) -> accessor.set(entity, value));
 
         if (entity.getPose().equals(Pose.DYING)) {
             entity.setPose(Pose.STANDING, true);
         }
     }
 
-    private static String profileName(final String name) {
+    public static String profileName(final String name) {
         final var sanitized = PROFILE_NAME_INVALID.matcher(name).replaceAll("");
         return sanitized.length() > 16 ? sanitized.substring(0, 16) : sanitized;
     }
@@ -773,6 +779,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             if (stored != null && Objects.equals(accessor.deserialize(stored, plugin.nbt()), value)) return false;
             final var tag = accessor.serialize(value, plugin.nbt());
             properties.put(accessor.key().asString(), tag);
+            if (getViewerValue(property).isPresent()) return true;
             final var updates = entities.values().stream().map(entity -> plugin.supply(entity, () -> {
                 accessor.apply(entity, tag, plugin.nbt());
             })).toArray(CompletableFuture[]::new);
@@ -780,6 +787,57 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
                     editTextDisplayName(display -> display.teleportAsync(getTagLocation(entity), PLUGIN))));
             return true;
         }).orElse(false);
+    }
+
+    @Override
+    public <T> Optional<T> getProperty(final EntityProperty<?, T> property, final Player viewer) {
+        return getViewerValue(property).map(value -> value.resolve(viewer)).or(() -> getProperty(property));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Optional<ViewerValue<T>> getViewerValue(final EntityProperty<?, T> property) {
+        return Optional.ofNullable(viewerValues.get(property.key().asString()))
+                .flatMap(ViewerValues::getByKey)
+                .filter(value -> value.isApplicable(property))
+                .map(value -> (ViewerValue<T>) value);
+    }
+
+    @Override
+    public <T> boolean setViewerValue(final EntityProperty<?, T> property, @Nullable final ViewerValue<T> value) {
+        if (!property.isApplicable(entityClass)) return false;
+        if (value != null && !value.isApplicable(property)) return false;
+        final var accessor = PropertyAccessors.of(property).orElse(null);
+        if (accessor == null) return false;
+
+        final var key = property.key().asString();
+        final var previous = value != null ? viewerValues.put(key, value.key()) : viewerValues.remove(key);
+        if (Objects.equals(previous, value != null ? value.key() : null)) return false;
+
+        entities.forEach((uuid, entity) -> {
+            final var viewer = plugin.getServer().getPlayer(uuid);
+            if (viewer == null) return;
+            if (value != null) plugin.supply(viewer, () -> value.resolve(viewer))
+                    .thenAccept(resolved -> plugin.supply(entity, () -> accessor.set(entity, resolved)));
+            else restoreProperty(viewer, entity, accessor);
+        });
+        return true;
+    }
+
+    // restores the persisted value, or the default value by respawning the entity if there is none
+    private void restoreProperty(final Player viewer, final Entity entity, final PropertyAccessor<?, ?> accessor) {
+        final var stored = properties.get(accessor.key().asString());
+        if (stored != null) plugin.supply(entity, () -> accessor.apply(entity, stored, plugin.nbt()));
+        else despawn(viewer).thenCompose(ignored -> spawn(viewer));
+    }
+
+    // must be called on the region of the viewer
+    private Map<PropertyAccessor<?, ?>, @Nullable Object> resolveViewerValues(final Player viewer) {
+        final var resolved = new LinkedHashMap<PropertyAccessor<?, ?>, @Nullable Object>();
+        if (viewerValues.isEmpty()) return resolved;
+        PropertyAccessors.ALL.forEach(accessor -> getViewerValue(accessor.property())
+                .ifPresent(value -> resolved.put(accessor, value.resolve(viewer))));
+        return resolved;
     }
 
     @Override
@@ -809,12 +867,20 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             tag.put("entityData", data.build());
         }
         tag.put("clickActions", actions.build());
+        if (!viewerValues.isEmpty()) {
+            final var values = CompoundTag.builder();
+            viewerValues.forEach((property, value) -> values.put(property, value.asString()));
+            tag.put("viewerValues", values.build());
+        }
         return tag.build();
     }
 
     @Override
+    @SuppressWarnings("PatternValidation")
     public void deserialize(final CompoundTag tag) throws ParserException {
         tag.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> entityData.forEach(properties::put));
+        tag.optional("viewerValues").map(Tag::getAsCompound).ifPresent(values -> values.forEach((property, value) ->
+                viewerValues.put(property, Key.key(value.getAsString()))));
         tag.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().deserialize(action, ClickAction.class))));
         tag.optional("displayName").map(t -> plugin.nbt().deserialize(t, Component.class))

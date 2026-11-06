@@ -50,6 +50,12 @@ public record PropertyAccessor<E, T>(
         setter.accept(entityType.cast(entity), deserialize(tag, nbt));
     }
 
+    public void set(final Object entity, @Nullable final Object value) {
+        final var entityType = property.entityType();
+        if (!entityType.isInstance(entity)) return;
+        setter.accept(entityType.cast(entity), property.valueType().cast(value));
+    }
+
     private static boolean isNull(final Tag tag) {
         return tag instanceof final ByteTag byteTag && byteTag.getAsByte() == NULL.getAsByte();
     }
