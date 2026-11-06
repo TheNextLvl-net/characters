@@ -19,6 +19,9 @@ import org.bukkit.Particle;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.block.data.type.Ladder;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -351,6 +354,8 @@ public final class EntityController {
     // vanilla's melee attack range, how far the attack box reaches beyond the hitbox
     private static final double ATTACK_REACH = 0.828;
     private int attackCooldown;
+    // the player this entity attacks, it keeps attacking it even if it would not notice it anymore
+    private @Nullable UUID attackTarget;
     // whether the entity is in the middle of a leap at its target, and for how many ticks it is on the ground again
     private boolean leaping;
     private int leapLandedTicks;
@@ -396,6 +401,28 @@ public final class EntityController {
             if (fireAspect > 0) target.setFireTicks(Math.max(target.getFireTicks(), fireAspect * 80));
             if (knockback > 0) target.knockback(knockback * 0.5, Math.sin(yaw), -Math.cos(yaw));
         });
+    }
+
+    /*
+     * Like vanilla's TargetingConditions, a target is only noticed within the range scaled by its visibility, at least two blocks.
+     * Sneaking, invisibility without armor and mob heads against their own kind make players harder to notice.
+     */
+    private boolean notices(final Player target, final Location current, final double range) {
+        final var distance = Math.max(range * visibility(target), 2);
+        return current.distanceSquared(target.getLocation()) <= distance * distance;
+    }
+
+    // whether the player to look at is noticed and seen, positions to look at always are
+    private boolean noticesToLook(final LookAtGoal lookAt, @Nullable final Player viewer, final Location current) {
+        final var target = resolvePlayer(lookAt.target(), viewer, current);
+        return target == null || (notices(target, current, lookAt.range()) && sees(target));
+    }
+
+    // vanilla's LivingEntity#getVisibilityPercent of the target for this entity
+    private double visibility(final Player target) {
+        final var level = ((CraftWorld) target.getWorld()).getHandle();
+        final var looker = ((CraftEntity) entity).getHandle();
+        return ((CraftPlayer) target).getHandle().getVisibilityPercent(level, looker);
     }
 
     // like vanilla's Sensing#hasLineOfSight, from eye to eye, through liquids and blocks without collision
@@ -650,6 +677,10 @@ public final class EntityController {
                 if (target == null || !target.getWorld().equals(home.getWorld()) || target.isDead()) yield null;
                 if (target.getGameMode() == GameMode.CREATIVE || target.getGameMode() == GameMode.SPECTATOR) yield null;
                 if (target.getLocation().distanceSquared(home) > attack.range() * attack.range()) yield null;
+                // like vanilla's targeting conditions, a new target has to be noticed first, the one it attacks it keeps
+                final var attacking = attack.equals(pursued) && target.getUniqueId().equals(attackTarget);
+                if (!attacking && !notices(target, current, attack.range())) yield null;
+                attackTarget = target.getUniqueId();
                 // in reach, but behind a block or a corner, it keeps moving until it sees the target
                 if (isInReach(current, target) && sees(target)) yield new Action(null, target.getEyeLocation(), target);
                 // keeps its eyes on the target while chasing it, once it is close enough to see it
@@ -683,6 +714,8 @@ public final class EntityController {
                 if (target == null || !target.getWorld().equals(current.getWorld())) yield null;
                 if (target.distanceSquared(eyes(current)) > lookAt.range() * lookAt.range()) yield null;
                 if (!lead) yield new Action(null, target);
+                // like vanilla's LookAtPlayerGoal, it only starts looking at a player it notices and sees
+                if (start && !noticesToLook(lookAt, player, current)) yield null;
                 if (start) state.lookTicks = ThreadLocalRandom.current().nextInt(MIN_LOOK_TICKS, MAX_LOOK_TICKS + 1);
                 else if (--state.lookTicks <= 0) yield null;
                 yield new Action(null, target);
