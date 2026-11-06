@@ -1,5 +1,7 @@
 package net.thenextlvl.character.plugin.character.movement;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.thenextlvl.character.event.CharacterAttackEvent;
 import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
@@ -9,6 +11,7 @@ import net.thenextlvl.character.goal.MovementGoal;
 import net.thenextlvl.character.goal.PatrolGoal;
 import net.thenextlvl.character.goal.Target;
 import net.thenextlvl.character.goal.WanderGoal;
+import net.thenextlvl.character.plugin.CharacterBootstrap;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.property.EntityProperties;
@@ -394,7 +397,10 @@ public final class EntityController {
         final var fireAspect = weapon != null ? weapon.getEnchantmentLevel(Enchantment.FIRE_ASPECT) : 0;
         final var knockback = weapon != null ? weapon.getEnchantmentLevel(Enchantment.KNOCKBACK) : 0;
         final var damage = attackDamage(living) + (sharpness > 0 ? 0.5 * sharpness + 0.5 : 0);
-        final var source = DamageSource.builder(DamageType.MOB_ATTACK).withCausingEntity(living).withDirectEntity(living).build();
+        // mobs attack like mobs, the others like players, whose damage does not scale with the difficulty
+        final var type = living instanceof Mob ? DamageType.MOB_ATTACK
+                : RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).getOrThrow(CharacterBootstrap.MANNEQUIN_ATTACK);
+        final var source = DamageSource.builder(type).withCausingEntity(living).withDirectEntity(living).build();
         final var yaw = Math.toRadians(living.getYaw());
         plugin.supply(target, () -> {
             target.damage(damage, source);

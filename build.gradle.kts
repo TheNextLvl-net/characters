@@ -72,6 +72,7 @@ tasks.shadowJar {
 paper {
     name = "Characters"
     main = "net.thenextlvl.character.plugin.CharacterPlugin"
+    bootstrapper = "net.thenextlvl.character.plugin.CharacterBootstrap"
     apiVersion = "26.1"
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
