@@ -6,12 +6,14 @@ import com.mojang.brigadier.context.CommandContext;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.SimpleCommand;
+import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
+
+import java.util.Optional;
 
 @NullMarked
 final class CharacterTagTextCommand extends SimpleCommand {
@@ -35,13 +37,14 @@ final class CharacterTagTextCommand extends SimpleCommand {
     public int run(final CommandContext<CommandSourceStack> context) {
         final var sender = context.getSource().getSender();
         final var character = context.getArgument("character", Character.class);
-        final var text = tryGetArgument(context, "text", String.class).map(MiniMessage.miniMessage()::deserialize).orElse(null);
+        final var text = tryGetArgument(context, "text", String.class).orElse("<character>");
 
         final var success = character.setDisplayName(text);
         final var message = success ? "character.tag.text" : "nothing.changed";
 
+        final var preview = sender instanceof final Player player ? character.getDisplayName(player) : Optional.<Component>empty();
         plugin.bundle().sendMessage(sender, message,
-                Placeholder.component("text", text != null ? text : Component.text(character.getName())),
+                Placeholder.component("text", preview.orElseGet(() -> Component.text(text))),
                 Placeholder.unparsed("character", character.getName()));
         return success ? SINGLE_SUCCESS : 0;
     }

@@ -1,4 +1,5 @@
 import io.papermc.hangarpublishplugin.model.Platforms
+import net.minecrell.pluginyml.paper.PaperPluginDescription
 
 plugins {
     id("java")
@@ -25,6 +26,7 @@ configurations.compileClasspath {
 
 repositories {
     mavenCentral()
+    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     maven("https://repo.inventivetalent.org/repository/public/")
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.thenextlvl.net/releases")
@@ -33,6 +35,9 @@ repositories {
 
 dependencies {
     paperweight.paperDevBundle("26.3.build.+")
+
+    compileOnly("io.github.miniplaceholders:miniplaceholders-api:3.2.1-SNAPSHOT")
+    compileOnly("me.clip:placeholderapi:2.12.3")
 
     implementation("net.thenextlvl.core:paper:3.0.0-pre5")
     implementation("net.thenextlvl:nbt:4.3.6")
@@ -71,6 +76,17 @@ paper {
     website = "https://thenextlvl.net"
     authors = listOf("NonSwag")
     foliaSupported = true
+
+    serverDependencies {
+        register("MiniPlaceholders") {
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            required = false
+        }
+        register("PlaceholderAPI") {
+            load = PaperPluginDescription.RelativeLoadOrder.BEFORE
+            required = false
+        }
+    }
 
     permissions {
         register("characters.admin") {
@@ -135,6 +151,14 @@ hangarPublish { // docs - https://docs.papermc.io/misc/hangar-publishing
         platforms.register(Platforms.PAPER) {
             jar.set(tasks.shadowJar.flatMap { it.archiveFile })
             platformVersions.set(versions)
+            dependencies {
+                hangar("MiniPlaceholders") {
+                    required.set(false)
+                }
+                hangar("PlaceholderAPI") {
+                    required.set(false)
+                }
+            }
         }
     }
 }
@@ -148,4 +172,8 @@ modrinth {
     gameVersions.set(versions)
     syncBodyFrom.set(rootProject.file("README.md").readText())
     loaders.addAll((property("loaders") as String).split(",").map { it.trim() })
+    dependencies {
+        optional.project("miniplaceholders")
+        optional.project("placeholderapi")
+    }
 }

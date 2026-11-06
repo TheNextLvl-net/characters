@@ -147,23 +147,47 @@ public interface Character {
     CompletableFuture<Boolean> teleportAsync(Location location) throws IllegalArgumentException;
 
     /**
-     * Returns the display name of the character.
+     * Returns the unparsed display name of the character.
+     * <p>
+     * The display name is in the <a href="https://docs.papermc.io/adventure/minimessage/format">MiniMessage format</a>
+     * and parsed separately for every viewer, see {@link #getDisplayName(Player)}.
      *
-     * @return display name
-     * @since 0.1.0
+     * @return unparsed display name
+     * @since 0.9.0
      */
     @Contract(pure = true)
-    Optional<Component> getDisplayName();
+    Optional<String> getDisplayName();
 
     /**
-     * Sets the display name of the character.
+     * Returns the display name of the character as the given viewer sees it.
+     * <p>
+     * PlaceholderAPI placeholders are applied first if PlaceholderAPI is installed,
+     * the result is then parsed as MiniMessage with the following tags:
+     * <ul>
+     *     <li>the standard MiniMessage tags</li>
+     *     <li>MiniPlaceholders tags, if MiniPlaceholders is installed</li>
+     *     <li>{@code <character>}: the name of the character</li>
+     *     <li>{@code <player>}: the name of the viewer</li>
+     *     <li>{@code <players>}: the number of online players</li>
+     * </ul>
      *
-     * @param displayName new display name
+     * @param viewer the viewer
+     * @return parsed display name
+     * @since 0.9.0
+     */
+    @Contract(pure = true)
+    Optional<Component> getDisplayName(Player viewer);
+
+    /**
+     * Sets the unparsed display name of the character.
+     *
+     * @param displayName new display name in the MiniMessage format
      * @return {@code true} if the display name was changed, {@code false} otherwise
-     * @since 0.1.0
+     * @see #getDisplayName(Player)
+     * @since 0.9.0
      */
     @Contract(mutates = "this")
-    boolean setDisplayName(@Nullable Component displayName);
+    boolean setDisplayName(@Nullable String displayName);
 
     /**
      * Checks if the display name of the character is visible.

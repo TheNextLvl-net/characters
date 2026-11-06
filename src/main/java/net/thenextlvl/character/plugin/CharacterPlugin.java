@@ -37,6 +37,8 @@ import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.listener.WorldListener;
 import net.thenextlvl.character.plugin.model.MessageMigrator;
+import net.thenextlvl.character.plugin.placeholder.MiniPlaceholdersFormatter;
+import net.thenextlvl.character.plugin.placeholder.PlaceholderAPIFormatter;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.AttributesSnapshotAdapter;
 import net.thenextlvl.character.plugin.serialization.BlockDataAdapter;
@@ -218,6 +220,9 @@ public final class CharacterPlugin extends JavaPlugin {
 
     private final PluginVersionChecker versionChecker = new PluginVersionChecker(this);
 
+    private @Nullable MiniPlaceholdersFormatter miniFormatter = null;
+    private @Nullable PlaceholderAPIFormatter papiFormatter = null;
+
     private final PaperCharacterProvider characterProvider = new PaperCharacterProvider(this);
     private final PaperGoalFactory goalFactory = new PaperGoalFactory(this);
     private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
@@ -256,10 +261,30 @@ public final class CharacterPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        loadHooks();
         registerCommands();
         registerListeners();
         getServer().getWorlds().forEach(this::loadCharacters);
         warnUnmigratedCharacters();
+    }
+
+    private void loadHooks() {
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            papiFormatter = new PlaceholderAPIFormatter();
+            getComponentLogger().info("PlaceholderAPI detected, using for placeholders");
+        }
+        if (getServer().getPluginManager().isPluginEnabled("MiniPlaceholders")) {
+            miniFormatter = new MiniPlaceholdersFormatter();
+            getComponentLogger().info("MiniPlaceholders detected, using for placeholders");
+        }
+    }
+
+    public @Nullable MiniPlaceholdersFormatter miniFormatter() {
+        return miniFormatter;
+    }
+
+    public @Nullable PlaceholderAPIFormatter papiFormatter() {
+        return papiFormatter;
     }
 
     public void loadCharacters(final World world) {
