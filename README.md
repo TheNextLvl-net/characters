@@ -11,12 +11,11 @@ This plugin makes it simple!
 - **Advanced Click Actions** – Define custom interactions for your NPCs  
 - **Simple Yet Powerful API** – Perfect for developers to extend functionality  
 - **Custom Skins** – Upload skins from **files or URLs** with ease
-
-### What's Next?
-
-- **NPC Combat** – Give NPCs **weapons, health, and attack behaviors**  
-- **Custom AI Goals** – Make NPCs **chase players, guard areas, or look at the nearest player**  
-- **Advanced Movement** – Enable **patrolling, following, or roaming behaviors**
+- **NPC Combat** – Give NPCs **weapons**, **health**, and **attack behaviors**  
+- **Custom AI Goals** – Make NPCs **chase players**, **guard areas**, or **look at the nearest player**  
+- **Advanced Movement** – **patrolling, following**, or **roaming behaviors**
+- **Per-viewer appearance** – One character can have different appearances for each viewer
+- **Per-viewer behavior** – One character can perform multiple actions at once for each viewer
 
 [Download now](https://modrinth.com/project/oeBa7ep1)  
 [Check out the Wiki](https://thenextlvl.net/docs/characters)  
