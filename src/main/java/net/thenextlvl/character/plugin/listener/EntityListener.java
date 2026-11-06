@@ -11,12 +11,17 @@ import net.thenextlvl.character.event.PlayerCharacterInteractEvent;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
 import org.bukkit.GameRules;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockReceiveGameEvent;
+import org.bukkit.event.block.EntityBlockFormEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
@@ -72,6 +77,40 @@ public final class EntityListener implements Listener {
             if (damageEvent.callEvent()) event.setDamage(damageEvent.getDamage());
             else event.setCancelled(true);
         });
+    }
+
+    /*
+     * Every viewer has their own entity of a character, which no one else sees.
+     * Mechanisms like pressure plates, tripwires or sculk sensors would fire for everyone because of an entity
+     * only one player sees, so only characters that move alike for all viewers may use them, like doors.
+     */
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEntityInteract(final EntityInteractEvent event) {
+        if (!usesMechanisms(event.getEntity())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onBlockReceiveGameEvent(final BlockReceiveGameEvent event) {
+        final var entity = event.getEntity();
+        if (entity != null && !usesMechanisms(entity)) event.setCancelled(true);
+    }
+
+    // characters never change blocks, like trampling farmland or turtle eggs
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEntityChangeBlock(final EntityChangeBlockEvent event) {
+        if (plugin.characterProvider().isCharacterPart(event.getEntity())) event.setCancelled(true);
+    }
+
+    // or freeze water with frost walker
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEntityBlockForm(final EntityBlockFormEvent event) {
+        if (plugin.characterProvider().isCharacterPart(event.getEntity())) event.setCancelled(true);
+    }
+
+    private boolean usesMechanisms(final Entity entity) {
+        return plugin.characterProvider().getCharacter(entity)
+                .map(character -> ((PaperCharacter) character).movesAlike())
+                .orElse(false);
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
