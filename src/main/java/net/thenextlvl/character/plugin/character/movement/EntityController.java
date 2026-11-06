@@ -14,6 +14,8 @@ import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.property.EntityProperties;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
@@ -283,6 +285,7 @@ public final class EntityController {
         }
         entity.setVelocity(velocity);
         trackProgress(current, moving);
+        if (moving && sprinting) spawnSprintParticle(current, velocity, player);
 
         if (moving && opensDoors) {
             final var ahead = current.clone().add(velocity.clone().setY(0).normalize().multiply(halfWidth() + 0.6));
@@ -508,7 +511,7 @@ public final class EntityController {
         }
         if (running != null) state.lastGoal = goals.indexOf(running);
         state.running = null;
-        @Nullable Action hold = null;
+        Action hold = null;
         for (var i = 1; i <= goals.size(); i++) {
             final var index = Math.floorMod(state.lastGoal + i, goals.size());
             final var goal = goals.get(index);
@@ -805,6 +808,21 @@ public final class EntityController {
             return face.getDirection();
         }
         return null;
+    }
+
+    /*
+     * Like players, sprinting mannequins kick up particles of the block below them,
+     * which the client only shows for entities that have the sprinting flag, that can not be set for mannequins.
+     * Every viewer has their own entity, so only the viewer sees them.
+     */
+    private void spawnSprintParticle(final Location current, final Vector velocity, @Nullable final Player viewer) {
+        if (viewer == null || !entity.isOnGround()) return;
+        final var block = current.clone().subtract(0, 0.2, 0).getBlock();
+        if (block.isEmpty() || block.isLiquid() || block.getType() == Material.BARRIER) return;
+        final var random = ThreadLocalRandom.current();
+        final var width = entity.getWidth();
+        final var location = current.clone().add((random.nextDouble() - 0.5) * width, 0.1, (random.nextDouble() - 0.5) * width);
+        viewer.spawnParticle(Particle.BLOCK, location, 0, -velocity.getX() * 4, 1.5, -velocity.getZ() * 4, 1, block.getBlockData());
     }
 
     private void updateSprinting(final Location current, final Location target) {
