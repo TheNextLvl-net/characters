@@ -100,7 +100,6 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected volatile Path dataFile;
     protected volatile Path backupFile;
 
-    protected volatile Pose pose = Pose.STANDING;
     protected volatile boolean displayNameVisible = true;
     protected volatile boolean persistent = true;
     protected volatile boolean visibleByDefault = true;
