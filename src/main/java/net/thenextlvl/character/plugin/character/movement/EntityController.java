@@ -185,6 +185,7 @@ public final class EntityController {
     private volatile boolean teleporting;
 
     private List<Location> path = List.of();
+    private @Nullable Location pathStart;
     private boolean pathReaches;
     private @Nullable Location pathGoal;
     private int pathIndex;
@@ -398,7 +399,16 @@ public final class EntityController {
     // falling or jumping, not standing, climbing, swimming or flying
     private boolean isAirborne(final Location current) {
         if (flies() || entity.isOnGround()) return false;
-        return !isOnClimbable(current) && !PathFinder.isWater(current.getBlock());
+        return !isOnClimbable(current) && !PathFinder.isWater(current.getBlock()) && !isOnWall(current);
+    }
+
+    // whether the entity climbs walls and is at one it can hold on to
+    private boolean isOnWall(final Location current) {
+        if (!climbsWalls()) return false;
+        for (final var face : new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST}) {
+            if (isWall(current, face.getDirection(), current.getY())) return true;
+        }
+        return false;
     }
 
     // in a ladder, vine or scaffolding, or right above the top of one, from where it steps onto the ledge next to it
@@ -713,6 +723,7 @@ public final class EntityController {
         if (pathGoal == null || pathGoal.distanceSquared(target) > REPATH_DISTANCE * REPATH_DISTANCE || repathTicks-- <= 0) {
             final var found = pathFinder().find(current, target, movement.accuracy());
             path = found.nodes();
+            pathStart = found.start();
             pathReaches = found.reaches();
             pathGoal = target.clone();
             pathIndex = 0;
@@ -923,15 +934,55 @@ public final class EntityController {
         return FLYING_SPEED * relative * modifier;
     }
 
-    // the direction of a wall right next to the entity
-    private @Nullable Vector wallDirection(final Location current) {
-        final var block = current.getBlock();
+    // the direction of a wall right next to the hitbox of the entity, with a block within its height above both levels
+    // in a corner, the wall it is lined up with the node along, so it does not switch between the walls every tick
+    private @Nullable Vector wallDirection(final Location current, final double level, final double other, final double dx, final double dz) {
+        Vector wall = null;
         for (final var face : new BlockFace[]{BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST}) {
-            final var relative = block.getRelative(face);
-            if (relative.isPassable() || relative.isLiquid()) continue;
-            return face.getDirection();
+            final var direction = face.getDirection();
+            if (!isWall(current, direction, level) || !isWall(current, direction, other)) continue;
+            if (wall == null || sideOffset(direction, dx, dz) < sideOffset(wall, dx, dz)) wall = direction;
         }
-        return null;
+        return wall;
+    }
+
+    // whether there is nothing right above the hitbox of the entity that would stop it climbing
+    private boolean isHeadClear(final Location current) {
+        final var half = entity.getWidth() / 2 - 0.01;
+        final var y = (int) Math.floor(current.getY() + entity.getHeight() + CLIMBING_VELOCITY);
+        for (var x = (int) Math.floor(current.getX() - half); x <= (int) Math.floor(current.getX() + half); x++) {
+            for (var z = (int) Math.floor(current.getZ() - half); z <= (int) Math.floor(current.getZ() + half); z++) {
+                final var block = current.getWorld().getBlockAt(x, y, z);
+                if (!block.isPassable() && !block.isLiquid()) return false;
+            }
+        }
+        return true;
+    }
+
+    // how far the node is beside the entity, along the wall
+    private static double sideOffset(final Vector wall, final double dx, final double dz) {
+        final var into = dx * wall.getX() + dz * wall.getZ();
+        return Math.hypot(dx - wall.getX() * into, dz - wall.getZ() * into);
+    }
+
+    // whether there is a wall on the given side of the hitbox, with a block within the height of the entity above the level
+    private boolean isWall(final Location current, final Vector direction, final double level) {
+        final var half = entity.getWidth() / 2;
+        // just outside the hitbox, the blocks along each side of it
+        final var reach = half + 0.35;
+        final var height = Math.max(1, entity.getHeight());
+        final var across = new Vector(-direction.getZ(), 0, direction.getX());
+        // slightly inside the hitbox, a block only diagonal to it is no wall it touches
+        final var side = half - 0.01;
+        for (var offset = -side; offset <= side + 1e-6; offset += Math.max(side, 0.5)) {
+            final var x = (int) Math.floor(current.getX() + direction.getX() * reach + across.getX() * offset);
+            final var z = (int) Math.floor(current.getZ() + direction.getZ() * reach + across.getZ() * offset);
+            for (var y = (int) Math.floor(level); y < level + height; y++) {
+                final var block = current.getWorld().getBlockAt(x, y, z);
+                if (!block.isPassable() && !block.isLiquid()) return true;
+            }
+        }
+        return false;
     }
 
     /*
@@ -965,7 +1016,10 @@ public final class EntityController {
         // close above or below the wanted position, the direction to it would flip around and the entity would spin,
         // so it keeps walking the way it faces to drop down from a ledge it is still standing on,
         // and entities that climb walls push against the wall to climb up, vanilla makes them climb when they touch it
-        if (horizontalSquared < STEERING_DISTANCE * STEERING_DISTANCE) {
+        // the nodes of wall climbers are in the middle of their footprint, which can leave a gap to the wall,
+        // pushing against the wall moves them that much further away from the node, without steering back
+        final var steering = climbsWalls() && dy > 0 ? STEERING_DISTANCE + footprintGap() : STEERING_DISTANCE;
+        if (horizontalSquared < steering * steering) {
             // up a ladder, vine or scaffolding
             if (dy > 0 && PathFinder.isClimbable(current.getBlock())) {
                 climbing = true;
@@ -987,8 +1041,23 @@ public final class EntityController {
                 return new Vector(-Math.sin(radians) * speed, 0, Math.cos(radians) * speed);
             }
             if (dy <= 0 || !climbsWalls()) return new Vector();
-            final var wall = wallDirection(current);
-            return wall != null ? wall.multiply(speed(modifier, false)) : new Vector();
+            // the wall it touches that goes up to the node, not a lower block next to it the entity would climb and lose again,
+            // nor a wall above it, which it can not reach
+            // climbs the wall and slides along it to the node, like from one wall to another in a corner,
+            // but not while something is right above it, it would climb into the underside of a ledge
+            final var wall = wallDirection(current, current.getY(), wanted.getY(), dx, dz);
+            if (wall != null && isHeadClear(current)) {
+                final var speed = speed(modifier, false);
+                final var into = dx * wall.getX() + dz * wall.getZ();
+                final var side = new Vector(dx - wall.getX() * into, 0, dz - wall.getZ() * into);
+                if (side.length() > speed) side.multiply(speed / side.length());
+                return wall.multiply(speed).add(side);
+            }
+            // not at the wall yet, or under a ledge, keep walking to the node next to it
+            final var distance = Math.sqrt(horizontalSquared);
+            if (distance < 0.01) return new Vector();
+            final var speed = Math.min(speed(modifier, false), distance);
+            return new Vector(dx / distance * speed, 0, dz / distance * speed);
         }
 
         final var wantedYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
@@ -1013,8 +1082,8 @@ public final class EntityController {
         // only jump if a block in the way is higher than the entity can step up, not for every higher waypoint
         // climbing a ladder that is further away, like vanilla when walking into it
         climbing = dy > 0 && PathFinder.isClimbable(current.getBlock());
-        // over a gap or a damaging block, the wanted position is two blocks away
-        if (!climbing && horizontalSquared > 1.5 * 1.5 && isEdge(current, radians)) {
+        // over a gap or a damaging block, the pathfinder put the wanted node two blocks after the previous one
+        if (!climbing && isJumpNode() && horizontalSquared > 1.5 * 1.5 && isEdge(current, radians)) {
             jumping = true;
             return new Vector(-Math.sin(radians) * speed, 0, Math.cos(radians) * speed);
         }
@@ -1053,6 +1122,15 @@ public final class EntityController {
             return JUMP_VELOCITY;
         }
         return velocity;
+    }
+
+    // whether the current node is a jump of the pathfinder, two blocks straight after the previous node
+    private boolean isJumpNode() {
+        if (pathIndex >= path.size()) return false;
+        final var node = path.get(pathIndex);
+        final var previous = pathIndex > 0 ? path.get(pathIndex - 1) : pathStart;
+        if (previous == null) return false;
+        return Math.abs(node.getX() - previous.getX()) >= 2 || Math.abs(node.getZ() - previous.getZ()) >= 2;
     }
 
     // whether the entity is at the edge of a gap or a damaging block, where it has to jump off
@@ -1127,6 +1205,8 @@ public final class EntityController {
     }
 
     private boolean arrived(final Location current, final Location target, final double distance) {
+        // like vanilla, it only clings to a wall while moving into it, stopping there would make it fall off
+        if (!entity.isOnGround() && isOnWall(current)) return false;
         if (distance > 0) return current.distanceSquared(target) <= distance * distance;
         return horizontalDistance(current, target) <= waypointDistance() && Math.abs(current.getY() - target.getY()) <= ARRIVAL_HEIGHT;
     }
@@ -1141,9 +1221,16 @@ public final class EntityController {
         return entity.getWidth() / 2;
     }
 
+    // the space between the hitbox and the edge of the blocks the pathfinder reserves for it, see PathFinder
+    private double footprintGap() {
+        final var width = entity.getWidth();
+        return (Math.max(1, (int) (width + 1)) - width) / 2;
+    }
+
     private void clearPath() {
         sprinting = false;
         path = List.of();
+        pathStart = null;
         pathReaches = false;
         pathGoal = null;
         pathIndex = 0;
@@ -1151,7 +1238,7 @@ public final class EntityController {
     }
 
     private PathFinder pathFinder() {
-        return new PathFinder(plugin.getServer(), entity.getWorld(), entity.getHeight(), eyeHeight(),
+        return new PathFinder(plugin.getServer(), entity.getWorld(), entity.getHeight(), entity.getWidth(), eyeHeight(),
                 opensDoors, swimming(), followRange(), climbsWalls(), flies(), jumpsGaps(), pathMalus());
     }
 

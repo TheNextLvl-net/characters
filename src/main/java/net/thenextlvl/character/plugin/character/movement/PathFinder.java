@@ -25,6 +25,9 @@ import java.util.Set;
  * A* pathfinding over the blocks of a world, modelled after vanilla's {@code WalkNodeEvaluator},
  * independent of the entity type.
  * <p>
+ * Like in vanilla, wide entities cover {@code (int) (width + 1)} blocks per side,
+ * so a node is the north-west corner of the area the entity covers, and every block of that area is checked.
+ * <p>
  * Nodes are the blocks an entity can stand or swim in: the block and the blocks above it up to the entity height
  * are passable, water, an open door or, if the entity may open doors, a door that can be opened by hand,
  * and the block below has a collision box, unless the entity swims.
@@ -95,6 +98,8 @@ public final class PathFinder {
     private final Server server;
     private final World world;
     private final int height;
+    // the number of blocks the entity covers per side
+    private final int width;
     private final double eyeHeight;
     private final boolean openDoors;
     private final Swimming swimming;
@@ -125,6 +130,7 @@ public final class PathFinder {
      * @param server       the server, used to check region ownership
      * @param world        the world to find paths in
      * @param entityHeight the height of the entity, to check the clearance
+     * @param entityWidth  the width of the entity, to check the clearance
      * @param eyeHeight    the eye height of the entity, to keep its eyes above water
      * @param openDoors    whether the entity may open closed doors
      * @param swimming     how the entity moves in water
@@ -134,12 +140,13 @@ public final class PathFinder {
      * @param jumps        whether the entity is fast enough to jump over gaps and damaging blocks
      * @param overrides    the malus of path types that differ for the entity, like in vanilla
      */
-    public PathFinder(final Server server, final World world, final double entityHeight, final double eyeHeight,
+    public PathFinder(final Server server, final World world, final double entityHeight, final double entityWidth, final double eyeHeight,
                       final boolean openDoors, final Swimming swimming, final double followRange,
                       final boolean climbs, final boolean flies, final boolean jumps, final Map<PathType, Float> overrides) {
         this.server = server;
         this.world = world;
         this.height = Math.max(1, (int) Math.ceil(entityHeight));
+        this.width = Math.max(1, (int) (entityWidth + 1));
         this.eyeHeight = eyeHeight;
         this.openDoors = openDoors;
         this.swimming = swimming;
@@ -165,11 +172,12 @@ public final class PathFinder {
     /**
      * A path to walk.
      *
+     * @param start   the bottom center of the start node, {@code null} for no path
      * @param nodes   the bottom centers of the nodes to walk through, excluding the start
      * @param reaches whether the path reaches the goal, otherwise it ends at the node closest to it
      */
-    public record Path(List<Location> nodes, boolean reaches) {
-        public static final Path EMPTY = new Path(List.of(), false);
+    public record Path(@Nullable Location start, List<Location> nodes, boolean reaches) {
+        public static final Path EMPTY = new Path(null, List.of(), false);
     }
 
     /**
@@ -196,8 +204,8 @@ public final class PathFinder {
      * @return the path, empty if no step brings the entity closer
      */
     public Path find(final Location from, final Location to, final int accuracy) {
-        final var start = node(from.getBlockX(), from.getBlockY(), from.getBlockZ());
-        final var goal = node(to.getBlockX(), to.getBlockY(), to.getBlockZ());
+        final var start = node(corner(from.getX()), from.getBlockY(), corner(from.getZ()));
+        final var goal = node(corner(to.getX()), to.getBlockY(), corner(to.getZ()));
 
         final var open = new PriorityQueue<Node>();
         final var parents = new HashMap<Long, Long>();
@@ -212,7 +220,7 @@ public final class PathFinder {
         while (!open.isEmpty() && closed.size() < maxNodes) {
             final var current = open.poll();
             if (!closed.add(current.key())) continue;
-            if (manhattan(current.key(), goal) <= accuracy) return new Path(path(parents, current.key()), true);
+            if (manhattan(current.key(), goal) <= accuracy) return new Path(location(start), path(parents, current.key()), true);
 
             final var distance = distance(current.key(), goal);
             if (distance < closestDistance) {
@@ -231,7 +239,11 @@ public final class PathFinder {
                 open.add(new Node(neighbor, cost, cost + distance(neighbor, goal)));
             }
         }
-        return new Path(path(parents, closest), false);
+        return new Path(location(start), path(parents, closest), false);
+    }
+
+    private Location location(final long node) {
+        return new Location(world, center(x(node)), y(node), center(z(node)));
     }
 
     /**
@@ -259,13 +271,32 @@ public final class PathFinder {
                 // walks along the ground like on land
             }
         }
-        final var below = world.getBlockAt(x, y - 1, z);
-        // striders walk on lava, which vanilla lets them stand on
-        if (below.getType() == Material.LAVA && malus(PathType.LAVA) == 0) return (double) y;
-        if (below.isPassable() || below.isLiquid()) return null;
-        // ladders and vines have a collision box, but nothing to stand on, an entity on top of one hangs in it
-        if (isClimbable(below)) return null;
-        return below.getBoundingBox().getMaxY();
+        // the highest ground below the area the entity covers, like an entity hanging over an edge
+        Double ground = null;
+        for (var dx = 0; dx < width; dx++) {
+            for (var dz = 0; dz < width; dz++) {
+                final var below = world.getBlockAt(x + dx, y - 1, z + dz);
+                final double top;
+                // striders walk on lava, which vanilla lets them stand on
+                if (below.getType() == Material.LAVA && malus(PathType.LAVA) == 0) top = y;
+                else if (below.isPassable() || below.isLiquid()) continue;
+                // ladders and vines have a collision box, but nothing to stand on, an entity on top of one hangs in it
+                else if (isClimbable(below)) continue;
+                else top = below.getBoundingBox().getMaxY();
+                if (ground == null || top > ground) ground = top;
+            }
+        }
+        return ground;
+    }
+
+    // the corner node of the area an entity centered at the given coordinate covers
+    private int corner(final double center) {
+        return (int) Math.floor(center - width / 2d + 0.5);
+    }
+
+    // the center of the area an entity covers from the given corner node
+    private double center(final int corner) {
+        return corner + width / 2d;
     }
 
     /**
@@ -282,7 +313,7 @@ public final class PathFinder {
             for (final var dy : offset == 0 ? new int[]{0} : new int[]{offset, -offset}) {
                 final var standing = standingHeight(x, y + dy, z);
                 if (standing != null && malus(node(x, y + dy, z)) != BLOCKED) {
-                    return new Location(world, x + 0.5, standing, z + 0.5);
+                    return new Location(world, center(x), standing, center(z));
                 }
             }
         }
@@ -361,7 +392,8 @@ public final class PathFinder {
         if (isOnLadder(x, y - 1, z)) addIfPassable(neighbors, x, y - 1, z);
         // climbing up and down walls
         if (climbs) {
-            if (isOnWall(x, y + 1, z) && isClear(x, y + height, z)) addIfPassable(neighbors, x, y + 1, z);
+            // like vanilla, it only climbs while touching a wall, a wall that only starts above it is out of reach
+            if (isOnWall(x, y, z) && isOnWall(x, y + 1, z) && isClear(x, y + height, z)) addIfPassable(neighbors, x, y + 1, z);
             if (isOnWall(x, y - 1, z)) addIfPassable(neighbors, x, y - 1, z);
         }
         // swimming up and down
@@ -478,13 +510,20 @@ public final class PathFinder {
     // a block next to a wall an entity that climbs walls can cling to
     private boolean isOnWall(final int x, final int y, final int z) {
         if (!climbs || !isClear(x, y, z)) return false;
-        for (var i = 0; i < 4; i++) {
-            final var direction = DIRECTIONS[i];
-            if (!isAccessible(x + direction[0], z + direction[1])) continue;
-            for (var h = 0; h < height; h++) {
-                final var block = world.getBlockAt(x + direction[0], y + h, z + direction[1]);
-                if (!block.isPassable() && !block.isLiquid()) return true;
-            }
+        // the columns right outside the footprint, on all four sides
+        for (var i = 0; i < width; i++) {
+            if (isWall(x - 1, y, z + i) || isWall(x + width, y, z + i)
+                || isWall(x + i, y, z - 1) || isWall(x + i, y, z + width)) return true;
+        }
+        return false;
+    }
+
+    // whether the column has a block the entity can cling to within its height
+    private boolean isWall(final int x, final int y, final int z) {
+        if (!isAccessible(x, z)) return false;
+        for (var h = 0; h < height; h++) {
+            final var block = world.getBlockAt(x, y + h, z);
+            if (!block.isPassable() && !block.isLiquid()) return true;
         }
         return false;
     }
@@ -496,6 +535,23 @@ public final class PathFinder {
 
     // the highest malus of the path types of the node, like vanilla, or blocked if any of them is
     private float pathMalus(final int x, final int y, final int z) {
+        var malus = 0f;
+        for (var dx = 0; dx < width; dx++) {
+            for (var dz = 0; dz < width; dz++) {
+                final var column = columnMalus(x + dx, y, z + dz);
+                if (column == BLOCKED) return BLOCKED;
+                malus = Math.max(malus, column);
+            }
+        }
+        for (final var neighbor : neighborTypes(x, y, z)) {
+            if (isBlocked(neighbor)) return BLOCKED;
+            malus = Math.max(malus, malus(neighbor));
+        }
+        return malus;
+    }
+
+    // the path types of the blocks the entity is in and stands on
+    private float columnMalus(final int x, final int y, final int z) {
         var malus = 0f;
         for (var i = 0; i < height; i++) {
             final var block = world.getBlockAt(x, y + i, z);
@@ -518,21 +574,18 @@ public final class PathFinder {
             if (isBlocked(floor)) return BLOCKED;
             malus = Math.max(malus, malus(floor));
         }
-        for (final var neighbor : neighborTypes(x, y, z)) {
-            if (isBlocked(neighbor)) return BLOCKED;
-            malus = Math.max(malus, malus(neighbor));
-        }
         return malus;
     }
 
     // like vanilla, blocks next to fire, lava, damaging blocks or water have their own path types
     private Set<PathType> neighborTypes(final int x, final int y, final int z) {
         final var types = EnumSet.noneOf(PathType.class);
-        for (var dx = -1; dx <= 1; dx++) {
-            for (var dz = -1; dz <= 1; dz++) {
+        for (var dx = -1; dx <= width; dx++) {
+            for (var dz = -1; dz <= width; dz++) {
                 if (!isAccessible(x + dx, z + dz)) continue;
                 for (var dy = -1; dy <= 1; dy++) {
-                    if (dx == 0 && dy == 0 && dz == 0) continue;
+                    // the blocks around the area, not the ones the entity is in
+                    if (dx >= 0 && dx < width && dz >= 0 && dz < width && dy == 0) continue;
                     final var block = world.getBlockAt(x + dx, y + dy, z + dz);
                     final var type = block.getType();
                     if (type == Material.LAVA || type == Material.MAGMA_BLOCK || isFire(type)) types.add(PathType.FIRE_IN_NEIGHBOR);
@@ -565,7 +618,17 @@ public final class PathFinder {
     }
 
     // whether the entity fits into the column at the given block
+    // whether the entity fits into the area at the given corner
     private boolean isClear(final int x, final int y, final int z) {
+        for (var dx = 0; dx < width; dx++) {
+            for (var dz = 0; dz < width; dz++) {
+                if (!isClearColumn(x + dx, y, z + dz)) return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isClearColumn(final int x, final int y, final int z) {
         if (!isAccessible(x, z) || y + height > world.getMaxHeight()) return false;
         for (var i = 0; i < height; i++) {
             if (!canOccupy(world.getBlockAt(x, y + i, z))) return false;
@@ -587,7 +650,7 @@ public final class PathFinder {
             final var y = y(current);
             final var z = z(current);
             final var height = nodeHeight(x, y, z);
-            path.add(new Location(world, x + 0.5, height != null ? height : y, z + 0.5));
+            path.add(new Location(world, center(x), height != null ? height : y, center(z)));
             current = parents.get(current);
         }
         Collections.reverse(path);

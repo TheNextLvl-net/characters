@@ -274,12 +274,28 @@ class PathFinderTest {
         final var from = new Location(world.proxy(), 0.5, FLOOR + 1, 0.5);
         final var to = new Location(world.proxy(), 3.5, FLOOR + 6, 0.5);
 
-        final var spider = new PathFinder(world.server(), world.proxy(), 0.9, 0.65, false, PathFinder.Swimming.SURFACE, 48, true, false, false, Map.of());
+        final var spider = new PathFinder(world.server(), world.proxy(), 0.9, 0.6, 0.65, false, PathFinder.Swimming.SURFACE, 48, true, false, false, Map.of());
         final var climbing = spider.find(from, to, 0);
         assertTrue(climbing.reaches(), "did not climb the wall");
         assertEnd(climbing.nodes(), 3, FLOOR + 6, 0);
 
         assertFalse(finder(world, false).find(from, to, 0).reaches(), "walked up a wall without climbing");
+
+        // spiders are wider than a block, the wall is next to their footprint, not next to a single column
+        final var wide = new PathFinder(world.server(), world.proxy(), 0.9, 1.4, 0.65, false, PathFinder.Swimming.SURFACE, 48, true, false, false, Map.of());
+        final var wideClimbing = wide.find(new Location(world.proxy(), 0, FLOOR + 1, 0), new Location(world.proxy(), 4, FLOOR + 6, 0), 1);
+        assertTrue(wideClimbing.reaches(), "the wide spider did not climb the wall: " + describe(wideClimbing.nodes()));
+    }
+
+    @Test
+    void doesNotClimbWallsAboveIt() {
+        final var world = new FakeWorld();
+        world.floor(-10, 10);
+        // a floating wall with a one block high gap below it, like vanilla, it is out of reach to climb from the ground
+        for (var z = -10; z <= 10; z++) for (var x = 3; x <= 4; x++) for (var y = FLOOR + 2; y <= FLOOR + 5; y++) world.blocks.put(key(x, y, z), Kind.SOLID);
+        final var spider = new PathFinder(world.server(), world.proxy(), 0.9, 1.4, 0.65, false, PathFinder.Swimming.SURFACE, 48, true, false, false, Map.of());
+        final var path = spider.find(new Location(world.proxy(), 0, FLOOR + 1, 0), new Location(world.proxy(), 4, FLOOR + 6, 0), 1);
+        assertFalse(path.reaches(), "climbed a wall it does not touch: " + describe(path.nodes()));
     }
 
     @Test
@@ -287,7 +303,7 @@ class PathFinderTest {
         final var world = new FakeWorld();
         world.floor(-10, 10);
         for (var z = -10; z <= 10; z++) for (var y = FLOOR + 1; y <= FLOOR + 5; y++) world.blocks.put(key(3, y, z), Kind.SOLID);
-        final var flyer = new PathFinder(world.server(), world.proxy(), 0.6, 0.3, false, PathFinder.Swimming.SURFACE, 48, false, true, false, Map.of());
+        final var flyer = new PathFinder(world.server(), world.proxy(), 0.6, 0.6, 0.3, false, PathFinder.Swimming.SURFACE, 48, false, true, false, Map.of());
         final var path = flyer.find(new Location(world.proxy(), 0.5, FLOOR + 1, 0.5), new Location(world.proxy(), 6.5, FLOOR + 1, 0.5), 0);
         assertTrue(path.reaches(), "did not fly over the wall");
         assertTrue(path.nodes().stream().anyMatch(location -> location.getY() > FLOOR + 5), "did not fly above the wall");
@@ -447,7 +463,7 @@ class PathFinderTest {
         assertEnd(path, 6, FLOOR + 1, 0);
         assertTrue(path.stream().allMatch(location -> Math.abs(location.getBlockZ()) <= 1), "walked around the gap: " + describe(path));
 
-        final var slow = new PathFinder(world.server(), world.proxy(), 1.8, 1.62, false, PathFinder.Swimming.SURFACE, 48, false, false, false, Map.of())
+        final var slow = new PathFinder(world.server(), world.proxy(), 1.8, 0.6, 1.62, false, PathFinder.Swimming.SURFACE, 48, false, false, false, Map.of())
                 .find(new Location(world.proxy(), 0.5, FLOOR + 1, 0.5), new Location(world.proxy(), 6.5, FLOOR + 1, 0.5));
         assertTrue(slow.stream().anyMatch(location -> location.getBlockZ() >= 8), "jumped without being fast enough: " + describe(slow));
     }
@@ -469,7 +485,7 @@ class PathFinderTest {
         world.floor(-10, 10);
         // a lava lake across the whole floor
         for (var x = 1; x <= 5; x++) for (var z = -10; z <= 10; z++) world.blocks.put(key(x, FLOOR, z), Kind.LAVA);
-        final var strider = new PathFinder(world.server(), world.proxy(), 1.7, 1.5, false, PathFinder.Swimming.SINK, 48, false, false, false,
+        final var strider = new PathFinder(world.server(), world.proxy(), 1.7, 0.9, 1.5, false, PathFinder.Swimming.SINK, 48, false, false, false,
                 Map.of(PathFinder.PathType.LAVA, 0f, PathFinder.PathType.FIRE_IN_NEIGHBOR, 0f));
         final var path = strider.find(new Location(world.proxy(), 0.5, FLOOR + 1, 0.5), new Location(world.proxy(), 7.5, FLOOR + 1, 0.5), 0);
         assertTrue(path.reaches(), "did not walk on the lava: " + describe(path.nodes()));
@@ -485,10 +501,28 @@ class PathFinderTest {
         final var finder = finder(world, false);
         // only a small malus for entities without overrides
         assertTrue(finder.find(new Location(world.proxy(), 2.5, FLOOR + 1, -1.5), new Location(world.proxy(), 2.5, FLOOR + 1, 0.5), 0).reaches());
-        final var animal = new PathFinder(world.server(), world.proxy(), 1.4, 1.3, false, PathFinder.Swimming.SURFACE, 48, false, false, false,
+        final var animal = new PathFinder(world.server(), world.proxy(), 1.4, 0.9, 1.3, false, PathFinder.Swimming.SURFACE, 48, false, false, false,
                 Map.of(PathFinder.PathType.FIRE, -1f, PathFinder.PathType.FIRE_IN_NEIGHBOR, 16f));
         assertFalse(animal.find(new Location(world.proxy(), 2.5, FLOOR + 1, -1.5), new Location(world.proxy(), 2.5, FLOOR + 1, 0.5), 0).reaches(),
                 "walked into fire");
+    }
+
+    @Test
+    void wideEntitiesDoNotFitThroughNarrowGaps() {
+        final var world = new FakeWorld();
+        world.floor(-10, 10);
+        // a wall across the floor with a one block wide gap, and a two block wide gap far away
+        for (var z = -10; z <= 10; z++) if (z != 0 && z != 8 && z != 9) world.wall(3, z);
+        final var from = new Location(world.proxy(), 0.5, FLOOR + 1, 0.5);
+        final var to = new Location(world.proxy(), 6.5, FLOOR + 1, 0.5);
+        final var narrow = finder(world, false).find(from, to, 0);
+        assertTrue(narrow.reaches());
+        assertTrue(narrow.nodes().stream().allMatch(location -> Math.abs(location.getBlockZ()) <= 2), "a narrow entity walked around: " + describe(narrow.nodes()));
+
+        final var wide = new PathFinder(world.server(), world.proxy(), 1.6, 1.4, 1.4, false, PathFinder.Swimming.SURFACE, 48, false, false, false, Map.of())
+                .find(new Location(world.proxy(), 1, FLOOR + 1, 1), new Location(world.proxy(), 7, FLOOR + 1, 1), 1);
+        assertTrue(wide.reaches(), "the wide entity did not find the wide gap: " + describe(wide.nodes()));
+        assertTrue(wide.nodes().stream().anyMatch(location -> location.getBlockZ() >= 8), "the wide entity squeezed through the narrow gap: " + describe(wide.nodes()));
     }
 
     @Test
@@ -517,7 +551,7 @@ class PathFinderTest {
 
     private static PathFinder finder(final FakeWorld world, final boolean openDoors, final PathFinder.Swimming swimming) {
         // a larger follow range than the default, as the test worlds are mostly open floor
-        return new PathFinder(world.server(), world.proxy(), 1.8, 1.62, openDoors, swimming, 48, false, false, true, Map.of());
+        return new PathFinder(world.server(), world.proxy(), 1.8, 0.6, 1.62, openDoors, swimming, 48, false, false, true, Map.of());
     }
 
     private static void assertEnd(final List<Location> path, final int x, final int y, final int z) {
