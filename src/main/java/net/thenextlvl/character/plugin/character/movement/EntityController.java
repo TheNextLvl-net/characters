@@ -2,6 +2,8 @@ package net.thenextlvl.character.plugin.character.movement;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.minecraft.network.protocol.game.ClientboundAnimatePacket;
+import net.minecraft.server.level.ServerLevel;
 import net.thenextlvl.character.event.CharacterAttackEvent;
 import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
@@ -19,31 +21,35 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.entity.CraftEntity;
-import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.block.data.type.Ladder;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.damage.CraftDamageSource;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.AbstractCubeMob;
-import org.bukkit.entity.Creeper;
-import org.bukkit.entity.Cat;
-import org.bukkit.entity.Ocelot;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Animals;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.Breeze;
+import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.CopperGolem;
 import org.bukkit.entity.Creaking;
+import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Drowned;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Enderman;
@@ -58,6 +64,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.MagmaCube;
 import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Ocelot;
 import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.PigZombie;
@@ -77,6 +84,8 @@ import org.bukkit.entity.Wither;
 import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Wolf;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -396,16 +405,47 @@ public final class EntityController {
         final var sharpness = weapon != null ? weapon.getEnchantmentLevel(Enchantment.SHARPNESS) : 0;
         final var fireAspect = weapon != null ? weapon.getEnchantmentLevel(Enchantment.FIRE_ASPECT) : 0;
         final var knockback = weapon != null ? weapon.getEnchantmentLevel(Enchantment.KNOCKBACK) : 0;
-        final var damage = attackDamage(living) + (sharpness > 0 ? 0.5 * sharpness + 0.5 : 0);
+        final var base = attackDamage(living);
+        final var bonus = sharpness > 0 ? 0.5 * sharpness + 0.5 : 0;
         // mobs attack like mobs, the others like players, whose damage does not scale with the difficulty
-        final var type = living instanceof Mob ? DamageType.MOB_ATTACK
-                : RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).getOrThrow(CharacterBootstrap.MANNEQUIN_ATTACK);
+        final var playerLike = !(living instanceof Mob);
+        final var type = playerLike ? RegistryAccess.registryAccess().getRegistry(RegistryKey.DAMAGE_TYPE).getOrThrow(CharacterBootstrap.MANNEQUIN_ATTACK)
+                : DamageType.MOB_ATTACK;
         final var source = DamageSource.builder(type).withCausingEntity(living).withDirectEntity(living).build();
+
+        // like vanilla's Player#attack, a sprinting hit knocks back further, a falling one is critical and a sword sweeps
+        final var knockbackAttack = playerLike && sprinting;
+        final var critical = playerLike && canCriticalAttack(living);
+        final var sweep = playerLike && !critical && !knockbackAttack && isSweepAttack(living, weapon);
+        final var damage = (critical ? base * 1.5 : base) + bonus;
+        final var sweepDamage = 1 + sweepingDamageRatio(living) * base + bonus;
+        final var strength = knockback * 0.5 + (knockbackAttack ? 0.5 : 0);
+        if (knockbackAttack) {
+            // the sprint ends with the hit
+            sprinting = false;
+            entity.setVelocity(entity.getVelocity().multiply(new Vector(0.6, 1, 0.6)));
+        }
+        final var origin = living.getLocation();
         final var yaw = Math.toRadians(living.getYaw());
         plugin.supply(target, () -> {
-            target.damage(damage, source);
+            // only the target sees this entity, so only the target hears and sees the effects of its attack
+            if (knockbackAttack) playAttackSound(target, origin, Sound.ENTITY_PLAYER_ATTACK_KNOCKBACK);
+            final var handle = ((CraftPlayer) target).getHandle();
+            var nmsSource = ((CraftDamageSource) source).getHandle();
+            if (critical) nmsSource = nmsSource.critical();
+            if (!handle.hurtServer(handle.level(), nmsSource, (float) damage)) {
+                if (playerLike) playAttackSound(target, origin, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE);
+                return;
+            }
             if (fireAspect > 0) target.setFireTicks(Math.max(target.getFireTicks(), fireAspect * 80));
-            if (knockback > 0) target.knockback(knockback * 0.5, Math.sin(yaw), -Math.cos(yaw));
+            if (strength > 0) target.knockback(strength, Math.sin(yaw), -Math.cos(yaw));
+            if (sweep) sweep(target, origin, yaw, ((CraftDamageSource) source).getHandle(), sweepDamage);
+            if (critical) {
+                playAttackSound(target, origin, Sound.ENTITY_PLAYER_ATTACK_CRIT);
+                handle.connection.send(new ClientboundAnimatePacket(handle, ClientboundAnimatePacket.CRITICAL_HIT));
+            } else if (!sweep && playerLike) {
+                playAttackSound(target, origin, Sound.ENTITY_PLAYER_ATTACK_STRONG);
+            }
         });
     }
 
@@ -434,6 +474,55 @@ public final class EntityController {
     // like vanilla's Sensing#hasLineOfSight, from eye to eye, through liquids and blocks without collision
     private boolean sees(final Player target) {
         return !(entity instanceof final LivingEntity living) || living.hasLineOfSight(target);
+    }
+
+    // like vanilla's Player#canCriticalAttack, falling onto the target, but not while climbing, swimming, riding, blind or sprinting
+    private boolean canCriticalAttack(final LivingEntity living) {
+        return living.getFallDistance() > 0 && !living.isOnGround() && !isOnClimbable(living.getLocation())
+               && !living.isInWater() && !living.isInsideVehicle() && !living.hasPotionEffect(PotionEffectType.BLINDNESS)
+               && !sprinting;
+    }
+
+    // like vanilla's Player#isSweepAttack, on the ground, not faster than walking, with a sword
+    private boolean isSweepAttack(final LivingEntity living, @Nullable final ItemStack weapon) {
+        if (!living.isOnGround() || weapon == null || !Tag.ITEMS_SWORDS.isTagged(weapon.getType())) return false;
+        final var attribute = living.getAttribute(Attribute.MOVEMENT_SPEED);
+        final var maxSpeed = (attribute != null ? attribute.getValue() : Attribute.MOVEMENT_SPEED.getDefaultValue()) * 2.5;
+        final var velocity = living.getVelocity();
+        return velocity.getX() * velocity.getX() + velocity.getZ() * velocity.getZ() < maxSpeed * maxSpeed;
+    }
+
+    private static double sweepingDamageRatio(final LivingEntity living) {
+        final var attribute = living.getAttribute(Attribute.SWEEPING_DAMAGE_RATIO);
+        return attribute != null ? attribute.getValue() : 0;
+    }
+
+    /*
+     * Like vanilla's Player#doSweepAttack, the mobs around the target in reach of the entity take damage and are knocked back.
+     * Other players have their own entity of the character, one they do not see would hurt them, so they are spared,
+     * like the entities of characters.
+     */
+    private void sweep(final Player target, final Location origin, final double yaw,
+                       final net.minecraft.world.damagesource.DamageSource source, final double damage) {
+        playAttackSound(target, origin, Sound.ENTITY_PLAYER_ATTACK_SWEEP);
+        final var sweepSource = source.knownCause(EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK);
+        final var box = target.getBoundingBox().expand(1, 0.25, 1);
+        target.getWorld().getNearbyEntities(box, nearby -> nearby instanceof LivingEntity && !(nearby instanceof Player)
+                && !nearby.equals(entity) && !(nearby instanceof final ArmorStand stand && stand.isMarker())
+                && !plugin.characterProvider().isCharacterPart(nearby)
+                && nearby.getLocation().distanceSquared(origin) < 9
+        ).forEach(nearby -> {
+            final var handle = ((CraftLivingEntity) nearby).getHandle();
+            if (handle.hurtServer((ServerLevel) handle.level(), sweepSource, (float) damage))
+                ((LivingEntity) nearby).knockback(0.4, Math.sin(yaw), -Math.cos(yaw));
+        });
+        final var dx = -Math.sin(yaw);
+        final var dz = Math.cos(yaw);
+        target.spawnParticle(Particle.SWEEP_ATTACK, origin.getX() + dx, origin.getY() + entity.getHeight() * 0.5, origin.getZ() + dz, 0, dx, 0, dz, 0);
+    }
+
+    private static void playAttackSound(final Player target, final Location origin, final Sound sound) {
+        target.playSound(origin, sound, SoundCategory.PLAYERS, 1, 1);
     }
 
     private double attackDamage(final LivingEntity living) {

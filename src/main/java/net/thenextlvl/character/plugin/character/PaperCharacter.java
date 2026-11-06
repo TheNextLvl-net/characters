@@ -931,9 +931,10 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             if (attribute != null) attribute.setBaseValue(0);
         }
 
-        if (entity instanceof final LivingEntity living && !(entity instanceof Mob)
-            && living.getAttribute(Attribute.ATTACK_DAMAGE) == null) {
-            living.registerAttribute(Attribute.ATTACK_DAMAGE);
+        // characters that attack like players, with the attributes of players, sweeping edge raises the sweeping damage ratio
+        if (entity instanceof final LivingEntity living && !(entity instanceof Mob)) {
+            if (living.getAttribute(Attribute.ATTACK_DAMAGE) == null) living.registerAttribute(Attribute.ATTACK_DAMAGE);
+            if (living.getAttribute(Attribute.SWEEPING_DAMAGE_RATIO) == null) living.registerAttribute(Attribute.SWEEPING_DAMAGE_RATIO);
         }
 
         PropertyAccessors.ALL.forEach(accessor -> {
