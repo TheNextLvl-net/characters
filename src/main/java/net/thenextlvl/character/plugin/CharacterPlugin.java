@@ -5,16 +5,18 @@ import dev.faststats.bukkit.BukkitMetrics;
 import dev.faststats.core.ErrorTracker;
 import io.papermc.paper.ServerBuildInfo;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import io.papermc.paper.math.Rotations;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.WeatheringCopperState;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.TriState;
-import net.thenextlvl.character.Character;
 import net.thenextlvl.binder.StaticBinder;
+import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterProvider;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ActionTypes;
@@ -34,8 +36,6 @@ import net.thenextlvl.character.plugin.listener.ChunkListener;
 import net.thenextlvl.character.plugin.listener.ConnectionListener;
 import net.thenextlvl.character.plugin.listener.EntityListener;
 import net.thenextlvl.character.plugin.listener.WorldListener;
-import net.thenextlvl.character.property.AttributesSnapshot;
-import net.thenextlvl.character.property.EquipmentSnapshot;
 import net.thenextlvl.character.plugin.model.MessageMigrator;
 import net.thenextlvl.character.plugin.serialization.ActionTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.AttributesSnapshotAdapter;
@@ -54,12 +54,16 @@ import net.thenextlvl.character.plugin.serialization.ProfilePropertyAdapter;
 import net.thenextlvl.character.plugin.serialization.QuaternionfAdapter;
 import net.thenextlvl.character.plugin.serialization.RegistryAdapter;
 import net.thenextlvl.character.plugin.serialization.ResolvableProfileAdapter;
+import net.thenextlvl.character.plugin.serialization.RotationsAdapter;
 import net.thenextlvl.character.plugin.serialization.SoundAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
+import net.thenextlvl.character.plugin.serialization.TransformationAdapter;
 import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import net.thenextlvl.character.plugin.version.PluginVersionChecker;
+import net.thenextlvl.character.property.AttributesSnapshot;
+import net.thenextlvl.character.property.EquipmentSnapshot;
 import net.thenextlvl.character.skin.SkinFactory;
 import net.thenextlvl.i18n.ComponentBundle;
 import net.thenextlvl.nbt.NBTInputStream;
@@ -67,25 +71,51 @@ import net.thenextlvl.nbt.serialization.NBT;
 import net.thenextlvl.nbt.serialization.adapters.EnumAdapter;
 import net.thenextlvl.nbt.tag.Tag;
 import org.bstats.bukkit.Metrics;
+import org.bukkit.Art;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.Rotation;
 import org.bukkit.World;
 import org.bukkit.attribute.AttributeModifier;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Cat;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.CopperGolem;
+import org.bukkit.entity.Cow;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Display.Brightness;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fox;
+import org.bukkit.entity.Frog;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.Llama;
+import org.bukkit.entity.MushroomCow;
+import org.bukkit.entity.Panda;
+import org.bukkit.entity.Parrot;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Pose;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Salmon;
+import org.bukkit.entity.Sniffer;
+import org.bukkit.entity.Spellcaster;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.TropicalFish;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.Wolf;
+import org.bukkit.entity.ZombieNautilus;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MainHand;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionType;
+import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.jspecify.annotations.NullMarked;
@@ -118,37 +148,72 @@ public final class CharacterPlugin extends JavaPlugin {
 
     private final NBT nbt = NBT.builder()
             .registerTypeHierarchyAdapter(ActionType.class, new ActionTypeAdapter())
+            .registerTypeHierarchyAdapter(Art.class, new RegistryAdapter<>(RegistryKey.PAINTING_VARIANT))
             .registerTypeHierarchyAdapter(AttributeModifier.Operation.class, new EnumAdapter<>(AttributeModifier.Operation.class))
             .registerTypeHierarchyAdapter(AttributesSnapshot.class, new AttributesSnapshotAdapter())
+            .registerTypeHierarchyAdapter(Axolotl.Variant.class, new EnumAdapter<>(Axolotl.Variant.class))
             .registerTypeHierarchyAdapter(BlockData.class, new BlockDataAdapter(getServer()))
+            .registerTypeHierarchyAdapter(BlockFace.class, new EnumAdapter<>(BlockFace.class))
             .registerTypeHierarchyAdapter(Brightness.class, new BrightnessAdapter())
+            .registerTypeHierarchyAdapter(Cat.SoundVariant.class, new RegistryAdapter<>(RegistryKey.CAT_SOUND_VARIANT))
             .registerTypeHierarchyAdapter(Cat.Type.class, new RegistryAdapter<>(RegistryKey.CAT_VARIANT))
+            .registerTypeHierarchyAdapter(Chicken.SoundVariant.class, new RegistryAdapter<>(RegistryKey.CHICKEN_SOUND_VARIANT))
+            .registerTypeHierarchyAdapter(Chicken.Variant.class, new RegistryAdapter<>(RegistryKey.CHICKEN_VARIANT))
             .registerTypeHierarchyAdapter(ClickAction.class, new ClickActionAdapter())
             .registerTypeHierarchyAdapter(Color.class, new ColorAdapter())
             .registerTypeHierarchyAdapter(Component.class, new ComponentAdapter())
+            .registerTypeHierarchyAdapter(CopperGolem.State.class, new EnumAdapter<>(CopperGolem.State.class))
+            .registerTypeHierarchyAdapter(Cow.SoundVariant.class, new RegistryAdapter<>(RegistryKey.COW_SOUND_VARIANT))
+            .registerTypeHierarchyAdapter(Cow.Variant.class, new RegistryAdapter<>(RegistryKey.COW_VARIANT))
+            .registerTypeHierarchyAdapter(Display.Billboard.class, new EnumAdapter<>(Display.Billboard.class))
             .registerTypeHierarchyAdapter(DyeColor.class, new EnumAdapter<>(DyeColor.class))
             .registerTypeHierarchyAdapter(EntityEffect.class, new EnumAdapter<>(EntityEffect.class))
             .registerTypeHierarchyAdapter(EntityType.class, new RegistryAdapter<>(RegistryKey.ENTITY_TYPE))
             .registerTypeHierarchyAdapter(EquipmentSlotGroup.class, new EquipmentSlotGroupAdapter())
             .registerTypeHierarchyAdapter(EquipmentSnapshot.class, new EquipmentSnapshotAdapter())
             .registerTypeHierarchyAdapter(Fox.Type.class, new EnumAdapter<>(Fox.Type.class))
+            .registerTypeHierarchyAdapter(Frog.Variant.class, new RegistryAdapter<>(RegistryKey.FROG_VARIANT))
+            .registerTypeHierarchyAdapter(Horse.Color.class, new EnumAdapter<>(Horse.Color.class))
+            .registerTypeHierarchyAdapter(Horse.Style.class, new EnumAdapter<>(Horse.Style.class))
+            .registerTypeHierarchyAdapter(ItemDisplay.ItemDisplayTransform.class, new EnumAdapter<>(ItemDisplay.ItemDisplayTransform.class))
             .registerTypeHierarchyAdapter(ItemStack.class, new ItemStackAdapter())
             .registerTypeHierarchyAdapter(Key.class, new KeyAdapter())
+            .registerTypeHierarchyAdapter(Llama.Color.class, new EnumAdapter<>(Llama.Color.class))
             .registerTypeHierarchyAdapter(Location.class, new LocationAdapter())
             .registerTypeHierarchyAdapter(MainHand.class, new EnumAdapter<>(MainHand.class))
+            .registerTypeHierarchyAdapter(MushroomCow.Variant.class, new EnumAdapter<>(MushroomCow.Variant.class))
             .registerTypeHierarchyAdapter(NamedTextColor.class, new NamedTextColorAdapter())
+            .registerTypeHierarchyAdapter(Panda.Gene.class, new EnumAdapter<>(Panda.Gene.class))
+            .registerTypeHierarchyAdapter(Parrot.Variant.class, new EnumAdapter<>(Parrot.Variant.class))
             .registerTypeHierarchyAdapter(Particle.class, new EnumAdapter<>(Particle.class))
+            .registerTypeHierarchyAdapter(Pig.SoundVariant.class, new RegistryAdapter<>(RegistryKey.PIG_SOUND_VARIANT))
+            .registerTypeHierarchyAdapter(Pig.Variant.class, new RegistryAdapter<>(RegistryKey.PIG_VARIANT))
             .registerTypeHierarchyAdapter(Pose.class, new EnumAdapter<>(Pose.class))
             .registerTypeHierarchyAdapter(PotionType.class, new EnumAdapter<>(PotionType.class))
             .registerTypeHierarchyAdapter(ProfileProperty.class, new ProfilePropertyAdapter())
             .registerTypeHierarchyAdapter(Quaternionf.class, new QuaternionfAdapter())
+            .registerTypeHierarchyAdapter(Rabbit.Type.class, new EnumAdapter<>(Rabbit.Type.class))
             .registerTypeHierarchyAdapter(ResolvableProfile.class, new ResolvableProfileAdapter())
+            .registerTypeHierarchyAdapter(Rotation.class, new EnumAdapter<>(Rotation.class))
+            .registerTypeHierarchyAdapter(Rotations.class, new RotationsAdapter())
+            .registerTypeHierarchyAdapter(Salmon.Variant.class, new EnumAdapter<>(Salmon.Variant.class))
+            .registerTypeHierarchyAdapter(Sniffer.State.class, new EnumAdapter<>(Sniffer.State.class))
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
-            .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
+            .registerTypeHierarchyAdapter(Spellcaster.Spell.class, new EnumAdapter<>(Spellcaster.Spell.class))
+            .registerTypeHierarchyAdapter(TextDisplay.TextAlignment.class, new EnumAdapter<>(TextDisplay.TextAlignment.class))
             .registerTypeHierarchyAdapter(Title.class, new TitleAdapter())
+            .registerTypeHierarchyAdapter(Title.Times.class, new TitleTimesAdapter())
+            .registerTypeHierarchyAdapter(Transformation.class, new TransformationAdapter())
             .registerTypeHierarchyAdapter(TriState.class, new EnumAdapter<>(TriState.class))
+            .registerTypeHierarchyAdapter(TropicalFish.Pattern.class, new EnumAdapter<>(TropicalFish.Pattern.class))
             .registerTypeHierarchyAdapter(Vector3f.class, new Vector3fAdapter())
+            .registerTypeHierarchyAdapter(Villager.Profession.class, new RegistryAdapter<>(RegistryKey.VILLAGER_PROFESSION))
+            .registerTypeHierarchyAdapter(Villager.Type.class, new RegistryAdapter<>(RegistryKey.VILLAGER_TYPE))
+            .registerTypeHierarchyAdapter(WeatheringCopperState.class, new EnumAdapter<>(WeatheringCopperState.class))
+            .registerTypeHierarchyAdapter(Wolf.SoundVariant.class, new RegistryAdapter<>(RegistryKey.WOLF_SOUND_VARIANT))
+            .registerTypeHierarchyAdapter(Wolf.Variant.class, new RegistryAdapter<>(RegistryKey.WOLF_VARIANT))
             .registerTypeHierarchyAdapter(World.class, new WorldAdapter(getServer()))
+            .registerTypeHierarchyAdapter(ZombieNautilus.Variant.class, new RegistryAdapter<>(RegistryKey.ZOMBIE_NAUTILUS_VARIANT))
             .build();
 
     private final PluginVersionChecker versionChecker = new PluginVersionChecker(this);
