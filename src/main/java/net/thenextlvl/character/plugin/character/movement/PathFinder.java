@@ -30,6 +30,7 @@ import java.util.PriorityQueue;
  * Entities that can swim also drop into water from any height up to {@link #MAX_WATER_FALL} blocks, as it breaks their fall.
  * Ladders, vines and scaffolding can be climbed up and down by every entity, like in vanilla.
  * Entities that climb walls, like spiders, can also be in any block next to a wall, to climb up, down and along it.
+ * Entities that are fast enough can jump straight over a gap or a damaging block onto the block behind it.
  * Entities that fly can be in any block they fit into and move in all directions, like vanilla's {@code FlyNodeEvaluator}.
  * <p>
  * Like in vanilla, every node has a path type with a malus that is added to its cost:
@@ -52,7 +53,10 @@ public final class PathFinder {
     // the malus of the vanilla path types
     private static final float BLOCKED = -1;
     private static final float WATER = 8;
-    private static final float DANGER = 8;
+    // less than vanilla's 8, being close to danger is no reason to take a much longer way
+    private static final float DANGER = 2;
+    // a jump is a bit more effort than walking, so it is only taken when it saves a detour
+    private static final double JUMP_COST = 1;
     private static final float DAMAGE_OTHER = 8;
     private static final float DAMAGE_FIRE = 16;
     private static final float STICKY_HONEY = 8;
@@ -72,6 +76,7 @@ public final class PathFinder {
     private final int maxNodes;
     private final boolean climbs;
     private final boolean flies;
+    private final boolean jumps;
 
     /**
      * How an entity moves in water.
@@ -101,10 +106,11 @@ public final class PathFinder {
      * @param followRange  the follow range of the entity, limiting the visited nodes like in vanilla, or {@code 0} for the default
      * @param climbs       whether the entity climbs walls, like spiders
      * @param flies        whether the entity flies
+     * @param jumps        whether the entity is fast enough to jump over gaps and damaging blocks
      */
     public PathFinder(final Server server, final World world, final double entityHeight, final double eyeHeight,
                       final boolean openDoors, final Swimming swimming, final double followRange,
-                      final boolean climbs, final boolean flies) {
+                      final boolean climbs, final boolean flies, final boolean jumps) {
         this.server = server;
         this.world = world;
         this.height = Math.max(1, (int) Math.ceil(entityHeight));
@@ -114,6 +120,7 @@ public final class PathFinder {
         this.maxNodes = followRange > 0 ? (int) (followRange * NODES_PER_BLOCK) : DEFAULT_MAX_NODES;
         this.climbs = climbs;
         this.flies = flies;
+        this.jumps = jumps;
     }
 
     /**
@@ -176,7 +183,8 @@ public final class PathFinder {
 
             for (final var neighbor : neighbors(current.key())) {
                 if (closed.contains(neighbor)) continue;
-                final var cost = costs.get(current.key()) + distance(current.key(), neighbor) + malus(neighbor);
+                final var jump = Math.abs(x(current.key()) - x(neighbor)) > 1 || Math.abs(z(current.key()) - z(neighbor)) > 1;
+                final var cost = costs.get(current.key()) + distance(current.key(), neighbor) + malus(neighbor) + (jump ? JUMP_COST : 0);
                 final var known = costs.get(neighbor);
                 if (known != null && known <= cost) continue;
                 costs.put(neighbor, cost);
@@ -351,7 +359,40 @@ public final class PathFinder {
                 break;
             }
         }
+        if (jumps && current != null) addJumps(neighbors, x, y, z);
         return neighbors;
+    }
+
+    /*
+     * Straight over a gap or a damaging block onto the block behind it, on the same level or one lower.
+     * The arc needs one more block of headroom above the start and the block jumped over.
+     */
+    private void addJumps(final List<Long> neighbors, final int x, final int y, final int z) {
+        if (!isClear(x, y + 1, z)) return;
+        for (var i = 0; i < 4; i++) {
+            final var direction = DIRECTIONS[i];
+            final var mx = x + direction[0];
+            final var mz = z + direction[1];
+            if (!isClear(mx, y, mz) || !isClear(mx, y + 1, mz)) continue;
+            // only worth a jump if there is nothing to walk on, or it hurts
+            final var gap = standingHeight(mx, y, mz) == null && standingHeight(mx, y - 1, mz) == null;
+            final var harmful = malus(node(mx, y, mz)) >= DAMAGE_OTHER || malus(node(mx, y, mz)) == BLOCKED
+                                || isDangerousFloor(mx, y - 1, mz);
+            if (!gap && !harmful) continue;
+            final var lx = x + direction[0] * 2;
+            final var lz = z + direction[1] * 2;
+            for (final var ly : new int[]{y, y - 1}) {
+                if (standingHeight(lx, ly, lz) == null || !isClear(lx, ly + 1, lz)) continue;
+                addIfPassable(neighbors, lx, ly, lz);
+                break;
+            }
+        }
+    }
+
+    // lava, fire or a damaging block where the entity would stand
+    private boolean isDangerousFloor(final int x, final int y, final int z) {
+        final var type = world.getBlockAt(x, y, z).getType();
+        return type == Material.LAVA || type == Material.MAGMA_BLOCK || isFire(type) || isDamaging(type);
     }
 
     // all 26 directions, without cutting corners
@@ -441,6 +482,17 @@ public final class PathFinder {
             }
         }
         return false;
+    }
+
+    /**
+     * Checks if the given block hurts entities in or on it, like fire, lava, magma or berry bushes.
+     *
+     * @param block the block
+     * @return {@code true} if the block is harmful
+     */
+    public static boolean isHarmful(final Block block) {
+        final var type = block.getType();
+        return type == Material.LAVA || type == Material.MAGMA_BLOCK || isFire(type) || isDamaging(type);
     }
 
     private static boolean isFire(final Material type) {

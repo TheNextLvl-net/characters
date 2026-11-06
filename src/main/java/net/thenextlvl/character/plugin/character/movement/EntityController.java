@@ -36,6 +36,7 @@ import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Spider;
 import org.bukkit.entity.Vex;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.entity.Wither;
 import org.bukkit.util.Vector;
 import org.jspecify.annotations.NullMarked;
@@ -103,6 +104,8 @@ public final class EntityController {
     private static final double LADDER_THICKNESS = 3 / 16d;
     // how far below the wanted position the feet may be when stepping off a ladder or vine
     private static final double CLIMB_TOLERANCE = 0.05;
+    // the walking speed needed to jump over a gap, a bit below a player's, who easily makes it
+    private static final double JUMP_SPEED = 0.2;
     // how much of its walking an entity can still steer in mid air
     private static final double AIR_CONTROL = 0.1;
     // like vanilla's jump delay
@@ -357,8 +360,19 @@ public final class EntityController {
         return PathFinder.isClimbable(block) || PathFinder.isClimbable(block.getRelative(0, -1, 0));
     }
 
+    /*
+     * Only damage by entities and explosions knocks back, damaging blocks like magma, fire or cactus do not,
+     * and they hurt again right after, which would never give the entity control back.
+     */
     private boolean isKnockedBack() {
-        return entity instanceof final LivingEntity living && living.getNoDamageTicks() > living.getMaximumNoDamageTicks() / 2;
+        if (!(entity instanceof final LivingEntity living)) return false;
+        if (living.getNoDamageTicks() <= living.getMaximumNoDamageTicks() / 2) return false;
+        final var cause = living.getLastDamageCause();
+        if (cause == null) return false;
+        final var source = cause.getDamageSource();
+        return source.getCausingEntity() != null || source.getDirectEntity() != null
+               || cause.getCause() == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION
+               || cause.getCause() == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION;
     }
 
     private void stop() {
@@ -730,6 +744,15 @@ public final class EntityController {
         return new Vector(dx / distance * step, 0, dz / distance * step);
     }
 
+    /*
+     * Whether the entity is fast enough to jump over a block, like players.
+     * A jump keeps the entity in the air for about 12 ticks, while air drag leaves it about 7.4 times its speed,
+     * so it needs about a quarter of a block per tick to clear a block, which slow mobs like zombies are not.
+     */
+    private boolean jumpsGaps() {
+        return entity instanceof LivingEntity && !flies() && speed(MovementGoal.DEFAULT_SPEED, false) >= JUMP_SPEED;
+    }
+
     private boolean climbsWalls() {
         return entity instanceof Spider;
     }
@@ -839,6 +862,11 @@ public final class EntityController {
         // only jump if a block in the way is higher than the entity can step up, not for every higher waypoint
         // climbing a ladder that is further away, like vanilla when walking into it
         climbing = dy > 0 && PathFinder.isClimbable(current.getBlock());
+        // over a gap or a damaging block, the wanted position is two blocks away
+        if (!climbing && horizontalSquared > 1.5 * 1.5 && isEdge(current, radians)) {
+            jumping = true;
+            return new Vector(-Math.sin(radians) * speed, 0, Math.cos(radians) * speed);
+        }
         // climbers climb instead of jumping
         jumping = !climbing && !climbsWalls() && dy > stepHeight() && horizontalSquared < Math.max(1, entity.getWidth()) && isBlocked(current, radians);
         return new Vector(-Math.sin(radians) * speed, 0, Math.cos(radians) * speed);
@@ -874,6 +902,18 @@ public final class EntityController {
             return JUMP_VELOCITY;
         }
         return velocity;
+    }
+
+    // whether the entity is at the edge of a gap or a damaging block, where it has to jump off
+    private boolean isEdge(final Location current, final double radians) {
+        if (!entity.isOnGround()) return false;
+        final var reach = halfWidth() + 0.3;
+        final var x = (int) Math.floor(current.getX() - Math.sin(radians) * reach);
+        final var z = (int) Math.floor(current.getZ() + Math.cos(radians) * reach);
+        final var feet = (int) Math.floor(current.getY() + 0.01);
+        final var floor = current.getWorld().getBlockAt(x, feet - 1, z);
+        final var ahead = current.getWorld().getBlockAt(x, feet, z);
+        return floor.isPassable() || floor.isLiquid() || PathFinder.isHarmful(floor) || PathFinder.isHarmful(ahead);
     }
 
     // whether the block right in front of the entity is too high to step up
@@ -959,7 +999,7 @@ public final class EntityController {
 
     private PathFinder pathFinder() {
         return new PathFinder(plugin.getServer(), entity.getWorld(), entity.getHeight(), eyeHeight(),
-                opensDoors, swimming(), followRange(), climbsWalls(), flies());
+                opensDoors, swimming(), followRange(), climbsWalls(), flies(), jumpsGaps());
     }
 
     private double eyeHeight() {
