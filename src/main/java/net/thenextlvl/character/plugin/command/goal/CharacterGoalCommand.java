@@ -122,9 +122,9 @@ public final class CharacterGoalCommand extends BrigadierCommand {
                     Placeholder.unparsed("character", character.getName()));
             for (var i = 0; i < goals.size(); i++) {
                 plugin.bundle().sendMessage(sender, "character.goal.list",
-                        Placeholder.unparsed("character", character.getName()),
+                        Placeholder.parsed("character", character.getName()),
                         Placeholder.unparsed("goal", describe(goals.get(i))),
-                        Placeholder.unparsed("index", String.valueOf(i + 1)));
+                        Placeholder.parsed("index", String.valueOf(i + 1)));
             }
             return Command.SINGLE_SUCCESS;
         }));

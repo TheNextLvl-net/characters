@@ -175,7 +175,7 @@ public final class CharacterActionNotificationCommand extends BrigadierCommand {
         final var notifications = action.getNotifications().findByTrigger(trigger)
                 .map(notification -> plugin.bundle().component("character.action.notification.list.entry", sender,
                         Placeholder.unparsed("type", notification.type().getName()),
-                        Placeholder.unparsed("command", editCommand(character, actionName, notification))))
+                        Placeholder.parsed("command", editCommand(character, actionName, notification))))
                 .toList();
         final var message = notifications.isEmpty()
                 ? "character.action.notification.list.empty.trigger"
