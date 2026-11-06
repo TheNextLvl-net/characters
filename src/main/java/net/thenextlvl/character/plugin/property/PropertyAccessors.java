@@ -177,7 +177,6 @@ public final class PropertyAccessors {
 
             bool(EntityProperties.LIVING_ENTITY_GLIDING, LivingEntity::isGliding, LivingEntity::setGliding),
             property(EntityProperties.LIVING_ENTITY_EQUIPMENT, Snapshots::equipment, Snapshots::applyEquipment, null),
-            bool(EntityProperties.LIVING_ENTITY_AI, LivingEntity::hasAI, LivingEntity::setAI),
             integer(EntityProperties.LIVING_ENTITY_ARROWS_IN_BODY, LivingEntity::getArrowsInBody, (entity, arrows) -> entity.setArrowsInBody(arrows, false)),
             integer(EntityProperties.LIVING_ENTITY_BEE_STINGERS_IN_BODY, LivingEntity::getBeeStingersInBody, LivingEntity::setBeeStingersInBody),
             floating(EntityProperties.LIVING_ENTITY_BODY_YAW, LivingEntity::getBodyYaw, LivingEntity::setBodyYaw),
@@ -186,7 +185,6 @@ public final class PropertyAccessors {
             bool(EntityProperties.LIVING_ENTITY_COLLIDABLE, LivingEntity::isCollidable, LivingEntity::setCollidable),
 
             bool(EntityProperties.MOB_AGGRESSIVE, Mob::isAggressive, Mob::setAggressive),
-            bool(EntityProperties.MOB_AWARE, Mob::isAware, Mob::setAware),
             bool(EntityProperties.MOB_LEFT_HANDED, Mob::isLeftHanded, Mob::setLeftHanded),
 
             bool(EntityProperties.SITTABLE_SITTING, Sittable::isSitting, Sittable::setSitting),

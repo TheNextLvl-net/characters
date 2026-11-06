@@ -11,6 +11,7 @@ import net.thenextlvl.character.plugin.command.argument.CharacterArgumentType;
 import net.thenextlvl.character.plugin.command.argument.MannequinCharacterArgumentType;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.equipment.CharacterEquipmentCommand;
+import net.thenextlvl.character.plugin.command.goal.CharacterGoalCommand;
 import net.thenextlvl.character.plugin.command.skin.CharacterSkinCommand;
 import net.thenextlvl.character.plugin.command.suggestion.PermissionSuggestionProvider;
 import net.thenextlvl.character.plugin.command.tag.CharacterTagCommand;
@@ -29,7 +30,7 @@ public final class CharacterCommand extends BrigadierCommand {
                 .then(CharacterCreateCommand.create(plugin))
                 .then(CharacterDeleteCommand.create(plugin))
                 .then(CharacterEquipmentCommand.create(plugin))
-                // .then(CharacterGoalCommand.create(plugin))
+                .then(CharacterGoalCommand.create(plugin))
                 .then(CharacterListCommand.create(plugin))
                 .then(CharacterSaveCommand.create(plugin))
                 .then(CharacterSkinCommand.create(plugin))

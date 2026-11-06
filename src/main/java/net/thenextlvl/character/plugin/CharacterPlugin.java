@@ -22,14 +22,14 @@ import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ActionTypes;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.action.ClickActionFactory;
+import net.thenextlvl.character.goal.Goal;
+import net.thenextlvl.character.goal.Target;
 import net.thenextlvl.character.event.CharacterLoadEvent;
-import net.thenextlvl.character.goal.GoalFactory;
 import net.thenextlvl.character.plugin.action.SimpleActionTypes;
 import net.thenextlvl.character.plugin.action.SimpleClickActionFactory;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
 import net.thenextlvl.character.plugin.character.PaperCharacterProvider;
 import net.thenextlvl.character.plugin.character.PaperSkinFactory;
-import net.thenextlvl.character.plugin.character.goal.PaperGoalFactory;
 import net.thenextlvl.character.plugin.command.CharacterCommand;
 import net.thenextlvl.character.plugin.listener.CharacterListener;
 import net.thenextlvl.character.plugin.listener.ChunkListener;
@@ -48,6 +48,7 @@ import net.thenextlvl.character.plugin.serialization.ColorAdapter;
 import net.thenextlvl.character.plugin.serialization.ComponentAdapter;
 import net.thenextlvl.character.plugin.serialization.EquipmentSlotGroupAdapter;
 import net.thenextlvl.character.plugin.serialization.EquipmentSnapshotAdapter;
+import net.thenextlvl.character.plugin.serialization.GoalAdapter;
 import net.thenextlvl.character.plugin.serialization.ItemStackAdapter;
 import net.thenextlvl.character.plugin.serialization.KeyAdapter;
 import net.thenextlvl.character.plugin.serialization.LocationAdapter;
@@ -58,6 +59,7 @@ import net.thenextlvl.character.plugin.serialization.RegistryAdapter;
 import net.thenextlvl.character.plugin.serialization.ResolvableProfileAdapter;
 import net.thenextlvl.character.plugin.serialization.RotationsAdapter;
 import net.thenextlvl.character.plugin.serialization.SoundAdapter;
+import net.thenextlvl.character.plugin.serialization.TargetAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
 import net.thenextlvl.character.plugin.serialization.TransformationAdapter;
@@ -173,6 +175,7 @@ public final class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(EntityType.class, new RegistryAdapter<>(RegistryKey.ENTITY_TYPE))
             .registerTypeHierarchyAdapter(EquipmentSlotGroup.class, new EquipmentSlotGroupAdapter())
             .registerTypeHierarchyAdapter(EquipmentSnapshot.class, new EquipmentSnapshotAdapter())
+            .registerTypeHierarchyAdapter(Goal.class, new GoalAdapter())
             .registerTypeHierarchyAdapter(Fox.Type.class, new EnumAdapter<>(Fox.Type.class))
             .registerTypeHierarchyAdapter(Frog.Variant.class, new RegistryAdapter<>(RegistryKey.FROG_VARIANT))
             .registerTypeHierarchyAdapter(Horse.Color.class, new EnumAdapter<>(Horse.Color.class))
@@ -201,6 +204,7 @@ public final class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(Salmon.Variant.class, new EnumAdapter<>(Salmon.Variant.class))
             .registerTypeHierarchyAdapter(Sniffer.State.class, new EnumAdapter<>(Sniffer.State.class))
             .registerTypeHierarchyAdapter(Sound.class, new SoundAdapter())
+            .registerTypeHierarchyAdapter(Target.class, new TargetAdapter())
             .registerTypeHierarchyAdapter(Spellcaster.Spell.class, new EnumAdapter<>(Spellcaster.Spell.class))
             .registerTypeHierarchyAdapter(TextDisplay.TextAlignment.class, new EnumAdapter<>(TextDisplay.TextAlignment.class))
             .registerTypeHierarchyAdapter(Title.class, new TitleAdapter())
@@ -224,7 +228,6 @@ public final class CharacterPlugin extends JavaPlugin {
     private @Nullable PlaceholderAPIFormatter papiFormatter = null;
 
     private final PaperCharacterProvider characterProvider = new PaperCharacterProvider(this);
-    private final PaperGoalFactory goalFactory = new PaperGoalFactory(this);
     private final PaperSkinFactory skinFactory = new PaperSkinFactory(this);
     private final SimpleActionTypes actionTypes = new SimpleActionTypes(this);
 
@@ -240,7 +243,6 @@ public final class CharacterPlugin extends JavaPlugin {
         StaticBinder.getInstance(ActionTypes.class.getClassLoader()).bind(ActionTypes.class, actionTypes);
         StaticBinder.getInstance(ClickActionFactory.class.getClassLoader()).bind(ClickActionFactory.class, SimpleClickActionFactory.INSTANCE);
         StaticBinder.getInstance(CharacterProvider.class.getClassLoader()).bind(CharacterProvider.class, characterProvider);
-        StaticBinder.getInstance(GoalFactory.class.getClassLoader()).bind(GoalFactory.class, goalFactory);
         StaticBinder.getInstance(SkinFactory.class.getClassLoader()).bind(SkinFactory.class, skinFactory);
     }
 
@@ -444,10 +446,6 @@ public final class CharacterPlugin extends JavaPlugin {
 
     public PaperCharacterProvider characterProvider() {
         return characterProvider;
-    }
-
-    public PaperGoalFactory goalFactory() {
-        return goalFactory;
     }
 
     public PaperSkinFactory skinFactory() {

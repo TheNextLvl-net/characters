@@ -1,8 +1,8 @@
 package net.thenextlvl.character.plugin.character;
 
-import com.destroystokyo.paper.entity.Pathfinder;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -16,11 +16,20 @@ import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.event.CharacterTeleportEvent;
 import net.thenextlvl.character.event.CharacterViewerAddEvent;
 import net.thenextlvl.character.event.CharacterViewerRemoveEvent;
+import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
+import net.thenextlvl.character.goal.LookAtGoal;
+import net.thenextlvl.character.goal.PatrolGoal;
+import net.thenextlvl.character.goal.Target;
+import net.thenextlvl.character.goal.WanderGoal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
+import net.thenextlvl.character.plugin.character.movement.Doors;
+import net.thenextlvl.character.plugin.character.movement.EntityController;
+import net.thenextlvl.character.plugin.character.movement.GoalState;
 import net.thenextlvl.character.plugin.model.EmptyLootTable;
 import net.thenextlvl.character.plugin.property.PropertyAccessor;
 import net.thenextlvl.character.plugin.property.PropertyAccessors;
+import net.thenextlvl.character.property.EntityProperties;
 import net.thenextlvl.character.property.EntityProperty;
 import net.thenextlvl.character.property.ViewerValue;
 import net.thenextlvl.character.property.ViewerValues;
@@ -29,6 +38,7 @@ import net.thenextlvl.nbt.NBTOutputStream;
 import net.thenextlvl.nbt.serialization.ParserException;
 import net.thenextlvl.nbt.serialization.TagSerializable;
 import net.thenextlvl.nbt.tag.CompoundTag;
+import net.thenextlvl.nbt.tag.ListTag;
 import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Chunk;
 import org.bukkit.Color;
@@ -50,6 +60,7 @@ import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.TextDisplay.TextAlignment;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -64,6 +75,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -71,6 +83,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -87,7 +100,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     protected final Class<? extends Entity> entityClass;
     protected final Map<String, ClickAction<?>> actions = Collections.synchronizedMap(new LinkedHashMap<>());
-    protected final Set<Goal> goals = ConcurrentHashMap.newKeySet();
+    protected final List<Goal> goals = new CopyOnWriteArrayList<>();
+    // pursues the goals with the entity of every viewer
+    protected final Map<UUID, EntityController> controllers = new ConcurrentHashMap<>();
+    protected volatile @Nullable ScheduledTask ticker = null;
+    // the state of the goals, shared by all entities if they move alike
+    protected final GoalState goalState = new GoalState();
+    protected volatile long ticks = 0;
+    protected final Doors doors;
     protected final Set<UUID> viewers = ConcurrentHashMap.newKeySet();
     protected final Set<UUID> spawning = ConcurrentHashMap.newKeySet();
     protected final Map<String, Tag> properties = new ConcurrentHashMap<>();
@@ -121,6 +141,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         this.location = location.clone();
         this.name = name;
         this.plugin = plugin;
+        this.doors = new Doors(plugin, this);
         this.type = type;
 
         final var dataFolder = plugin.characterProvider().getDataFolder(location.getWorld());
@@ -166,18 +187,181 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     @Override
-    public @Unmodifiable Set<Goal> getGoals() {
-        return Set.copyOf(goals);
+    public @Unmodifiable List<Goal> getGoals() {
+        return List.copyOf(goals);
     }
 
     @Override
     public boolean addGoal(final Goal goal) {
-        return goals.add(goal);
+        return addGoal(goals.size(), goal);
     }
 
     @Override
+    public synchronized boolean addGoal(final int index, final Goal goal) {
+        Preconditions.checkPositionIndex(index, goals.size());
+        if (goals.contains(goal)) return false;
+        goals.add(index, goal);
+        entities.forEach((viewer, entity) -> plugin.supply(entity, () -> {
+            updateAI(entity);
+            startController(viewer, entity);
+        }));
+        return true;
+    }
+
+    // controllers notice removed goals on their next tick
+    @Override
     public boolean removeGoal(final Goal goal) {
-        return goals.remove(goal);
+        if (!goals.remove(goal)) return false;
+        if (goals.isEmpty()) updateAI();
+        return true;
+    }
+
+    @Override
+    public boolean clearGoals() {
+        if (goals.isEmpty()) return false;
+        goals.clear();
+        updateAI();
+        return true;
+    }
+
+    // must be called on the region of the entity
+    private void startController(final UUID viewer, final Entity entity) {
+        controllers.compute(viewer, (ignored, existing) -> {
+            if (existing != null && !existing.isStopped() && existing.entity().equals(entity)) return existing;
+            return new EntityController(plugin, this, viewer, entity);
+        });
+        startTicking();
+    }
+
+    // one task per character ticks all of its entities in sync
+    private synchronized void startTicking() {
+        final var ticker = this.ticker;
+        if (ticker != null && !ticker.isCancelled()) return;
+        this.ticker = plugin.getServer().getRegionScheduler().runAtFixedRate(plugin, getLocation(), task -> tickControllers(), 1, 1);
+    }
+
+    private synchronized void stopTicking() {
+        final var ticker = this.ticker;
+        if (ticker != null) ticker.cancel();
+        this.ticker = null;
+    }
+
+    /**
+     * Ticks the controllers of all entities, on the region of the character's location.
+     * <p>
+     * The entities are usually close to the character's location and on the same region,
+     * those that walked onto another region are ticked through their own scheduler instead.
+     */
+    public void tickControllers() {
+        final var ticks = this.ticks;
+        this.ticks = ticks + 1;
+        if (controllers.isEmpty()) {
+            stopTicking();
+            // a controller may have been added in the meantime
+            if (!controllers.isEmpty()) startTicking();
+            return;
+        }
+        controllers.forEach((viewer, controller) -> {
+            final var entity = controller.entity();
+            if (plugin.getServer().isOwnedByCurrentRegion(entity)) {
+                if (!controller.tick()) controllers.remove(viewer, controller);
+            } else entity.getScheduler().run(plugin, task -> {
+                if (!controller.tick()) controllers.remove(viewer, controller);
+            }, () -> controllers.remove(viewer, controller));
+        });
+    }
+
+    /**
+     * Gives the entity AI if the character has goals, so it can move by velocity, but it is never aware,
+     * so it does not act on its own.
+     * <p>
+     * An entity that is still walking back to the character's location after its goals were removed
+     * keeps its AI until it arrived, see {@link #setPhysics(Entity, boolean)}.
+     * <p>
+     * Must be called on the region of the entity.
+     *
+     * @param entity the entity
+     */
+    public void updateAI(final Entity entity) {
+        if (entity instanceof final Mob mob) mob.setAware(false);
+        if (!(entity instanceof final LivingEntity living)) return;
+        final var viewer = getViewer(entity);
+        final var controller = viewer != null ? controllers.get(viewer) : null;
+        final var moving = controller != null && controller.hasPhysics();
+        living.setAI(!goals.isEmpty() || moving);
+    }
+
+    private void updateAI() {
+        entities.values().forEach(entity -> plugin.supply(entity, () -> updateAI(entity)));
+    }
+
+    public Doors doors() {
+        return doors;
+    }
+
+    public GoalState goalState() {
+        return goalState;
+    }
+
+    public long ticks() {
+        return ticks;
+    }
+
+    /**
+     * Enables or disables the physics of the given entity, which moves it by velocity.
+     * <p>
+     * Characters have no gravity, and mobs without AI ignore velocity.
+     * With physics, the entity has gravity and AI, but mobs are never aware, so they do not act on their own.
+     * Entities of the same character overlap, so they do not collide while moving.
+     * Disabling the physics restores the state the entity was spawned with,
+     * with AI only if the character has goals, see {@link #updateAI(Entity)}.
+     * <p>
+     * Must be called on the region of the entity.
+     *
+     * @param entity  the entity
+     * @param physics whether the entity should have physics
+     */
+    public void setPhysics(final Entity entity, final boolean physics) {
+        entity.setGravity(physics);
+        entity.setVelocity(new Vector());
+        if (entity instanceof final LivingEntity living) {
+            living.setAI(physics || !goals.isEmpty());
+            living.setCollidable(!physics);
+        }
+        if (entity instanceof final Mob mob) mob.setAware(false);
+        if (entity instanceof final Mannequin mannequin) mannequin.setImmovable(!physics);
+        if (physics) return;
+        Stream.of(
+                EntityProperties.ENTITY_GRAVITY,
+                EntityProperties.LIVING_ENTITY_COLLIDABLE,
+                EntityProperties.MANNEQUIN_IMMOVABLE
+        ).forEach(property -> PropertyAccessors.of(property).ifPresent(accessor -> {
+            final var value = properties.get(accessor.key().asString());
+            if (value != null) accessor.apply(entity, value, plugin.nbt());
+        }));
+    }
+
+    /**
+     * Checks if the entities of this character move alike for all viewers.
+     * <p>
+     * This is the case if no movement goal depends on the viewer,
+     * only then may the entities change the world, like opening doors.
+     *
+     * @return {@code true} if the entities move alike for all viewers
+     */
+    public boolean movesAlike() {
+        return goals.stream().allMatch(goal -> switch (goal) {
+            case final FollowGoal follow ->
+                    !(follow.target() instanceof Target.Viewer || follow.target() instanceof Target.NearestPlayer);
+            case final WanderGoal ignored -> true;
+            case final PatrolGoal ignored -> true;
+            case final LookAtGoal ignored -> true;
+        });
+    }
+
+    @Override
+    public Optional<Location> getLocation(final Player player) {
+        return getEntity(player).map(Entity::getLocation);
     }
 
     @Override
@@ -276,6 +460,11 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         }
 
         this.location = destination;
+        // the task ticking the entities belongs to the region of the character's location
+        if (ticker != null) {
+            stopTicking();
+            if (!controllers.isEmpty()) startTicking();
+        }
         if (!destination.isChunkLoaded()) return despawn().thenApply(ignored -> true);
 
         final var chunkKey = Chunk.getChunkKey(destination);
@@ -312,11 +501,6 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         this.dataFile = dataFile;
         this.backupFile = backupFile;
         return true;
-    }
-
-    @Override
-    public Optional<Pathfinder> getPathfinder(final Player player) {
-        return getEntity(player, Mob.class).map(Mob::getPathfinder);
     }
 
     @Override
@@ -557,6 +741,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
             spawnTag(uuid, entity);
             updateTeamOptions(entity);
+            if (!goals.isEmpty()) startController(uuid, entity);
             return entity;
         }).thenCompose(entity -> entity != null
                 ? showEntity(player, entity)
@@ -588,6 +773,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         if (viewer == null) return;
         entities.remove(viewer, entity);
         removeTag(viewer);
+        controllers.remove(viewer);
+        if (entities.isEmpty()) doors.closeAll();
         final var owner = plugin.getServer().getPlayer(viewer);
         if (owner != null && !CharacterPlugin.RUNNING_FOLIA) {
             final var team = owner.getScoreboard().getTeam(entity.getScoreboardEntryName());
@@ -648,7 +835,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         if (entity instanceof final TNTPrimed primed) primed.setFuseTicks(Integer.MAX_VALUE);
 
         if (entity instanceof final LivingEntity living) {
-            living.setAI(false);
+            // only entities with goals have AI, see updateAI
+            living.setAI(!goals.isEmpty());
             living.setCanPickupItems(false);
             living.setRemoveWhenFarAway(false);
             final var instance = living.getAttribute(MAX_HEALTH);
@@ -656,6 +844,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         }
 
         if (entity instanceof final Mob mob) {
+            mob.setAware(false);
             mob.setLootTable(EmptyLootTable.INSTANCE);
             mob.setDespawnInPeacefulOverride(TriState.FALSE);
         }
@@ -888,6 +1077,10 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             tag.put("entityData", data.build());
         }
         tag.put("clickActions", actions.build());
+        if (!goals.isEmpty()) {
+            final var goals = ListTag.of(this.goals.stream().map(goal -> plugin.nbt().serialize(goal, Goal.class)).toList());
+            tag.put("goals", goals);
+        }
         if (!viewerValues.isEmpty()) {
             final var values = CompoundTag.builder();
             viewerValues.forEach((property, value) -> values.put(property, value.asString()));
@@ -902,6 +1095,13 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         tag.optional("entityData").map(Tag::getAsCompound).ifPresent(entityData -> entityData.forEach(properties::put));
         tag.optional("viewerValues").map(Tag::getAsCompound).ifPresent(values -> values.forEach((property, value) ->
                 viewerValues.put(property, Key.key(value.getAsString()))));
+        tag.optional("goals").map(Tag::getAsList).ifPresent(goals -> goals.forEach(goal -> {
+            try {
+                addGoal(plugin.nbt().deserialize(goal, Goal.class));
+            } catch (final ParserException e) {
+                plugin.getComponentLogger().warn("Failed to load a goal of character {}: {}", getName(), e.getMessage());
+            }
+        }));
         tag.optional("clickActions").map(Tag::getAsCompound).ifPresent(actions -> actions.forEach((name, action) ->
                 addAction(name, plugin.nbt().deserialize(action, ClickAction.class))));
         tag.optional("displayName").map(Tag::getAsString)

@@ -14,7 +14,6 @@ Entity#setInvulnerable = entity:invulnerable
 Entity#setPose = entity:pose
 Fox#foxType = fox:variant
 Fox#setSleeping = fox:sleeping
-LivingEntity#AI = living_entity:ai
 LivingEntity#getEquipment = living_entity:equipment
 LivingEntity#setArrowsInBody = living_entity:arrows_in_body
 Mannequin#setSkinParts = mannequin:skin_parts
@@ -38,6 +37,8 @@ ArmorStand#rightLegPose = ignored: covered by the matching *_rotations property
 ThrownPotion#item = ignored: covered by throwable_projectile:item
 
 # managed by the character
+LivingEntity#AI = ignored: managed by the character, controlled by its goals
+Mob#aware = ignored: managed by the character, controlled by its goals
 Entity#persistent = ignored: managed by the character
 Entity#visibleByDefault = ignored: managed by the character
 LivingEntity#canPickupItems = ignored: managed by the character

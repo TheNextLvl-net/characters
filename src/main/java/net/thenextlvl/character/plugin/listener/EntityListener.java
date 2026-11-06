@@ -12,6 +12,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPortalEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
@@ -56,6 +57,12 @@ public final class EntityListener implements Listener {
     public void onEntityDamage(final EntityDamageEvent event) {
         if (!plugin.characterProvider().isCharacterPart(event.getEntity())) return;
         event.setCancelled(event.getEntity().isMarkedInvulnerable());
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onEntityPortal(final EntityPortalEvent event) {
+        if (!plugin.characterProvider().isCharacterPart(event.getEntity())) return;
+        event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

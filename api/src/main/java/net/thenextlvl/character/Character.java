@@ -1,6 +1,5 @@
 package net.thenextlvl.character;
 
-import com.destroystokyo.paper.entity.Pathfinder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.thenextlvl.character.action.ClickAction;
@@ -22,6 +21,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -101,16 +101,6 @@ public interface Character {
     Stream<Entity> getEntities();
 
     /**
-     * Returns the pathfinder of the entity that is shown to the given player.
-     *
-     * @param player the player to get the pathfinder for
-     * @return the pathfinder, or empty if the character is not spawned for the player or not a mob
-     * @since 0.9.0
-     */
-    @Contract(pure = true)
-    Optional<Pathfinder> getPathfinder(Player player);
-
-    /**
      * Returns the location of the character.
      * <p>
      * This is the location the character is spawned at,
@@ -121,6 +111,20 @@ public interface Character {
      */
     @Contract(value = " -> new", pure = true)
     Location getLocation();
+
+    /**
+     * Returns the current location of the entity that is shown to the given player.
+     * <p>
+     * Goals move every entity on its own, so this may differ from {@link #getLocation()}
+     * and between players.
+     *
+     * @param player the player to get the location for
+     * @return the location of the entity, or empty if the character is not spawned for the player
+     * @see #getGoals()
+     * @since 0.9.0
+     */
+    @Contract(pure = true)
+    Optional<Location> getLocation(Player player);
 
     /**
      * Returns the world of the character.
@@ -316,24 +320,37 @@ public interface Character {
     boolean setTeamColor(@Nullable NamedTextColor color);
 
     /**
-     * Returns the goals of the character.
+     * Returns the goals of the character, in the order they take turns.
      *
      * @return goals
-     * @since 0.1.0
+     * @see Goal
+     * @since 0.9.0
      */
     @Unmodifiable
     @Contract(pure = true)
-    Set<Goal> getGoals();
+    List<Goal> getGoals();
 
     /**
-     * Adds a goal to the character.
+     * Adds a goal to the end of the goals of the character.
      *
      * @param goal goal to add
-     * @return {@code true} if the goal was added, {@code false} otherwise
-     * @since 0.1.0
+     * @return {@code true} if the goal was added, {@code false} if the character already has it
+     * @since 0.9.0
      */
     @Contract(mutates = "this")
     boolean addGoal(Goal goal);
+
+    /**
+     * Adds a goal to the character at the given position in the order goals take turns.
+     *
+     * @param index the position, {@code 0} being the first
+     * @param goal  goal to add
+     * @return {@code true} if the goal was added, {@code false} if the character already has it
+     * @throws IndexOutOfBoundsException if the index is out of range
+     * @since 0.9.0
+     */
+    @Contract(mutates = "this")
+    boolean addGoal(int index, Goal goal) throws IndexOutOfBoundsException;
 
     /**
      * Removes a goal from the character.
@@ -344,6 +361,15 @@ public interface Character {
      */
     @Contract(mutates = "this")
     boolean removeGoal(Goal goal);
+
+    /**
+     * Removes all goals from the character.
+     *
+     * @return {@code true} if any goal was removed, {@code false} otherwise
+     * @since 0.9.0
+     */
+    @Contract(mutates = "this")
+    boolean clearGoals();
 
     /**
      * Gets the click actions of this character.

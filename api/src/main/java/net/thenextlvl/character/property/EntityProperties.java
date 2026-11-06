@@ -552,14 +552,6 @@ public final class EntityProperties {
     public static final EntityProperty<LivingEntity, EquipmentSnapshot> LIVING_ENTITY_EQUIPMENT = create("living_entity:equipment", LivingEntity.class, EquipmentSnapshot.class);
 
     /**
-     * The {@code living_entity:ai} property of {@link LivingEntity}.
-     *
-     * @see LivingEntity#hasAI()
-     * @since 0.9.0
-     */
-    public static final EntityProperty<LivingEntity, Boolean> LIVING_ENTITY_AI = create("living_entity:ai", LivingEntity.class, Boolean.class);
-
-    /**
      * The {@code living_entity:arrows_in_body} property of {@link LivingEntity}.
      *
      * @see LivingEntity#getArrowsInBody()
@@ -598,14 +590,6 @@ public final class EntityProperties {
      * @since 0.9.0
      */
     public static final EntityProperty<Mob, Boolean> MOB_AGGRESSIVE = create("mob:aggressive", Mob.class, Boolean.class);
-
-    /**
-     * The {@code mob:aware} property of {@link Mob}.
-     *
-     * @see Mob#isAware()
-     * @since 0.9.0
-     */
-    public static final EntityProperty<Mob, Boolean> MOB_AWARE = create("mob:aware", Mob.class, Boolean.class);
 
     /**
      * The {@code mob:left_handed} property of {@link Mob}.

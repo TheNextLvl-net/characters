@@ -1,82 +1,33 @@
 package net.thenextlvl.character.goal;
 
-import io.papermc.paper.entity.LookAnchor;
-import org.bukkit.Location;
-import org.bukkit.entity.Entity;
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
+import com.google.common.base.Preconditions;
 
 /**
- * Represents a goal that looks at an entity or location.
+ * Makes the character look at a target while it is within range.
  *
- * @since 0.1.0
+ * @param target the target to look at
+ * @param range  the maximum distance between the entity and the target
+ * @since 0.9.0
  */
-@ApiStatus.NonExtendable
-public interface LookAtGoal extends Goal {
+public record LookAtGoal(Target target, double range) implements Goal {
     /**
-     * Gets the entity to look at.
+     * The default range.
      *
-     * @return target entity
-     * @since 0.1.0
+     * @since 0.9.0
      */
-    @Nullable
-    @Contract(pure = true)
-    Entity getTargetingEntity();
+    public static final double DEFAULT_RANGE = 8;
 
-    /**
-     * Gets the location to look at.
-     *
-     * @return target location
-     * @since 0.1.0
-     */
-    @Nullable
-    @Contract(pure = true)
-    Location getTargetingLocation();
+    public LookAtGoal {
+        Preconditions.checkArgument(range > 0, "Range must be positive");
+    }
 
     /**
-     * Gets the anchor used to look at the target.
+     * Makes the character look at a target within {@link #DEFAULT_RANGE}.
      *
-     * @return look anchor
-     * @since 0.1.0
+     * @param target the target to look at
+     * @since 0.9.0
      */
-    @Contract(pure = true)
-    LookAnchor getLookAnchor();
-
-    /**
-     * A builder for look at goals.
-     *
-     * @since 0.1.0
-     */
-    interface Builder extends Goal.Builder<LookAtGoal> {
-        /**
-         * Sets the anchor used to look at the target.
-         *
-         * @param anchor look anchor
-         * @return this builder
-         * @since 0.1.0
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder lookAt(LookAnchor anchor);
-
-        /**
-         * Sets the entity to look at.
-         *
-         * @param targetingEntity target entity
-         * @return this builder
-         * @since 0.1.0
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder targetEntity(Entity targetingEntity);
-
-        /**
-         * Sets the location to look at.
-         *
-         * @param targetingLocation target location
-         * @return this builder
-         * @since 0.1.0
-         */
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder targetLocation(Location targetingLocation);
+    public LookAtGoal(final Target target) {
+        this(target, DEFAULT_RANGE);
     }
 }
