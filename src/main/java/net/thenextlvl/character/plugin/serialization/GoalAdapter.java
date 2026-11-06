@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.serialization;
 
+import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.goal.LookAtGoal;
@@ -33,6 +34,11 @@ public final class GoalAdapter implements TagAdapter<Goal> {
                     root.get("range").getAsDouble(),
                     root.get("speed").getAsDouble()
             );
+            case "attack" -> new AttackGoal(
+                    context.deserialize(root.get("target"), Target.class),
+                    root.get("range").getAsDouble(),
+                    root.get("speed").getAsDouble()
+            );
             case "wander" -> new WanderGoal(
                     root.get("radius").getAsDouble(),
                     root.get("speed").getAsDouble()
@@ -61,6 +67,12 @@ public final class GoalAdapter implements TagAdapter<Goal> {
                     .put("distance", follow.distance())
                     .put("range", follow.range())
                     .put("speed", follow.speed())
+                    .build();
+            case final AttackGoal attack -> CompoundTag.builder()
+                    .put("type", "attack")
+                    .put("target", context.serialize(attack.target(), Target.class))
+                    .put("range", attack.range())
+                    .put("speed", attack.speed())
                     .build();
             case final WanderGoal wander -> CompoundTag.builder()
                     .put("type", "wander")

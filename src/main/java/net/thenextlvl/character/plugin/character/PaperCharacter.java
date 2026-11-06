@@ -14,9 +14,11 @@ import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.CharacterAnimation;
 import net.thenextlvl.character.action.ClickAction;
+import net.thenextlvl.character.action.ClickType;
 import net.thenextlvl.character.event.CharacterTeleportEvent;
 import net.thenextlvl.character.event.CharacterViewerAddEvent;
 import net.thenextlvl.character.event.CharacterViewerRemoveEvent;
+import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.goal.LookAtGoal;
@@ -351,11 +353,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     /**
      * Makes the entity of the player look at them for a few seconds, if the character looks at interactions.
+     * <p>
+     * Only right clicks count, left clicks are attacks and should not stop the character.
      *
-     * @param player the player interacting with the character
+     * @param player    the player interacting with the character
+     * @param clickType how the player interacted
      */
-    public void interact(final Player player) {
-        if (!lookAtInteraction) return;
+    public void interact(final Player player, final ClickType clickType) {
+        if (!lookAtInteraction || !clickType.isRightClick()) return;
         final var entity = entities.get(player.getUniqueId());
         if (entity == null) return;
         plugin.supply(entity, () -> {
@@ -423,6 +428,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         return goals.stream().allMatch(goal -> switch (goal) {
             case final FollowGoal follow ->
                     !(follow.target() instanceof Target.Viewer || follow.target() instanceof Target.NearestPlayer);
+            case final AttackGoal attack ->
+                    !(attack.target() instanceof Target.Viewer || attack.target() instanceof Target.NearestPlayer);
             case final WanderGoal ignored -> true;
             case final PatrolGoal ignored -> true;
             case final LookAtGoal ignored -> true;

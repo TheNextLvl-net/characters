@@ -5,7 +5,7 @@ package net.thenextlvl.character.goal;
  *
  * @since 0.9.0
  */
-public sealed interface MovementGoal extends Goal permits FollowGoal, PatrolGoal, WanderGoal {
+public sealed interface MovementGoal extends Goal permits AttackGoal, FollowGoal, PatrolGoal, WanderGoal {
     /**
      * The default speed modifier, the normal movement speed of the entity.
      *

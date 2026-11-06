@@ -2,11 +2,16 @@ package net.thenextlvl.character.plugin.listener;
 
 import io.papermc.paper.event.player.PlayerPickEntityEvent;
 import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
+import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ClickType;
+import net.thenextlvl.character.event.CharacterDamageEvent;
+import net.thenextlvl.character.event.CharacterDeathEvent;
+import net.thenextlvl.character.event.CharacterRespawnEvent;
 import net.thenextlvl.character.event.PlayerCharacterInteractEvent;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
 import org.bukkit.GameRules;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -56,7 +61,17 @@ public final class EntityListener implements Listener {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onEntityDamage(final EntityDamageEvent event) {
         if (!plugin.characterProvider().isCharacterPart(event.getEntity())) return;
-        event.setCancelled(event.getEntity().isMarkedInvulnerable());
+        if (event.getEntity().isMarkedInvulnerable()) {
+            event.setCancelled(true);
+            return;
+        }
+        plugin.characterProvider().getCharacter(event.getEntity()).ifPresent(character -> {
+            final var viewer = ((PaperCharacter) character).getOwner(event.getEntity());
+            if (viewer == null) return;
+            final var damageEvent = new CharacterDamageEvent(character, viewer, event.getDamageSource(), event.getDamage());
+            if (damageEvent.callEvent()) event.setDamage(damageEvent.getDamage());
+            else event.setCancelled(true);
+        });
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -76,12 +91,18 @@ public final class EntityListener implements Listener {
         plugin.characterProvider().getCharacter(event.getEntity()).ifPresent(character -> {
             final var owner = ((PaperCharacter) character).getOwner(event.getEntity());
             if (owner == null) return;
+            new CharacterDeathEvent(character, owner).callEvent();
             // todo: maybe make the respawn delay a per-character property (with an option to never respawn)
             if (!event.getEntity().getWorld().getGameRuleValue(GameRules.IMMEDIATE_RESPAWN)) {
                 plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.despawn(owner), 20);
-                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.spawn(owner), 75);
-            } else character.despawn(owner).thenCompose(ignored -> character.spawn(owner));
+                plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> respawn(character, owner), 75);
+            } else character.despawn(owner).thenAccept(ignored -> respawn(character, owner));
         });
+    }
+
+    private void respawn(final Character character, final Player viewer) {
+        if (!viewer.isConnected()) return;
+        if (new CharacterRespawnEvent(character, viewer).callEvent()) character.spawn(viewer);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

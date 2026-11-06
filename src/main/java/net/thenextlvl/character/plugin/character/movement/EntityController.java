@@ -1,5 +1,7 @@
 package net.thenextlvl.character.plugin.character.movement;
 
+import net.thenextlvl.character.event.CharacterAttackEvent;
+import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.goal.LookAtGoal;
@@ -9,11 +11,14 @@ import net.thenextlvl.character.goal.Target;
 import net.thenextlvl.character.goal.WanderGoal;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.character.PaperCharacter;
+import net.thenextlvl.character.property.EntityProperties;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
@@ -218,6 +223,8 @@ public final class EntityController {
 
         final var interaction = interaction(current);
         final var action = interaction != null ? interaction : action(goals, home, current, player);
+        if (attackCooldown > 0) attackCooldown--;
+        setAggressive(action.attack() != null);
         if (action == Action.IDLE) {
             rotate(null, current, false, home);
             if (goals.isEmpty()) stop();
@@ -243,6 +250,7 @@ public final class EntityController {
             if (physics) entity.setVelocity(new Vector(0, flies() ? 0 : vertical(current, null), 0));
             character.doors().close();
             rotate(action.look(), current, false, home);
+            if (action.attack() != null) attack(action.attack(), current);
             return;
         }
 
@@ -259,7 +267,64 @@ public final class EntityController {
             character.doors().open(entity, ahead, halfWidth());
         }
         character.doors().close();
-        rotate(null, current, moving, home);
+        // the head looks at the target, if any, while the body faces the way it walks
+        rotate(action.look(), current, moving, home);
+        if (action.attack() != null) attack(action.attack(), current);
+    }
+
+    // attacking
+
+    // like vanilla's MeleeAttackGoal, once a second
+    private static final int ATTACK_INTERVAL = 20;
+    // vanilla's melee attack range, how far the attack box reaches beyond the hitbox
+    private static final double ATTACK_REACH = 0.828;
+    private int attackCooldown;
+    private boolean aggressive;
+
+    // whether the hitboxes are within vanilla's melee attack range
+    private boolean isInReach(final Location current, final Player target) {
+        final var reach = entity.getWidth() / 2 + ATTACK_REACH + target.getWidth() / 2;
+        final var location = target.getLocation();
+        if (horizontalDistance(current, location) > reach) return false;
+        return location.getY() < current.getY() + entity.getHeight() && current.getY() < location.getY() + target.getHeight();
+    }
+
+    /*
+     * Every viewer sees their own entity swing at the target,
+     * but only the target's own entity hurts them, the target would be hurt by every viewer's entity otherwise.
+     */
+    private void attack(final Player target, final Location current) {
+        if (attackCooldown > 0 || !isInReach(current, target)) return;
+        attackCooldown = ATTACK_INTERVAL;
+        if (!(entity instanceof final LivingEntity living)) return;
+        living.swingMainHand();
+        if (!target.getUniqueId().equals(viewer)) return;
+        if (!new CharacterAttackEvent(character, target).callEvent()) return;
+        // vanilla's attack with weapon damage and knockback, which needs both on the same region
+        if (living instanceof Mob && plugin.getServer().isOwnedByCurrentRegion(target)) {
+            living.attack(target);
+            return;
+        }
+        final var damage = attackDamage(living);
+        final var source = DamageSource.builder(DamageType.MOB_ATTACK).withCausingEntity(living).withDirectEntity(living).build();
+        plugin.supply(target, () -> target.damage(damage, source));
+    }
+
+    // the attack damage attribute, which entities like mannequins get to apply the modifiers of their weapon
+    private double attackDamage(final LivingEntity living) {
+        var attribute = living.getAttribute(Attribute.ATTACK_DAMAGE);
+        if (attribute == null) {
+            living.registerAttribute(Attribute.ATTACK_DAMAGE);
+            attribute = living.getAttribute(Attribute.ATTACK_DAMAGE);
+        }
+        return attribute != null ? attribute.getValue() : 1;
+    }
+
+    // like vanilla, mobs show that they attack, like zombies raising their arms
+    private void setAggressive(final boolean aggressive) {
+        if (this.aggressive == aggressive || !(entity instanceof final Mob mob)) return;
+        this.aggressive = aggressive;
+        mob.setAggressive(aggressive || character.getProperty(EntityProperties.MOB_AGGRESSIVE).orElse(false));
     }
 
     private boolean isKnockedBack() {
@@ -312,11 +377,29 @@ public final class EntityController {
     }
 
     // what the running goal does this tick, either moving or looking
-    private record Action(@Nullable Movement movement, @Nullable Location look) {
+    // what the running goal does this tick: moving, looking and attacking
+    /*
+     * What the running goal does this tick: moving, looking and attacking.
+     * A held action is a satisfied goal, the entity stands still but may still look at something.
+     */
+    private record Action(@Nullable Movement movement, @Nullable Location look, @Nullable Player attack, boolean hold) {
         // no goal applies, the entity keeps its own state
-        private static final Action IDLE = new Action(null, null);
+        private static final Action IDLE = new Action(null, null, null, false);
         // a movement goal applies, but has nothing to do right now, so the entity stands still where it is
-        private static final Action HOLD = new Action(null, null);
+        private static final Action HOLD = new Action(null, null, null, true);
+
+        private Action(@Nullable final Movement movement, @Nullable final Location look) {
+            this(movement, look, null, false);
+        }
+
+        private Action(@Nullable final Movement movement, @Nullable final Location look, @Nullable final Player attack) {
+            this(movement, look, attack, false);
+        }
+
+        // stands still, looking at the given location
+        private static Action hold(@Nullable final Location look) {
+            return look != null ? new Action(null, look, null, true) : HOLD;
+        }
     }
 
     /**
@@ -325,6 +408,8 @@ public final class EntityController {
      * @param player the player interacting with the entity
      */
     public void interact(final UUID player) {
+        // combat is never interrupted
+        if (state().running instanceof AttackGoal) return;
         interacting = player;
         interactionTicks = INTERACTION_TICKS;
     }
@@ -366,27 +451,28 @@ public final class EntityController {
         final var running = state.running;
         if (running != null && goals.contains(running)) {
             final var action = action(state, running, home, current, player, false, true);
-            if (action != null && action != Action.HOLD) return pursue(running, action);
+            if (action != null && !action.hold()) return pursue(running, action);
         }
         if (running != null) state.lastGoal = goals.indexOf(running);
         state.running = null;
-        var hold = false;
+        @Nullable Action hold = null;
         for (var i = 1; i <= goals.size(); i++) {
             final var index = Math.floorMod(state.lastGoal + i, goals.size());
             final var goal = goals.get(index);
             final var action = action(state, goal, home, current, player, true, true);
             if (action == null) continue;
-            if (action == Action.HOLD) {
-                hold = true;
+            if (action.hold()) {
+                // the first satisfied goal that looks at something, like a follow goal at its target
+                if (hold == null || (hold.look() == null && action.look() != null)) hold = action;
                 continue;
             }
             state.running = goal;
             state.mode = GoalState.Mode.RUNNING;
             return pursue(goal, action);
         }
-        state.mode = hold ? GoalState.Mode.HOLD : GoalState.Mode.NONE;
+        state.mode = hold != null ? GoalState.Mode.HOLD : GoalState.Mode.NONE;
         pursue(null, null);
-        return hold ? Action.HOLD : fallback(home);
+        return hold != null ? hold : fallback(home);
     }
 
     // does what the leading entity decided, an entity that is done before the leader waits for it
@@ -400,7 +486,11 @@ public final class EntityController {
             }
             case HOLD -> {
                 pursue(null, null);
-                yield Action.HOLD;
+                // looks at what its own satisfied goal looks at, like the target it follows
+                yield goals.stream()
+                        .map(goal -> action(state, goal, home, current, player, false, false))
+                        .filter(action -> action != null && action.hold() && action.look() != null)
+                        .findFirst().orElse(Action.HOLD);
             }
             case NONE -> {
                 pursue(null, null);
@@ -430,6 +520,16 @@ public final class EntityController {
         // only living entities have physics to move with
         if (goal instanceof MovementGoal && !(entity instanceof LivingEntity)) return null;
         return switch (goal) {
+            case final AttackGoal attack -> {
+                // the nearest player to the character's location, like when following
+                final var target = resolvePlayer(attack.target(), player, home);
+                if (target == null || !target.getWorld().equals(home.getWorld()) || target.isDead()) yield null;
+                if (target.getGameMode() == GameMode.CREATIVE || target.getGameMode() == GameMode.SPECTATOR) yield null;
+                if (target.getLocation().distanceSquared(home) > attack.range() * attack.range()) yield null;
+                if (isInReach(current, target)) yield new Action(null, target.getEyeLocation(), target);
+                // keeps its eyes on the target while chasing it
+                yield new Action(new Movement(target.getLocation(), 0, attack.speed(), 1), target.getEyeLocation(), target);
+            }
             case final FollowGoal follow -> {
                 // the nearest player to the character's location, the entity itself is always closest to the one it follows
                 final var target = resolve(follow.target(), player, home, false);
@@ -437,10 +537,12 @@ public final class EntityController {
                 if (target.distanceSquared(home) > follow.range() * follow.range()) yield null;
                 // like vanilla, it only starts following again once the target is farther away than where it stops
                 final var distance = start ? follow.distance() + FOLLOW_START_DISTANCE : follow.distance();
-                if (arrived(current, target, distance)) yield Action.HOLD;
+                // it looks at the target while following it and while waiting close to it
+                final var eyes = resolve(follow.target(), player, home, true);
+                if (arrived(current, target, distance)) yield Action.hold(eyes);
                 // the target can not be reached, it is tried again with a new path
-                if (lead && !start && stuckTicks >= STUCK_TICKS) yield Action.HOLD;
-                yield new Action(new Movement(target, follow.distance(), follow.speed(), 1), null);
+                if (lead && !start && stuckTicks >= STUCK_TICKS) yield Action.hold(eyes);
+                yield new Action(new Movement(target, follow.distance(), follow.speed(), 1), eyes);
             }
             case final WanderGoal wander -> {
                 final var target = wander(wander, home, current);
@@ -654,6 +756,15 @@ public final class EntityController {
         }
 
         final var wantedYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        // on a ladder, vine or scaffolding it moves straight towards the wanted position, like off the top onto a ledge,
+        // turning first would make it walk out of the ladder and fall off
+        if (PathFinder.isClimbable(current.getBlock())) {
+            movementYaw = wantedYaw;
+            climbing = dy > 0;
+            final var distance = Math.sqrt(horizontalSquared);
+            final var speed = Math.min(speed(modifier, false), distance);
+            return new Vector(dx / distance * speed, 0, dz / distance * speed);
+        }
         movementYaw = rotateTowards(movementYaw, wantedYaw, MAX_TURN);
         var speed = speed(modifier, PathFinder.isWater(current.getBlock()));
         // do not overshoot the target itself, nodes are only waypoints
@@ -883,6 +994,20 @@ public final class EntityController {
     }
 
     // targets
+
+    // like resolve, but only players
+    private @Nullable Player resolvePlayer(final Target target, @Nullable final Player viewer, final Location origin) {
+        return switch (target) {
+            case Target.Viewer ignored -> viewer;
+            case final Target.OfPlayer ofPlayer -> plugin.getServer().getPlayer(ofPlayer.player());
+            case final Target.NearestPlayer nearest -> viewer == null ? null : origin.getNearbyPlayers(nearest.radius()).stream()
+                    .filter(player -> player.getGameMode() != GameMode.SPECTATOR)
+                    .filter(player -> player.equals(viewer) || viewer.canSee(player))
+                    .min(Comparator.comparingDouble(player -> player.getLocation().distanceSquared(origin)))
+                    .orElse(null);
+            case Target.Position ignored -> null;
+        };
+    }
 
     // the nearest player is the one closest to the origin
     private @Nullable Location resolve(final Target target, @Nullable final Player viewer, final Location origin, final boolean eyes) {

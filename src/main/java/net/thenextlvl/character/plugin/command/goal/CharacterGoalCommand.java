@@ -13,6 +13,7 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.goal.LookAtGoal;
@@ -50,6 +51,7 @@ public final class CharacterGoalCommand extends BrigadierCommand {
         return Commands.literal("add").then(characterArgument(plugin)
                 .then(targets("look-at", LookAtGoal::new))
                 .then(targets("follow", FollowGoal::new))
+                .then(targets("attack", AttackGoal::new))
                 .then(Commands.literal("wander").then(Commands.argument("radius", DoubleArgumentType.doubleArg(1))
                         .executes(context -> add(context, new WanderGoal(context.getArgument("radius", double.class)))))));
     }
@@ -157,6 +159,7 @@ public final class CharacterGoalCommand extends BrigadierCommand {
             case final LookAtGoal lookAt -> "look at " + describe(lookAt.target()) + " (range " + lookAt.range() + ")";
             case final FollowGoal follow -> "follow " + describe(follow.target())
                                             + " (distance " + follow.distance() + ", range " + follow.range() + ")";
+            case final AttackGoal attack -> "attack " + describe(attack.target()) + " (range " + attack.range() + ")";
             case final WanderGoal wander -> "wander (radius " + wander.radius() + ")";
             case final PatrolGoal patrol -> "patrol (" + patrol.points().size() + " points)";
         };

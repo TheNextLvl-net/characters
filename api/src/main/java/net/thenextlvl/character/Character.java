@@ -324,7 +324,8 @@ public interface Character {
     /**
      * Checks if the character looks at players that interact with it.
      * <p>
-     * The entity of the player stops whatever it is doing and looks at them for a few seconds.
+     * The entity of a player that right-clicks it stops whatever it is doing and looks at them for a few seconds,
+     * unless it is attacking.
      *
      * @return {@code true} if the character looks at interacting players
      * @since 0.9.0

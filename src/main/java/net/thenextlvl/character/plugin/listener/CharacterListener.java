@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 public final class CharacterListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlayerCharacterInteract(final PlayerCharacterInteractEvent event) {
-        ((PaperCharacter) event.getCharacter()).interact(event.getPlayer());
+        ((PaperCharacter) event.getCharacter()).interact(event.getPlayer(), event.getClickType());
         event.getCharacter().forEachAction((name, action) -> {
             if (action.isSupportedClickType(event.getClickType())) action.invoke(event.getCharacter(), event.getPlayer());
         });

@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.serialization;
 
+import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
 import net.thenextlvl.character.goal.LookAtGoal;
@@ -29,6 +30,8 @@ class GoalAdapterTest {
                 new LookAtGoal(Target.nearestPlayer(12), 4),
                 new FollowGoal(Target.player(UUID.randomUUID())),
                 new FollowGoal(Target.viewer(), 1, 20, 0.3),
+                new AttackGoal(Target.viewer()),
+                new AttackGoal(Target.nearestPlayer(10), 12, 1.2),
                 new WanderGoal(5),
                 new WanderGoal(8, 0.1)
         );
