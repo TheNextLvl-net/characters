@@ -370,6 +370,8 @@ public final class EntityController {
      */
     private void attack(final Player target, final Location current) {
         if (attackCooldown > 0 || !isInReach(current, target)) return;
+        // like vanilla's MeleeAttackGoal, it only hits what it sees, not through blocks or around corners
+        if (!sees(target)) return;
         // mobs that leap at their target only hit it with a leap, coming down on it or as they land, not on the way up
         if (leapHeight() > 0 && !isLeapLanding()) return;
         attackCooldown = ATTACK_INTERVAL;
@@ -394,6 +396,11 @@ public final class EntityController {
             if (fireAspect > 0) target.setFireTicks(Math.max(target.getFireTicks(), fireAspect * 80));
             if (knockback > 0) target.knockback(knockback * 0.5, Math.sin(yaw), -Math.cos(yaw));
         });
+    }
+
+    // like vanilla's Sensing#hasLineOfSight, from eye to eye, through liquids and blocks without collision
+    private boolean sees(final Player target) {
+        return !(entity instanceof final LivingEntity living) || living.hasLineOfSight(target);
     }
 
     private double attackDamage(final LivingEntity living) {
@@ -643,7 +650,8 @@ public final class EntityController {
                 if (target == null || !target.getWorld().equals(home.getWorld()) || target.isDead()) yield null;
                 if (target.getGameMode() == GameMode.CREATIVE || target.getGameMode() == GameMode.SPECTATOR) yield null;
                 if (target.getLocation().distanceSquared(home) > attack.range() * attack.range()) yield null;
-                if (isInReach(current, target)) yield new Action(null, target.getEyeLocation(), target);
+                // in reach, but behind a block or a corner, it keeps moving until it sees the target
+                if (isInReach(current, target) && sees(target)) yield new Action(null, target.getEyeLocation(), target);
                 // keeps its eyes on the target while chasing it, once it is close enough to see it
                 yield new Action(new Movement(target.getLocation(), 0, attack.speed(), 1), inLookRange(current, target.getEyeLocation()), target);
             }
