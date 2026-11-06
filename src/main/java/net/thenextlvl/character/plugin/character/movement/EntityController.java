@@ -97,8 +97,8 @@ public final class EntityController {
     private static final float DEFAULT_MAX_HEAD_PITCH = 40;
     private static final float BODY_ROTATION_SPEED = 5;
     private static final double JUMP_VELOCITY = 0.42;
-    // like vanilla, climbing ladders
-    private static final double CLIMBING_VELOCITY = 0.2;
+    // like vanilla, climbing ladders: vanilla sets 0.2 after the move, gravity and drag leave (0.2 - 0.08) * 0.98 for the next one
+    private static final double CLIMBING_VELOCITY = (0.2 - 0.08) * 0.98;
     // like vanilla's jump delay
     private static final int JUMP_DELAY = 10;
     private static final double WATER_JUMP_VELOCITY = 0.3;
@@ -527,8 +527,8 @@ public final class EntityController {
                 if (target.getGameMode() == GameMode.CREATIVE || target.getGameMode() == GameMode.SPECTATOR) yield null;
                 if (target.getLocation().distanceSquared(home) > attack.range() * attack.range()) yield null;
                 if (isInReach(current, target)) yield new Action(null, target.getEyeLocation(), target);
-                // keeps its eyes on the target while chasing it
-                yield new Action(new Movement(target.getLocation(), 0, attack.speed(), 1), target.getEyeLocation(), target);
+                // keeps its eyes on the target while chasing it, once it is close enough to see it
+                yield new Action(new Movement(target.getLocation(), 0, attack.speed(), 1), inLookRange(current, target.getEyeLocation()), target);
             }
             case final FollowGoal follow -> {
                 // the nearest player to the character's location, the entity itself is always closest to the one it follows
@@ -537,8 +537,8 @@ public final class EntityController {
                 if (target.distanceSquared(home) > follow.range() * follow.range()) yield null;
                 // like vanilla, it only starts following again once the target is farther away than where it stops
                 final var distance = start ? follow.distance() + FOLLOW_START_DISTANCE : follow.distance();
-                // it looks at the target while following it and while waiting close to it
-                final var eyes = resolve(follow.target(), player, home, true);
+                // it looks at the target while following it and while waiting close to it, once it is close enough to see it
+                final var eyes = inLookRange(current, resolve(follow.target(), player, home, true));
                 if (arrived(current, target, distance)) yield Action.hold(eyes);
                 // the target can not be reached, it is tried again with a new path
                 if (lead && !start && stuckTicks >= STUCK_TICKS) yield Action.hold(eyes);
@@ -994,6 +994,13 @@ public final class EntityController {
     }
 
     // targets
+
+    // the target, if it is close enough to look at, like a look goal with the default range
+    private @Nullable Location inLookRange(final Location current, @Nullable final Location target) {
+        if (target == null || !target.getWorld().equals(current.getWorld())) return null;
+        final var range = LookAtGoal.DEFAULT_RANGE;
+        return target.distanceSquared(eyes(current)) <= range * range ? target : null;
+    }
 
     // like resolve, but only players
     private @Nullable Player resolvePlayer(final Target target, @Nullable final Player viewer, final Location origin) {
