@@ -79,6 +79,23 @@ class PathFinderTest {
     }
 
     @Test
+    void dropsDownItsMaxFallDistance() {
+        final var world = new FakeWorld();
+        world.floor(-10, 10);
+        // a five block high platform to start on, with the floor below it
+        for (var x = -10; x <= 2; x++) for (var z = -10; z <= 10; z++) for (var y = FLOOR + 1; y <= FLOOR + 5; y++) world.blocks.put(key(x, y, z), Kind.SOLID);
+        final var from = new Location(world.proxy(), 0.5, FLOOR + 6, 0.5);
+        final var to = new Location(world.proxy(), 6.5, FLOOR + 1, 0.5);
+
+        final var careful = finder(world, false, PathFinder.Swimming.SINK).find(from, to, 0);
+        assertFalse(careful.reaches(), "dropped down five blocks: " + describe(careful.nodes()));
+
+        final var daring = new PathFinder(world.server(), world.proxy(), 1.8, 0.6, 1.62, false, PathFinder.Swimming.SINK, 48, false, false, true, Map.of(), 5)
+                .find(from, to, 0);
+        assertTrue(daring.reaches(), "did not drop down five blocks: " + describe(daring.nodes()));
+    }
+
+    @Test
     void worksWithNegativeCoordinates() {
         final var world = new FakeWorld();
         world.floor(-1010, -990);

@@ -31,7 +31,8 @@ import java.util.Set;
  * Nodes are the blocks an entity can stand or swim in: the block and the blocks above it up to the entity height
  * are passable, water, an open door or, if the entity may open doors, a door that can be opened by hand,
  * and the block below has a collision box, unless the entity swims.
- * An entity can jump up one block, drop down {@link #MAX_FALL} blocks and swim depending on its {@link Swimming} ability.
+ * An entity can jump up one block, drop down its maximum fall distance, by default {@link #MAX_FALL} blocks,
+ * and swim depending on its {@link Swimming} ability.
  * Entities that can swim also drop into water from any height up to {@link #MAX_WATER_FALL} blocks, as it breaks their fall.
  * Ladders, vines and scaffolding can be climbed up and down by every entity, like in vanilla.
  * Entities that climb walls, like spiders, can also be in any block next to a wall, to climb up, down and along it.
@@ -107,6 +108,7 @@ public final class PathFinder {
     private final boolean climbs;
     private final boolean flies;
     private final boolean jumps;
+    private final int maxFall;
 
     /**
      * How an entity moves in water.
@@ -143,6 +145,28 @@ public final class PathFinder {
     public PathFinder(final Server server, final World world, final double entityHeight, final double entityWidth, final double eyeHeight,
                       final boolean openDoors, final Swimming swimming, final double followRange,
                       final boolean climbs, final boolean flies, final boolean jumps, final Map<PathType, Float> overrides) {
+        this(server, world, entityHeight, entityWidth, eyeHeight, openDoors, swimming, followRange, climbs, flies, jumps, overrides, MAX_FALL);
+    }
+
+    /**
+     * @param server       the server, used to check region ownership
+     * @param world        the world to find paths in
+     * @param entityHeight the height of the entity, to check the clearance
+     * @param entityWidth  the width of the entity, to check the clearance
+     * @param eyeHeight    the eye height of the entity, to keep its eyes above water
+     * @param openDoors    whether the entity may open closed doors
+     * @param swimming     how the entity moves in water
+     * @param followRange  the follow range of the entity, limiting the visited nodes like in vanilla, or {@code 0} for the default
+     * @param climbs       whether the entity climbs walls, like spiders
+     * @param flies        whether the entity flies
+     * @param jumps        whether the entity is fast enough to jump over gaps and damaging blocks
+     * @param overrides    the malus of path types that differ for the entity, like in vanilla
+     * @param maxFall      the number of blocks the entity drops down, like vanilla's {@code Mob#getMaxFallDistance}
+     */
+    public PathFinder(final Server server, final World world, final double entityHeight, final double entityWidth, final double eyeHeight,
+                      final boolean openDoors, final Swimming swimming, final double followRange,
+                      final boolean climbs, final boolean flies, final boolean jumps, final Map<PathType, Float> overrides,
+                      final int maxFall) {
         this.server = server;
         this.world = world;
         this.height = Math.max(1, (int) Math.ceil(entityHeight));
@@ -155,6 +179,7 @@ public final class PathFinder {
         this.flies = flies;
         this.jumps = jumps;
         this.overrides = overrides;
+        this.maxFall = maxFall;
     }
 
     // the malus of the type for this entity, divers swim through water at no cost unless overridden
@@ -413,8 +438,8 @@ public final class PathFinder {
                 addIfPassable(neighbors, nx, y + 1, nz);
             }
             // on land, a node above means the block at this level is solid, in water both can be valid
-            final var maxFall = swimming != Swimming.SINK ? MAX_WATER_FALL : MAX_FALL;
-            for (var dy = 0; dy <= maxFall; dy++) {
+            final var maxDrop = swimming != Swimming.SINK ? Math.max(MAX_WATER_FALL, maxFall) : maxFall;
+            for (var dy = 0; dy <= maxDrop; dy++) {
                 if (dy > 0 && !isClear(nx, y - dy + 1, nz)) break;
                 final var standing = standingHeight(nx, y - dy, nz);
                 // along the wall it climbs
@@ -429,7 +454,7 @@ public final class PathFinder {
                 }
                 if (standing == null) continue;
                 // deeper drops only into water
-                if (dy > MAX_FALL && !isWater(world.getBlockAt(nx, y - dy, nz))) break;
+                if (dy > maxFall && !isWater(world.getBlockAt(nx, y - dy, nz))) break;
                 if (standing - base <= MAX_STEP_UP) addIfPassable(neighbors, nx, y - dy, nz);
                 break;
             }

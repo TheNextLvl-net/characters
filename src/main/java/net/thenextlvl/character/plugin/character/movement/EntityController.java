@@ -24,6 +24,7 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.AbstractCubeMob;
+import org.bukkit.entity.Creeper;
 import org.bukkit.entity.AbstractVillager;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Animals;
@@ -1239,7 +1240,24 @@ public final class EntityController {
 
     private PathFinder pathFinder() {
         return new PathFinder(plugin.getServer(), entity.getWorld(), entity.getHeight(), entity.getWidth(), eyeHeight(),
-                opensDoors, swimming(), followRange(), climbsWalls(), flies(), jumpsGaps(), pathMalus());
+                opensDoors, swimming(), followRange(), climbsWalls(), flies(), jumpsGaps(), pathMalus(), maxFallDistance());
+    }
+
+    /*
+     * Like vanilla's Mob#getMaxFallDistance, mobs drop down three blocks,
+     * but while attacking they take the fall damage they can afford, depending on their health and the difficulty,
+     * creepers anything that leaves them with half a heart.
+     * Other entities, like mannequins, have no target and always drop three blocks, like players do in vanilla.
+     */
+    private int maxFallDistance() {
+        if (!(entity instanceof final Mob mob) || !(pursued instanceof AttackGoal)) return PathFinder.MAX_FALL;
+        final var health = (float) mob.getHealth();
+        if (mob instanceof Creeper) return (int) Math.floor(health - 1 + PathFinder.MAX_FALL);
+        final var maxHealth = mob.getAttribute(Attribute.MAX_HEALTH);
+        final var max = maxHealth != null ? (float) maxHealth.getValue() : health;
+        final var difficulty = mob.getWorld().getDifficulty().ordinal();
+        final var allowed = Math.max(0, (int) (health - max * 0.33f) - (3 - difficulty) * 4);
+        return allowed + PathFinder.MAX_FALL;
     }
 
     private @Nullable Map<PathFinder.PathType, Float> pathMalus;
