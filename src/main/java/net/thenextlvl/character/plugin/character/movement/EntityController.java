@@ -23,20 +23,27 @@ import org.bukkit.block.data.type.Ladder;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.AbstractCubeMob;
 import org.bukkit.entity.Allay;
+import org.bukkit.entity.Axolotl;
 import org.bukkit.entity.Bat;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Blaze;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Frog;
 import org.bukkit.entity.Ghast;
 import org.bukkit.entity.HappyGhast;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.MagmaCube;
 import org.bukkit.entity.Mannequin;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Spider;
 import org.bukkit.entity.Vex;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -274,9 +281,15 @@ public final class EntityController {
         final var moving = velocity.getX() != 0 || velocity.getZ() != 0;
         // flying entities move in all directions on their own
         if (!flies()) velocity.setY(vertical(current, movement));
+        if (hops()) hop(velocity, moving);
+        else if (entity instanceof Frog) longJump(velocity, moving, movement.target(), current);
         // like vanilla, an entity keeps its momentum in mid air and can only steer a little,
         // which is still enough to get onto a block it jumps up to once it is high enough
-        if (isAirborne(current)) {
+        // hoppers fly only as far as their hop carries them
+        if (isAirborne(current) && hops()) {
+            final var momentum = entity.getVelocity();
+            velocity.setX(momentum.getX()).setZ(momentum.getZ());
+        } else if (isAirborne(current)) {
             final var momentum = entity.getVelocity().setY(0);
             final var steered = momentum.clone().add(velocity.clone().setY(0).multiply(AIR_CONTROL));
             final var limit = Math.max(momentum.length(), Math.hypot(velocity.getX(), velocity.getZ()));
@@ -765,6 +778,95 @@ public final class EntityController {
         return entity instanceof LivingEntity && !flies() && speed(MovementGoal.DEFAULT_SPEED, false) >= JUMP_SPEED;
     }
 
+    // hopping
+
+    // like vanilla's slime move control, and the jump delay and power of rabbits
+    private static final int MIN_SLIME_HOP_DELAY = 10;
+    private static final int MAX_SLIME_HOP_DELAY = 29;
+    private static final int RABBIT_HOP_DELAY = 10;
+    // how far a hop carries a slime, a bit further the bigger it is
+    private static final double SLIME_HOP_DISTANCE = 0.5;
+    private static final double SLIME_HOP_DISTANCE_PER_SIZE = 0.25;
+    private static final double RABBIT_HOP_SPEED = 0.12;
+    private static final double RABBIT_JUMP_VELOCITY = 0.3;
+    // too little to be worth a hop, like a small correction close to the target
+    private static final double MIN_HOP_SPEED = 0.05;
+    private int hopDelay;
+
+    // like vanilla frogs, which walk, but now and then jump up to four blocks wide
+    private static final int MIN_LONG_JUMP_DELAY = 100;
+    private static final int MAX_LONG_JUMP_DELAY = 140;
+    private static final double MAX_LONG_JUMP_DISTANCE = 4;
+    private static final double MIN_LONG_JUMP_DISTANCE = 3;
+    private static final double LONG_JUMP_VELOCITY = 0.6;
+    // how far momentum carries an entity relative to its starting speed, through about twelve ticks of air drag
+    private static final double AIR_DISTANCE_FACTOR = 7.4;
+    private int longJumpDelay = MIN_LONG_JUMP_DELAY;
+
+    // slimes, magma cubes and rabbits only move while they hop
+    private boolean hops() {
+        return entity instanceof AbstractCubeMob || entity instanceof Rabbit;
+    }
+
+    private boolean isSitting() {
+        return entity.getPose() == Pose.SITTING || (entity instanceof final Sittable sittable && sittable.isSitting());
+    }
+
+    /*
+     * Waits on the ground, then jumps towards the wanted position and moves while in the air,
+     * the momentum carries it from there, see the air control in tick.
+     * A sitting rabbit does not move at all.
+     */
+    private void hop(final Vector velocity, final boolean moving) {
+        if (isSitting()) {
+            velocity.setX(0).setZ(0);
+            return;
+        }
+        if (!moving || !entity.isOnGround()) return;
+        final var horizontal = Math.hypot(velocity.getX(), velocity.getZ());
+        if (hopDelay > 0 || horizontal < MIN_HOP_SPEED) {
+            if (hopDelay > 0) hopDelay--;
+            // no jumping at all while waiting, not even when a block is in the way
+            velocity.setX(0).setY(Math.min(velocity.getY(), entity.getVelocity().getY())).setZ(0);
+            return;
+        }
+        final double speed;
+        if (entity instanceof final AbstractCubeMob cube) {
+            hopDelay = ThreadLocalRandom.current().nextInt(MIN_SLIME_HOP_DELAY, MAX_SLIME_HOP_DELAY + 1);
+            // magma cubes jump higher the bigger they are
+            velocity.setY(cube instanceof MagmaCube ? JUMP_VELOCITY + cube.getSize() * 0.1 : JUMP_VELOCITY);
+            speed = (SLIME_HOP_DISTANCE + SLIME_HOP_DISTANCE_PER_SIZE * cube.getSize()) / AIR_DISTANCE_FACTOR * modifierOf(velocity);
+        } else {
+            hopDelay = RABBIT_HOP_DELAY;
+            // a higher jump only when a block is in the way
+            velocity.setY(jumping ? JUMP_VELOCITY : RABBIT_JUMP_VELOCITY);
+            speed = RABBIT_HOP_SPEED * modifierOf(velocity);
+        }
+        velocity.setX(velocity.getX() / horizontal * speed).setZ(velocity.getZ() / horizontal * speed);
+    }
+
+    // now and then a long jump towards the target, if it is far enough away and the jump lands on something
+    private void longJump(final Vector velocity, final boolean moving, final Location target, final Location current) {
+        if (longJumpDelay > 0) longJumpDelay--;
+        if (longJumpDelay > 0 || !moving || !entity.isOnGround() || isSitting()) return;
+        final var distance = horizontalDistance(current, target);
+        if (distance < MIN_LONG_JUMP_DISTANCE) return;
+        final var jump = Math.min(distance, MAX_LONG_JUMP_DISTANCE);
+        final var horizontal = Math.hypot(velocity.getX(), velocity.getZ());
+        if (horizontal < 1.0E-3) return;
+        final var landing = current.clone().add(velocity.getX() / horizontal * jump, 0, velocity.getZ() / horizontal * jump);
+        if (pathFinder().ground(landing.getBlockX(), current.getBlockY(), landing.getBlockZ(), 2) == null) return;
+        longJumpDelay = ThreadLocalRandom.current().nextInt(MIN_LONG_JUMP_DELAY, MAX_LONG_JUMP_DELAY + 1);
+        final var speed = jump / AIR_DISTANCE_FACTOR;
+        velocity.setX(velocity.getX() / horizontal * speed).setY(LONG_JUMP_VELOCITY).setZ(velocity.getZ() / horizontal * speed);
+    }
+
+    // how fast the goal wants to move, relative to its normal speed, which hops scale with
+    private double modifierOf(final Vector velocity) {
+        final var walking = speed(MovementGoal.DEFAULT_SPEED, false);
+        return walking > 0 ? Math.clamp(Math.hypot(velocity.getX(), velocity.getZ()) / walking, 0.25, 2) : 1;
+    }
+
     private boolean climbsWalls() {
         return entity instanceof Spider;
     }
@@ -974,7 +1076,9 @@ public final class EntityController {
     private double speed(final double modifier, final boolean water) {
         final var attribute = entity instanceof final LivingEntity living ? living.getAttribute(Attribute.MOVEMENT_SPEED) : null;
         if (entity instanceof Mob) {
-            final var speed = (attribute != null ? attribute.getValue() : 0) * modifier;
+            // frogs and axolotls use vanilla's smooth swimming move control, which slows them down on land
+            final var land = water ? 1 : entity instanceof Frog ? 0.1 : entity instanceof Axolotl ? 0.5 : 1;
+            final var speed = (attribute != null ? attribute.getValue() : 0) * modifier * land;
             return water ? WATER_SPEED * speed : MOB_GROUND_SPEED * speed * speed;
         }
         final var relative = attribute != null ? attribute.getValue() / Attribute.MOVEMENT_SPEED.getDefaultValue() : 1;
