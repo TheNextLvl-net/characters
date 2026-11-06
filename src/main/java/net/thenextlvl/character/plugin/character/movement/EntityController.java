@@ -166,6 +166,8 @@ public final class EntityController {
     private static final double BUOYANCY = 0.04;
     // once rising, a swimming entity rises this far above the jump threshold before it sinks back, so it bobs visibly
     private static final double BOBBING = 0.25;
+    // how deep a swimming mannequin swims, its hitbox is 0.6 high, so its head just breaks the surface
+    private static final double SWIMMING_DEPTH = 0.5;
     // the height of the water surface within the topmost water block
     private static final double WATER_SURFACE = 0.9;
     private static final double DEFAULT_STEP_HEIGHT = 0.6;
@@ -176,7 +178,6 @@ public final class EntityController {
     private static final double WATER_SPEED = 0.1;
     // other entities walk and swim like players do at their default movement speed
     private static final double WALKING_SPEED = 0.2158;
-    private static final double SWIMMING_SPEED = 0.098;
     private static final double FLYING_SPEED = 0.15;
     // mannequins sprint like players, once the target is far away, until it is close again
     private static final double SPRINTING_MULTIPLIER = 1.3;
@@ -288,6 +289,7 @@ public final class EntityController {
         if (attackCooldown > 0) attackCooldown--;
         // the leap ends once it lands, with a tick to hit the target it lands on
         if (leaping && entity.isOnGround() && leapLandedTicks++ > 0) leaping = false;
+        updateSwimming(current);
         setAggressive(action.attack() != null);
         if (action == Action.IDLE) {
             rotate(null, current, false, home);
@@ -366,6 +368,10 @@ public final class EntityController {
     // vanilla's melee attack range, how far the attack box reaches beyond the hitbox
     private static final double ATTACK_REACH = 0.828;
     private int attackCooldown;
+    // the pose a swimming mannequin gets back once it stops swimming, and its size standing, null while it does not swim
+    private @Nullable Pose swimmingPose;
+    private double standingHeight;
+    private double standingEyeHeight;
     // the player this entity attacks, it keeps attacking it even if it would not notice it anymore
     private @Nullable UUID attackTarget;
     // whether the entity is in the middle of a leap at its target, and for how many ticks it is on the ground again
@@ -1257,6 +1263,15 @@ public final class EntityController {
             }
             case SURFACE -> {
                 if (jumping) return WATER_JUMP_VELOCITY;
+                // a swimming mannequin glides right below the surface, like a sprint swimming player, instead of bobbing up
+                if (swimmingPose != null) {
+                    surfacing = false;
+                    if (movement == null) return 0;
+                    // like vanilla's LivingEntity#jumpOutOfFluid, it can not step up in the water, so it jumps out onto a ledge
+                    if (isAgainstLedge(current)) return WATER_JUMP_VELOCITY;
+                    final var speed = speed(movement.speed(), true);
+                    return Math.clamp((waterDepth(current) - SWIMMING_DEPTH) * 0.1, -speed, speed);
+                }
                 // like vanilla's FloatGoal, which keeps jumping while the water is deeper than the threshold,
                 // but it keeps rising a bit longer before it sinks back, so it bobs instead of hovering
                 final var depth = waterDepth(current);
@@ -1344,6 +1359,18 @@ public final class EntityController {
         return block.getBoundingBox().getMaxY() - current.getY() > stepHeight();
     }
 
+    // whether a block is right in front of the entity at its feet, with room above it to get onto
+    private boolean isAgainstLedge(final Location current) {
+        final var radians = Math.toRadians(movementYaw);
+        final var reach = halfWidth() + 0.3;
+        final var x = (int) Math.floor(current.getX() - Math.sin(radians) * reach);
+        final var z = (int) Math.floor(current.getZ() + Math.cos(radians) * reach);
+        final var block = current.getWorld().getBlockAt(x, (int) Math.floor(current.getY() + 0.01), z);
+        if (block.isPassable() || PathFinder.isOpen(block) || block.isLiquid()) return false;
+        final var above = block.getRelative(0, 1, 0);
+        return above.isPassable() && !above.isLiquid();
+    }
+
     // how deep the entity is in the water, from its feet up to the surface
     private static double waterDepth(final Location current) {
         var block = current.getBlock();
@@ -1370,8 +1397,8 @@ public final class EntityController {
             final var speed = (attribute != null ? attribute.getValue() : 0) * modifier * land;
             return water ? WATER_SPEED * speed : MOB_GROUND_SPEED * speed * speed;
         }
+        if (water) return swimmingSpeed(attribute != null ? attribute.getValue() : Attribute.MOVEMENT_SPEED.getDefaultValue()) * modifier;
         final var relative = attribute != null ? attribute.getValue() / Attribute.MOVEMENT_SPEED.getDefaultValue() : 1;
-        if (water) return SWIMMING_SPEED * relative * modifier;
         return WALKING_SPEED * relative * modifier * (sprinting ? SPRINTING_MULTIPLIER : 1);
     }
 
@@ -1416,6 +1443,48 @@ public final class EntityController {
         return (Math.max(1, (int) (width + 1)) - width) / 2;
     }
 
+    /*
+     * Like vanilla's Entity#updateSwimming for players, a sprinting mannequin swims, until it stops sprinting or leaves the water.
+     * Players start swimming once their eyes are under water, mannequins keep them above the surface,
+     * so they start once the water is deep enough to swim in.
+     * Mannequins do not update their pose on their own, so it is set to swimming and back to the pose it had.
+     */
+    private void updateSwimming(final Location current) {
+        if (!(entity instanceof Mannequin)) return;
+        final var swim = swimmingPose != null
+                ? sprinting && entity.isInWater() && !entity.isInsideVehicle()
+                : sprinting && entity.isInWater() && !entity.isInsideVehicle()
+                  && PathFinder.isWater(current.getBlock()) && waterDepth(current) > waterJumpThreshold();
+        if (swim && swimmingPose == null) {
+            standingHeight = entity.getHeight();
+            standingEyeHeight = eyeHeight();
+            swimmingPose = entity.getPose();
+            entity.setPose(Pose.SWIMMING, true);
+        } else if (!swim && swimmingPose != null) {
+            entity.setPose(swimmingPose, true);
+            swimmingPose = null;
+        }
+    }
+
+    /*
+     * Like vanilla's LivingEntity#travelInWater for players, the speed a player swims at once the water slowed it down,
+     * the input of 0.02 per tick, by 0.98 for walking forward, slowed down every tick, sprinting less so.
+     * The movement speed only counts with water movement efficiency, like depth strider, which also lessens the slow down,
+     * and dolphin's grace barely slows it down.
+     */
+    private double swimmingSpeed(final double movementSpeed) {
+        var slowDown = sprinting ? 0.9 : 0.8;
+        var input = 0.02;
+        final var attribute = entity instanceof final LivingEntity living ? living.getAttribute(Attribute.WATER_MOVEMENT_EFFICIENCY) : null;
+        final var efficiency = (attribute != null ? attribute.getValue() : 0) * (entity.isOnGround() ? 1 : 0.5);
+        if (efficiency > 0) {
+            slowDown += (0.54600006 - slowDown) * efficiency;
+            input += (movementSpeed - input) * efficiency;
+        }
+        if (entity instanceof final LivingEntity living && living.hasPotionEffect(PotionEffectType.DOLPHINS_GRACE)) slowDown = 0.96;
+        return 0.98 * input * slowDown / (1 - slowDown);
+    }
+
     private void clearPath() {
         sprinting = false;
         path = List.of();
@@ -1427,7 +1496,10 @@ public final class EntityController {
     }
 
     private PathFinder pathFinder() {
-        return new PathFinder(plugin.getServer(), entity.getWorld(), entity.getHeight(), entity.getWidth(), eyeHeight(),
+        // paths fit the entity standing, while swimming it is smaller, but it can not stay in a gap only that fits
+        final var height = swimmingPose != null ? standingHeight : entity.getHeight();
+        final var eyes = swimmingPose != null ? standingEyeHeight : eyeHeight();
+        return new PathFinder(plugin.getServer(), entity.getWorld(), height, entity.getWidth(), eyes,
                 opensDoors, swimming(), followRange(), climbsWalls(), flies(), jumpsGaps(), pathMalus(), maxFallDistance());
     }
 
