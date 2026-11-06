@@ -17,6 +17,7 @@ import net.kyori.adventure.title.Title;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.binder.StaticBinder;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.CharacterAnimation;
 import net.thenextlvl.character.CharacterProvider;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ActionTypes;
@@ -159,6 +160,7 @@ public final class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(BlockData.class, new BlockDataAdapter(getServer()))
             .registerTypeHierarchyAdapter(BlockFace.class, new EnumAdapter<>(BlockFace.class))
             .registerTypeHierarchyAdapter(Brightness.class, new BrightnessAdapter())
+            .registerTypeHierarchyAdapter(CharacterAnimation.class, new EnumAdapter<>(CharacterAnimation.class))
             .registerTypeHierarchyAdapter(Cat.SoundVariant.class, new RegistryAdapter<>(RegistryKey.CAT_SOUND_VARIANT))
             .registerTypeHierarchyAdapter(Cat.Type.class, new RegistryAdapter<>(RegistryKey.CAT_VARIANT))
             .registerTypeHierarchyAdapter(Chicken.SoundVariant.class, new RegistryAdapter<>(RegistryKey.CHICKEN_SOUND_VARIANT))

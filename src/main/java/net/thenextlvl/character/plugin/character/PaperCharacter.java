@@ -12,6 +12,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags;
 import net.kyori.adventure.util.TriState;
 import net.thenextlvl.character.Character;
+import net.thenextlvl.character.CharacterAnimation;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.event.CharacterTeleportEvent;
 import net.thenextlvl.character.event.CharacterViewerAddEvent;
@@ -43,6 +44,7 @@ import net.thenextlvl.nbt.tag.Tag;
 import org.bukkit.Chunk;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.attribute.Attribute;
@@ -130,6 +132,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected volatile Path backupFile;
 
     protected volatile boolean displayNameVisible = true;
+    protected volatile boolean lookAtInteraction = false;
     protected volatile boolean persistent = true;
     protected volatile boolean visibleByDefault = true;
 
@@ -293,6 +296,73 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     private void updateAI() {
         entities.values().forEach(entity -> plugin.supply(entity, () -> updateAI(entity)));
+    }
+
+    @Override
+    public boolean playAnimation(final CharacterAnimation animation) {
+        if (!animation.isApplicable(entityClass) || entities.isEmpty()) return false;
+        entities.forEach((viewer, entity) -> playAnimation(animation, viewer, entity));
+        return true;
+    }
+
+    @Override
+    public boolean playAnimation(final CharacterAnimation animation, final Player viewer) {
+        final var entity = entities.get(viewer.getUniqueId());
+        if (entity == null || !animation.isApplicable(entityClass)) return false;
+        playAnimation(animation, viewer.getUniqueId(), entity);
+        return true;
+    }
+
+    private void playAnimation(final CharacterAnimation animation, final UUID viewer, final Entity entity) {
+        plugin.supply(entity, () -> {
+            switch (animation) {
+                case SWING_MAIN_HAND -> {
+                    if (entity instanceof final LivingEntity living) living.swingMainHand();
+                }
+                case SWING_OFF_HAND -> {
+                    if (entity instanceof final LivingEntity living) living.swingOffHand();
+                }
+                case HURT -> {
+                    if (entity instanceof final LivingEntity living) living.playHurtAnimation(0);
+                }
+                // vanilla only spawns the particles on the client, every viewer sees their own entity
+                case CRITICAL_HIT, MAGIC_CRITICAL_HIT -> {
+                    final var player = plugin.getServer().getPlayer(viewer);
+                    if (player == null) return;
+                    final var particle = animation == CharacterAnimation.CRITICAL_HIT ? Particle.CRIT : Particle.ENCHANTED_HIT;
+                    final var center = entity.getLocation().add(0, entity.getHeight() / 2, 0);
+                    player.spawnParticle(particle, center, 16, entity.getWidth() / 2, entity.getHeight() / 4, entity.getWidth() / 2, 0.4);
+                }
+            }
+        });
+    }
+
+    @Override
+    public boolean isLookingAtInteraction() {
+        return lookAtInteraction;
+    }
+
+    @Override
+    public boolean setLookAtInteraction(final boolean lookAtInteraction) {
+        if (this.lookAtInteraction == lookAtInteraction) return false;
+        this.lookAtInteraction = lookAtInteraction;
+        return true;
+    }
+
+    /**
+     * Makes the entity of the player look at them for a few seconds, if the character looks at interactions.
+     *
+     * @param player the player interacting with the character
+     */
+    public void interact(final Player player) {
+        if (!lookAtInteraction) return;
+        final var entity = entities.get(player.getUniqueId());
+        if (entity == null) return;
+        plugin.supply(entity, () -> {
+            startController(player.getUniqueId(), entity);
+            final var controller = controllers.get(player.getUniqueId());
+            if (controller != null) controller.interact(player.getUniqueId());
+        });
     }
 
     public Doors doors() {
@@ -1066,6 +1136,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         getTeamColor().ifPresent(teamColor -> tag.put("teamColor", plugin.nbt().serialize(teamColor)));
         getViewPermission().ifPresent(viewPermission -> tag.put("viewPermission", viewPermission));
         tag.put("displayNameVisible", isDisplayNameVisible());
+        if (lookAtInteraction) tag.put("lookAtInteraction", true);
         tag.put("tagOptions", tagOptions.serialize());
         tag.put("type", plugin.nbt().serialize(getType()));
         tag.put("visibleByDefault", isVisibleByDefault());
@@ -1107,6 +1178,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         tag.optional("displayName").map(Tag::getAsString)
                 .ifPresentOrElse(this::setDisplayName, () -> this.setDisplayName(null));
         tag.optional("displayNameVisible").map(Tag::getAsBoolean).ifPresent(this::setDisplayNameVisible);
+        tag.optional("lookAtInteraction").map(Tag::getAsBoolean).ifPresent(this::setLookAtInteraction);
         tag.optional("tagOptions").map(Tag::getAsCompound).ifPresent(tagOptions::deserialize);
         tag.optional("teamColor").map(t -> plugin.nbt().deserialize(t, NamedTextColor.class)).ifPresent(this::setTeamColor);
         tag.optional("viewPermission").map(Tag::getAsString).ifPresent(permission -> this.viewPermission = permission);

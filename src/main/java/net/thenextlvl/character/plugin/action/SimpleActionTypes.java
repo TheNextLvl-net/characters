@@ -5,6 +5,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.title.Title;
+import net.thenextlvl.character.CharacterAnimation;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ActionTypes;
 import net.thenextlvl.character.plugin.CharacterPlugin;
@@ -56,6 +57,11 @@ public final class SimpleActionTypes implements ActionTypes {
 
     private final ActionType<Title> sendTitle = ActionType.builder("send_title", Title.class)
             .action((character, player, title) -> player.showTitle(title))
+            .build();
+
+    private final ActionType<CharacterAnimation> playAnimation = ActionType.builder("play_animation", CharacterAnimation.class)
+            .action((character, player, animation) -> character.playAnimation(animation, player))
+            .applicable((animation, character) -> animation.isApplicable(character.getEntityClass()))
             .build();
 
     private final ActionType<String> connect;
@@ -126,6 +132,11 @@ public final class SimpleActionTypes implements ActionTypes {
     @Override
     public ActionType<String> connect() {
         return connect;
+    }
+
+    @Override
+    public ActionType<CharacterAnimation> playAnimation() {
+        return playAnimation;
     }
 
     private boolean isDeprecated(final Enum<?> anEnum) {

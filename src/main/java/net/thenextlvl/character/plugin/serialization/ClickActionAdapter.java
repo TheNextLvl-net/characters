@@ -1,5 +1,6 @@
 package net.thenextlvl.character.plugin.serialization;
 
+import net.kyori.adventure.sound.Sound;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.action.ClickType;
@@ -37,6 +38,8 @@ public final class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
         action.setChance(chance);
         action.setCooldown(cooldown);
         action.setPermission(permission);
+        root.optional("cooldownMessage").map(Tag::getAsString).ifPresent(action::setCooldownMessage);
+        root.optional("cooldownSound").map(sound -> context.deserialize(sound, Sound.class)).ifPresent(action::setCooldownSound);
         return action;
     }
 
@@ -45,6 +48,8 @@ public final class ClickActionAdapter implements TagAdapter<ClickAction<?>> {
         final var builder = CompoundTag.builder();
         action.getPermission().ifPresent(permission -> builder.put("permission", permission));
         if (!action.getCooldown().isZero()) builder.put("cooldown", action.getCooldown().toMillis());
+        action.getCooldownMessage().ifPresent(message -> builder.put("cooldownMessage", message));
+        action.getCooldownSound().ifPresent(sound -> builder.put("cooldownSound", context.serialize(sound, Sound.class)));
         builder.put("actionType", context.serialize(action.getActionType()));
         final var types = ListTag.<StringTag>builder().contentType(StringTag.ID);
         for (final var type : action.getClickTypes()) types.add(StringTag.of(type.name()));

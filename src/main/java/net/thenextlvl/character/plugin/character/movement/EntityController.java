@@ -153,6 +153,11 @@ public final class EntityController {
     private @Nullable Location previous;
     private PathFinder.@Nullable Swimming swimming;
 
+    // like vanilla villagers, a player interacting with the entity has its attention for a few seconds
+    private static final int INTERACTION_TICKS = 60;
+    private volatile @Nullable UUID interacting;
+    private volatile int interactionTicks;
+
     private final GoalState own = new GoalState();
     // the goal this entity pursued last, to start over when the leading entity switches goals
     private @Nullable Goal pursued;
@@ -211,7 +216,8 @@ public final class EntityController {
         final var player = plugin.getServer().getPlayer(viewer);
         opensDoors = character.movesAlike();
 
-        final var action = action(goals, home, current, player);
+        final var interaction = interaction(current);
+        final var action = interaction != null ? interaction : action(goals, home, current, player);
         if (action == Action.IDLE) {
             rotate(null, current, false, home);
             if (goals.isEmpty()) stop();
@@ -311,6 +317,32 @@ public final class EntityController {
         private static final Action IDLE = new Action(null, null);
         // a movement goal applies, but has nothing to do right now, so the entity stands still where it is
         private static final Action HOLD = new Action(null, null);
+    }
+
+    /**
+     * Makes the entity stop and look at the given player for a few seconds.
+     *
+     * @param player the player interacting with the entity
+     */
+    public void interact(final UUID player) {
+        interacting = player;
+        interactionTicks = INTERACTION_TICKS;
+    }
+
+    // looks at the interacting player, interrupting the goals
+    private @Nullable Action interaction(final Location current) {
+        final var interacting = this.interacting;
+        final var interactionTicks = this.interactionTicks;
+        if (interacting == null || (this.interactionTicks = interactionTicks - 1) <= 0) {
+            this.interacting = null;
+            return null;
+        }
+        final var player = plugin.getServer().getPlayer(interacting);
+        if (player == null || !player.getWorld().equals(current.getWorld())) {
+            this.interacting = null;
+            return null;
+        }
+        return new Action(null, player.getEyeLocation());
     }
 
     // the state of the character if all entities move alike, so they switch goals at the same time
@@ -497,8 +529,8 @@ public final class EntityController {
 
         final Location wanted;
         if (pathIndex < path.size()) wanted = path.get(pathIndex);
-        // the path ended at the goal, walk the last bit to the exact target,
-        // a path that ends before the goal stops there, instead of pushing into whatever is in the way
+            // the path ended at the goal, walk the last bit to the exact target,
+            // a path that ends before the goal stops there, instead of pushing into whatever is in the way
         else if (pathReaches && horizontalDistance(current, target) <= DIRECT_APPROACH_DISTANCE) wanted = target;
         else if (climbsWalls()) wanted = target;
         else {
@@ -516,8 +548,8 @@ public final class EntityController {
         final var node = path.get(pathIndex);
         final var waypoint = waypointDistance();
         final var close = Math.abs(current.getX() - node.getX()) < waypoint
-                          && Math.abs(current.getZ() - node.getZ()) < waypoint
-                          && Math.abs(current.getY() - node.getY()) < 1;
+                && Math.abs(current.getZ() - node.getZ()) < waypoint
+                && Math.abs(current.getY() - node.getY()) < 1;
         if (close || shouldTargetNextNode(current)) pathIndex++;
     }
 
@@ -541,8 +573,8 @@ public final class EntityController {
 
     private boolean flies() {
         return entity instanceof Ghast || entity instanceof Phantom || entity instanceof Vex || entity instanceof Allay || entity instanceof Bee
-               || entity instanceof Parrot || entity instanceof Bat || entity instanceof Blaze || entity instanceof Wither
-               || entity instanceof EnderDragon || entity instanceof HappyGhast;
+                || entity instanceof Parrot || entity instanceof Bat || entity instanceof Blaze || entity instanceof Wither
+                || entity instanceof EnderDragon || entity instanceof HappyGhast;
     }
 
     // entities without collisions, like vexes, fly through blocks
@@ -565,7 +597,7 @@ public final class EntityController {
     // vanilla's flying mobs all have their own move control, so this is a sensible average of them
     private double flyingSpeed(final double modifier) {
         final var attribute = entity instanceof final LivingEntity living ? living.getAttribute(Attribute.FLYING_SPEED) : null;
-        final var relative = attribute != null && attribute.getDefaultValue() > 0 ? attribute.getValue() / attribute.getDefaultValue() : 1;
+        final var relative = attribute != null ? attribute.getValue() / Attribute.FLYING_SPEED.getDefaultValue() : 1;
         return FLYING_SPEED * relative * modifier;
     }
 
@@ -605,7 +637,7 @@ public final class EntityController {
             // down a ladder, vine or scaffolding, walking into the wall would make it climb up again,
             // but while it still stands on the top of a ladder, it moves to the middle of it to drop in
             if (dy < -0.5 && (PathFinder.isClimbable(current.getBlock())
-                              || PathFinder.isClimbable(current.getBlock().getRelative(0, -1, 0)))) {
+                    || PathFinder.isClimbable(current.getBlock().getRelative(0, -1, 0)))) {
                 final var distance = Math.sqrt(horizontalSquared);
                 if (!entity.isOnGround() || distance < 0.01) return new Vector();
                 final var speed = Math.min(speed(modifier, false), distance);
@@ -702,7 +734,7 @@ public final class EntityController {
             final var speed = (attribute != null ? attribute.getValue() : 0) * modifier;
             return water ? WATER_SPEED * speed : MOB_GROUND_SPEED * speed * speed;
         }
-        final var relative = attribute != null && attribute.getDefaultValue() > 0 ? attribute.getValue() / attribute.getDefaultValue() : 1;
+        final var relative = attribute != null ? attribute.getValue() / Attribute.MOVEMENT_SPEED.getDefaultValue() : 1;
         if (water) return SWIMMING_SPEED * relative * modifier;
         return WALKING_SPEED * relative * modifier * (sprinting ? SPRINTING_MULTIPLIER : 1);
     }
@@ -768,7 +800,8 @@ public final class EntityController {
         if (swimming != null) return swimming;
         final PathFinder.Swimming result;
         if (Tag.ENTITY_TYPES_AQUATIC.isTagged(entity.getType())) result = PathFinder.Swimming.DIVE;
-        else if (entity instanceof final Mob mob) result = mob.getPathfinder().canFloat() ? PathFinder.Swimming.SURFACE : PathFinder.Swimming.SINK;
+        else if (entity instanceof final Mob mob)
+            result = mob.getPathfinder().canFloat() ? PathFinder.Swimming.SURFACE : PathFinder.Swimming.SINK;
         else if (entity instanceof Mannequin) result = PathFinder.Swimming.SURFACE;
         else result = PathFinder.Swimming.SINK;
         return this.swimming = result;
@@ -814,7 +847,8 @@ public final class EntityController {
         newHeadYaw = bodyYaw + Math.clamp(wrapDegrees(newHeadYaw - bodyYaw), -MAX_HEAD_YAW, MAX_HEAD_YAW);
 
         if (differs(headYaw, newHeadYaw) || differs(pitch, newPitch)) entity.setRotation(newHeadYaw, newPitch);
-        if (entity instanceof final LivingEntity living && differs(living.getBodyYaw(), bodyYaw)) living.setBodyYaw(bodyYaw);
+        if (entity instanceof final LivingEntity living && differs(living.getBodyYaw(), bodyYaw))
+            living.setBodyYaw(bodyYaw);
     }
 
     private float bodyYaw(final Location current) {
@@ -859,12 +893,13 @@ public final class EntityController {
                 yield player != null ? position(player, eyes) : null;
             }
             // only players the viewer can see, vanished or hidden players would give themselves away
-            case final Target.NearestPlayer nearest -> viewer == null ? null : origin.getNearbyPlayers(nearest.radius()).stream()
-                    .filter(player -> player.getGameMode() != GameMode.SPECTATOR)
-                    .filter(player -> player.equals(viewer) || viewer.canSee(player))
-                    .min(Comparator.comparingDouble(player -> player.getLocation().distanceSquared(origin)))
-                    .map(player -> position(player, eyes))
-                    .orElse(null);
+            case final Target.NearestPlayer nearest ->
+                    viewer == null ? null : origin.getNearbyPlayers(nearest.radius()).stream()
+                            .filter(player -> player.getGameMode() != GameMode.SPECTATOR)
+                            .filter(player -> player.equals(viewer) || viewer.canSee(player))
+                            .min(Comparator.comparingDouble(player -> player.getLocation().distanceSquared(origin)))
+                            .map(player -> position(player, eyes))
+                            .orElse(null);
             case final Target.Position position -> position.location();
         };
     }

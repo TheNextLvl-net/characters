@@ -301,6 +301,49 @@ public interface Character {
     TagOptions getTagOptions();
 
     /**
+     * Plays the given animation for every viewer.
+     *
+     * @param animation the animation
+     * @return {@code true} if the animation is applicable and was played for any viewer
+     * @see CharacterAnimation#isApplicable(Class)
+     * @since 0.9.0
+     */
+    boolean playAnimation(CharacterAnimation animation);
+
+    /**
+     * Plays the given animation for one viewer.
+     *
+     * @param animation the animation
+     * @param viewer    the viewer
+     * @return {@code true} if the animation is applicable and the character is spawned for the viewer
+     * @see CharacterAnimation#isApplicable(Class)
+     * @since 0.9.0
+     */
+    boolean playAnimation(CharacterAnimation animation, Player viewer);
+
+    /**
+     * Checks if the character looks at players that interact with it.
+     * <p>
+     * The entity of the player stops whatever it is doing and looks at them for a few seconds.
+     *
+     * @return {@code true} if the character looks at interacting players
+     * @since 0.9.0
+     */
+    @Contract(pure = true)
+    boolean isLookingAtInteraction();
+
+    /**
+     * Sets whether the character looks at players that interact with it.
+     *
+     * @param lookAtInteraction whether the character looks at interacting players
+     * @return {@code true} if the setting was changed, {@code false} otherwise
+     * @see #isLookingAtInteraction()
+     * @since 0.9.0
+     */
+    @Contract(mutates = "this")
+    boolean setLookAtInteraction(boolean lookAtInteraction);
+
+    /**
      * Returns the team color of the character.
      *
      * @return team color

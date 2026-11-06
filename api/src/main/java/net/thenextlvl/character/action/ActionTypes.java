@@ -1,5 +1,6 @@
 package net.thenextlvl.character.action;
 
+import net.thenextlvl.character.CharacterAnimation;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.title.Title;
 import net.thenextlvl.binder.StaticBinder;
@@ -117,4 +118,12 @@ public interface ActionTypes {
      */
     @Contract(pure = true)
     ActionType<String> connect();
+
+    /**
+     * Plays an animation of the character for the player.
+     *
+     * @return the action type
+     * @since 0.9.0
+     */
+    ActionType<CharacterAnimation> playAnimation();
 }

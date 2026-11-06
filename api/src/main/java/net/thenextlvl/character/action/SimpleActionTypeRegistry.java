@@ -19,7 +19,8 @@ final class SimpleActionTypeRegistry implements ActionTypeRegistry {
             ActionTypes.types().runConsoleCommand(),
             ActionTypes.types().runCommand(),
             ActionTypes.types().sendTitle(),
-            ActionTypes.types().connect()
+            ActionTypes.types().connect(),
+            ActionTypes.types().playAnimation()
     ));
 
     @Override

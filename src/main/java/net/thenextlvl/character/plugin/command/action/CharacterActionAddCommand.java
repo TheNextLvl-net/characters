@@ -8,6 +8,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.action.argument.ConnectCommand;
+import net.thenextlvl.character.plugin.command.action.argument.PlayAnimationCommand;
 import net.thenextlvl.character.plugin.command.action.argument.PlaySoundCommand;
 import net.thenextlvl.character.plugin.command.action.argument.RunConsoleCommand;
 import net.thenextlvl.character.plugin.command.action.argument.RunPlayerCommand;
@@ -34,6 +35,7 @@ public final class CharacterActionAddCommand extends BrigadierCommand {
         final var command = new CharacterActionAddCommand(plugin);
         final var commands = clickTypesArgument()
                 .then(ConnectCommand.create(plugin))
+                .then(PlayAnimationCommand.create(plugin))
                 .then(PlaySoundCommand.create(plugin))
                 .then(RunConsoleCommand.create(plugin))
                 .then(RunPlayerCommand.create(plugin))

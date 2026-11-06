@@ -47,7 +47,8 @@ final class CharacterAttributeCommand extends BrigadierCommand {
 
     private LiteralArgumentBuilder<CommandSourceStack> set() {
         final var tree = characterArgument(plugin)
-                .then(setTeamColor());
+                .then(setTeamColor())
+                .then(attribute("character:look-at-interaction", Character::setLookAtInteraction));
         PropertyAccessors.ALL.forEach(accessor -> {
             final var argument = setAttribute(accessor);
             if (argument != null) tree.then(argument);
