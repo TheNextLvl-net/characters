@@ -89,6 +89,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected final Map<String, Tag> properties = new ConcurrentHashMap<>();
     protected final Map<String, Key> viewerValues = new ConcurrentHashMap<>();
     protected final Map<UUID, Entity> entities = new ConcurrentHashMap<>();
+    // the name tag of every viewer, riding the entity of that viewer
+    protected final Map<UUID, TextDisplay> tags = new ConcurrentHashMap<>();
     protected final PaperTagOptions tagOptions = new PaperTagOptions();
 
     protected final CharacterPlugin plugin;
@@ -98,7 +100,6 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     protected volatile @Nullable Component displayName;
     protected volatile @Nullable NamedTextColor teamColor = null;
     protected volatile @Nullable String viewPermission = null;
-    protected volatile @Nullable TextDisplay textDisplayName = null;
 
     protected volatile Location location;
     protected volatile Path dataFile;
@@ -170,10 +171,15 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     public @Nullable Player getOwner(final Entity entity) {
+        final var viewer = getViewer(entity);
+        return viewer != null ? plugin.getServer().getPlayer(viewer) : null;
+    }
+
+    private @Nullable UUID getViewer(final Entity entity) {
         return entities.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(entity))
                 .findAny()
-                .map(entry -> plugin.getServer().getPlayer(entry.getKey()))
+                .map(Map.Entry::getKey)
                 .orElse(null);
     }
 
@@ -255,9 +261,6 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
                     ? entity.teleportAsync(destination, PLUGIN)
                     : removeEntity(uuid)));
         });
-        final var display = textDisplayName;
-        if (display != null) anyEntity().ifPresent(entity ->
-                teleports.add(display.teleportAsync(getTagLocation(entity), PLUGIN)));
         return CompletableFuture.allOf(teleports.toArray(CompletableFuture[]::new))
                 .thenCompose(ignored -> spawn())
                 .thenApply(ignored -> true);
@@ -365,12 +368,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     @Override
     public boolean isPart(final Entity entity) {
-        return entity.equals(textDisplayName) || entities.containsValue(entity);
+        return entities.containsValue(entity) || (entity instanceof final TextDisplay display && tags.containsValue(display));
     }
 
     @Override
     public Stream<Player> getTrackedBy() {
-        return entities.keySet().stream().map(plugin.getServer()::getPlayer).filter(Objects::nonNull);
+        return entities.keySet().stream()
+                .map(plugin.getServer()::getPlayer)
+                .filter(Objects::nonNull);
     }
 
     @Override
@@ -437,7 +442,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     public boolean setDisplayName(@Nullable final Component displayName) {
         if (Objects.equals(displayName, this.displayName)) return false;
         this.displayName = displayName;
-        anyEntity().ifPresent(this::updateTextDisplayName);
+        entities.forEach(this::updateTag);
         return true;
     }
 
@@ -445,7 +450,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     public boolean setDisplayNameVisible(final boolean visible) {
         if (visible == displayNameVisible) return false;
         this.displayNameVisible = visible;
-        anyEntity().ifPresent(this::updateTextDisplayName);
+        entities.forEach(this::updateTag);
         return true;
     }
 
@@ -460,7 +465,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     public boolean setTeamColor(@Nullable final NamedTextColor color) {
         if (color == this.teamColor) return false;
         this.teamColor = color;
-        editTextDisplayName(this::updateTextDisplayNameText);
+        editTags(this::updateTagText);
         entities.values().forEach(this::updateTeamOptions);
         return true;
     }
@@ -507,8 +512,6 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     // must be called on the region of the player
     private CompletableFuture<Boolean> spawnEntity(final Player player) {
-        updateTextDisplayNameVisibility(player);
-
         final var uuid = player.getUniqueId();
         final var location = getLocation();
         if (!player.isConnected() || !location.isChunkLoaded()) return CompletableFuture.completedFuture(false);
@@ -527,7 +530,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             if (!entity.isValid()) return null;
             entities.put(uuid, entity);
 
-            updateTextDisplayName(entity);
+            spawnTag(uuid, entity);
             updateTeamOptions(entity);
             return entity;
         }).thenCompose(entity -> entity != null
@@ -540,7 +543,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         return plugin.supply(player, () -> {
             if (!player.isConnected()) return false;
             if (plugin.getServer().isOwnedByCurrentRegion(entity)) player.showEntity(plugin, entity);
-            updateTextDisplayNameVisibility(player);
+            showTag(player);
             return true;
         }).thenCompose(shown -> Boolean.TRUE.equals(shown)
                 ? CompletableFuture.completedFuture(true)
@@ -555,33 +558,23 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     }
 
     public void invalidate(final Entity entity) {
-        final var owner = getOwner(entity);
-        entities.values().remove(entity);
+        if (entity instanceof final TextDisplay display && tags.values().remove(display)) return;
+        final var viewer = getViewer(entity);
+        if (viewer == null) return;
+        entities.remove(viewer, entity);
+        removeTag(viewer);
+        final var owner = plugin.getServer().getPlayer(viewer);
         if (owner != null && !CharacterPlugin.RUNNING_FOLIA) {
             final var team = owner.getScoreboard().getTeam(entity.getScoreboardEntryName());
             if (team != null) team.unregister();
         }
-        // the name tag is only ever spawned and removed on the region of the character's location
-        if (entities.isEmpty()) plugin.supply(location, () -> {
-            if (entities.isEmpty()) removeTextDisplayName();
-        });
     }
 
     public CompletableFuture<Boolean> updateVisibility(final Player player) {
         return compose(player, () -> {
             if (!canSee(player) || player.isChunkSent(Chunk.getChunkKey(location))) return spawnEntity(player);
-            updateTextDisplayNameVisibility(player);
             return CompletableFuture.completedFuture(false);
         });
-    }
-
-    // must be called on the region of the player
-    // players on another region are updated once the character is spawned for them
-    private void updateTextDisplayNameVisibility(final Player player) {
-        final var display = textDisplayName;
-        if (display == null || !plugin.getServer().isOwnedByCurrentRegion(display)) return;
-        if (canSee(player)) player.showEntity(plugin, display);
-        else player.hideEntity(plugin, display);
     }
 
     private CompletableFuture<Boolean> compose(final Entity entity, final Supplier<CompletableFuture<Boolean>> supplier) {
@@ -596,17 +589,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
                 .thenApply(ignored -> futures.stream().anyMatch(CompletableFuture::join));
     }
 
-    private Optional<Entity> anyEntity() {
-        return entities.values().stream().findAny();
-    }
-
-    private Location getTagLocation(final Entity entity) {
-        return getLocation().add(0, entity.getHeight(), 0);
-    }
-
-    private void editTextDisplayName(final Consumer<TextDisplay> consumer) {
-        final var display = textDisplayName;
-        if (display != null) plugin.supply(display, () -> consumer.accept(display));
+    private void editTags(final Consumer<TextDisplay> consumer) {
+        tags.values().forEach(tag -> plugin.supply(tag, () -> consumer.accept(tag)));
     }
 
     protected void preSpawn(final Entity entity, final Map<PropertyAccessor<?, ?>, @Nullable Object> viewerValues) {
@@ -680,14 +664,44 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         return characterSettings;
     }
 
-    protected void removeTextDisplayName() {
-        final var display = textDisplayName;
-        if (display == null) return;
-        textDisplayName = null;
-        plugin.supply(display, display::remove);
+    // must be called on the region of the entity
+    private void spawnTag(final UUID viewer, final Entity entity) {
+        if (!showDisplayName()) return;
+        final var tag = entity.getWorld().spawn(entity.getLocation(), TextDisplay.class, false, this::configureTag);
+        if (!tag.isValid()) return;
+        entity.addPassenger(tag);
+        final var previous = tags.put(viewer, tag);
+        if (previous != null) plugin.supply(previous, previous::remove);
     }
 
-    private void updateTextDisplayName(final TextDisplay display) {
+    // must be called on the region of the viewer
+    private void showTag(final Player viewer) {
+        final var tag = tags.get(viewer.getUniqueId());
+        if (tag != null && plugin.getServer().isOwnedByCurrentRegion(tag)) viewer.showEntity(plugin, tag);
+    }
+
+    // spawns, updates or removes the tag of the given viewer
+    private void updateTag(final UUID viewer, final Entity entity) {
+        plugin.supply(entity, () -> {
+            final var tag = tags.get(viewer);
+            if (!showDisplayName()) {
+                removeTag(viewer);
+            } else if (tag != null && tag.isValid()) {
+                configureTag(tag);
+            } else {
+                spawnTag(viewer, entity);
+                final var player = plugin.getServer().getPlayer(viewer);
+                if (player != null) plugin.supply(player, () -> showTag(player));
+            }
+        });
+    }
+
+    private void removeTag(final UUID viewer) {
+        final var tag = tags.remove(viewer);
+        if (tag != null) plugin.supply(tag, tag::remove);
+    }
+
+    private void configureTag(final TextDisplay display) {
         display.setAlignment(tagOptions.getAlignment());
         display.setBackgroundColor(tagOptions.getBackgroundColor().orElse(null));
         display.setBillboard(tagOptions.getBillboard());
@@ -705,33 +719,18 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
                 tagOptions.getRightRotation()
         ));
         display.setVisibleByDefault(false);
-        updateTextDisplayNameOpacity(display);
-        updateTextDisplayNameText(display);
+        updateTagOpacity(display);
+        updateTagText(display);
     }
 
-    private void updateTextDisplayNameText(final TextDisplay display) {
+    private void updateTagText(final TextDisplay display) {
         final var displayName = this.displayName;
         final var component = displayName != null ? displayName : Component.text(getName());
         display.text(component.colorIfAbsent(teamColor));
     }
 
-    private void updateTextDisplayNameOpacity(final TextDisplay display) {
+    private void updateTagOpacity(final TextDisplay display) {
         display.setTextOpacity((byte) Math.round(25f + ((100f - tagOptions.getTextOpacity()) * 2.3f)));
-    }
-
-    protected void updateTextDisplayName(final Entity entity) {
-        plugin.supply(location, () -> {
-            final var display = textDisplayName;
-            if (display == null && showDisplayName()) {
-                textDisplayName = location.getWorld().spawn(getTagLocation(entity), TextDisplay.class, this::updateTextDisplayName);
-                plugin.getServer().getOnlinePlayers().forEach(player ->
-                        plugin.supply(player, () -> updateTextDisplayNameVisibility(player)));
-            } else if (display != null && !showDisplayName()) {
-                removeTextDisplayName();
-            } else if (display != null) {
-                plugin.supply(display, () -> updateTextDisplayName(display));
-            }
-        });
     }
 
     protected boolean showDisplayName() {
@@ -780,11 +779,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             final var tag = accessor.serialize(value, plugin.nbt());
             properties.put(accessor.key().asString(), tag);
             if (getViewerValue(property).isPresent()) return true;
-            final var updates = entities.values().stream().map(entity -> plugin.supply(entity, () -> {
-                accessor.apply(entity, tag, plugin.nbt());
-            })).toArray(CompletableFuture[]::new);
-            CompletableFuture.allOf(updates).thenRun(() -> anyEntity().ifPresent(entity ->
-                    editTextDisplayName(display -> display.teleportAsync(getTagLocation(entity), PLUGIN))));
+            entities.values().forEach(entity -> plugin.supply(entity, () -> accessor.apply(entity, tag, plugin.nbt())));
             return true;
         }).orElse(false);
     }
@@ -977,7 +972,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setAlignment(final TextAlignment alignment) {
             if (Objects.equals(alignment, this.alignment)) return false;
-            editTextDisplayName(display -> display.setAlignment(alignment));
+            editTags(display -> display.setAlignment(alignment));
             this.alignment = alignment;
             return true;
         }
@@ -985,7 +980,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setBackgroundColor(@Nullable final Color color) {
             if (Objects.equals(color, this.backgroundColor)) return false;
-            editTextDisplayName(display -> display.setBackgroundColor(color));
+            editTags(display -> display.setBackgroundColor(color));
             this.backgroundColor = color;
             return true;
         }
@@ -993,7 +988,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setBillboard(final Billboard billboard) {
             if (Objects.equals(billboard, this.billboard)) return false;
-            editTextDisplayName(display -> display.setBillboard(billboard));
+            editTags(display -> display.setBillboard(billboard));
             this.billboard = billboard;
             return true;
         }
@@ -1001,7 +996,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setBrightness(@Nullable final Brightness brightness) {
             if (Objects.equals(brightness, this.brightness)) return false;
-            editTextDisplayName(display -> display.setBrightness(brightness));
+            editTags(display -> display.setBrightness(brightness));
             this.brightness = brightness;
             return true;
         }
@@ -1009,7 +1004,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setDefaultBackground(final boolean enabled) {
             if (enabled == defaultBackground) return false;
-            editTextDisplayName(display -> display.setDefaultBackground(enabled));
+            editTags(display -> display.setDefaultBackground(enabled));
             this.defaultBackground = enabled;
             return true;
         }
@@ -1018,14 +1013,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setLeftRotation(final Quaternionf rotation) {
             if (Objects.equals(rotation, this.leftRotation)) return false;
             this.leftRotation = rotation;
-            editTextDisplayName(display -> display.setTransformation(getTransformation()));
+            editTags(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
         @Override
         public boolean setLineWidth(final int width) {
             if (width == lineWidth) return false;
-            editTextDisplayName(display -> display.setLineWidth(width));
+            editTags(display -> display.setLineWidth(width));
             this.lineWidth = width;
             return true;
         }
@@ -1034,7 +1029,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setOffset(final Vector3f offset) {
             if (Objects.equals(offset, this.offset)) return false;
             this.offset = offset;
-            editTextDisplayName(display -> display.setTransformation(getTransformation()));
+            editTags(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
@@ -1057,7 +1052,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setRightRotation(final Quaternionf rotation) {
             if (Objects.equals(rotation, this.rightRotation)) return false;
             this.rightRotation = rotation;
-            editTextDisplayName(display -> display.setTransformation(getTransformation()));
+            editTags(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
@@ -1065,7 +1060,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setScale(final Vector3f scale) {
             if (Objects.equals(scale, this.scale)) return false;
             this.scale = scale;
-            editTextDisplayName(display -> display.setTransformation(getTransformation()));
+            editTags(display -> display.setTransformation(getTransformation()));
             return true;
         }
 
@@ -1081,7 +1076,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         @Override
         public boolean setSeeThrough(final boolean seeThrough) {
             if (seeThrough == this.seeThrough) return false;
-            editTextDisplayName(display -> display.setSeeThrough(seeThrough));
+            editTags(display -> display.setSeeThrough(seeThrough));
             this.seeThrough = seeThrough;
             return true;
         }
@@ -1090,14 +1085,14 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         public boolean setTextOpacity(final float opacity) {
             if (opacity == textOpacity) return false;
             this.textOpacity = opacity;
-            editTextDisplayName(PaperCharacter.this::updateTextDisplayNameOpacity);
+            editTags(PaperCharacter.this::updateTagOpacity);
             return true;
         }
 
         @Override
         public boolean setShadowed(final boolean enabled) {
             if (enabled == textShadow) return false;
-            editTextDisplayName(display -> display.setShadowed(enabled));
+            editTags(display -> display.setShadowed(enabled));
             this.textShadow = enabled;
             return true;
         }

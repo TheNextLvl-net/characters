@@ -79,7 +79,9 @@ public final class EntityListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onEntityRemove(final EntityRemoveEvent event) {
-        plugin.characterProvider().getCharacter(event.getEntity())
+        plugin.characterProvider().getCharacters()
+                .filter(character -> character.isPart(event.getEntity()))
+                .findAny()
                 .map(character -> (PaperCharacter) character)
                 .ifPresent(character -> character.invalidate(event.getEntity()));
     }
