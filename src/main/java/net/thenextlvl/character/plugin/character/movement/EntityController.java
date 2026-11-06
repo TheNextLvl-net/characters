@@ -101,6 +101,8 @@ public final class EntityController {
     // like vanilla, climbing ladders: vanilla sets 0.2 after the move, gravity and drag leave (0.2 - 0.08) * 0.98 for the next one
     private static final double CLIMBING_VELOCITY = (0.2 - 0.08) * 0.98;
     private static final double LADDER_THICKNESS = 3 / 16d;
+    // how far below the wanted position the feet may be when stepping off a ladder or vine
+    private static final double CLIMB_TOLERANCE = 0.05;
     // how much of its walking an entity can still steer in mid air
     private static final double AIR_CONTROL = 0.1;
     // like vanilla's jump delay
@@ -346,8 +348,13 @@ public final class EntityController {
     // falling or jumping, not standing, climbing, swimming or flying
     private boolean isAirborne(final Location current) {
         if (flies() || entity.isOnGround()) return false;
+        return !isOnClimbable(current) && !PathFinder.isWater(current.getBlock());
+    }
+
+    // in a ladder, vine or scaffolding, or right above the top of one, from where it steps onto the ledge next to it
+    private static boolean isOnClimbable(final Location current) {
         final var block = current.getBlock();
-        return !PathFinder.isClimbable(block) && !PathFinder.isWater(block);
+        return PathFinder.isClimbable(block) || PathFinder.isClimbable(block.getRelative(0, -1, 0));
     }
 
     private boolean isKnockedBack() {
@@ -813,11 +820,12 @@ public final class EntityController {
         final var wantedYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
         // on a ladder, vine or scaffolding it moves straight towards the wanted position, like off the top onto a ledge,
         // turning first would make it walk out of the ladder and fall off
-        if (PathFinder.isClimbable(current.getBlock())) {
+        if (isOnClimbable(current)) {
             movementYaw = wantedYaw;
             climbing = dy > 0;
-            // climb first, moving sideways out of the ladder before being high enough would make it fall
-            if (dy > stepHeight()) return hugLadder(current, modifier, true);
+            // climb until level with the wanted position, vanilla only steps up blocks on the ground,
+            // moving sideways off the ladder or vine before that would make it fall
+            if (dy > CLIMB_TOLERANCE && PathFinder.isClimbable(current.getBlock())) return hugLadder(current, modifier, true);
             final var distance = Math.sqrt(horizontalSquared);
             final var speed = Math.min(speed(modifier, false), distance);
             return new Vector(dx / distance * speed, 0, dz / distance * speed);

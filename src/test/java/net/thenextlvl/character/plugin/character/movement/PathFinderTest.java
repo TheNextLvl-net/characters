@@ -376,6 +376,20 @@ class PathFinderTest {
                                                                && location.getBlockY() >= 68), "stood on top of the ladder: " + describe(path.nodes()));
     }
 
+    // the second setup in game: twisting vines and a ladder next to each other on a pillar, the target on top
+    @Test
+    void climbsVinesOntoPillar() {
+        final var world = new FakeWorld();
+        for (var x = 30; x <= 45; x++) for (var z = 168; z <= 180; z++) world.blocks.put(key(x, 63, z), Kind.SOLID);
+        for (var y = 64; y <= 66; y++) world.blocks.put(key(39, y, 173), Kind.SOLID);
+        for (var y = 64; y <= 71; y++) world.blocks.put(key(39, y, 174), Kind.SOLID);
+        for (var x = 34; x <= 38; x++) world.blocks.put(key(x, 71, 174), Kind.SOLID);
+        for (var x = 35; x <= 37; x++) world.blocks.put(key(x, 72, 174), Kind.SOLID);
+        for (var y = 64; y <= 72; y++) world.blocks.put(key(40, y, 173), Kind.VINE);
+        final var path = finder(world, false).find(new Location(world.proxy(), 41.5, 64, 173.5), new Location(world.proxy(), 37.6, 73, 174.5), 0);
+        assertTrue(path.reaches(), "did not reach the top: " + describe(path.nodes()));
+    }
+
     @Test
     void climbsDownVinesFromPillar() {
         final var world = pillar();
