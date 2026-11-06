@@ -489,6 +489,9 @@ public final class EntityProperties {
 
     /**
      * The {@code entity:silent} property of {@link Entity}.
+     * <p>
+     * Unless this property is set, a character is silent while it has no goals
+     * and makes the sounds of its kind, like footsteps and ambient sounds, while it has any.
      *
      * @see Entity#isSilent()
      * @since 0.9.0

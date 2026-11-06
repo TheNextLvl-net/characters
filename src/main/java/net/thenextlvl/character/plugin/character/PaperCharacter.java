@@ -209,6 +209,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         goals.add(index, goal);
         entities.forEach((viewer, entity) -> plugin.supply(entity, () -> {
             updateAI(entity);
+            updateSilent(entity);
             startController(viewer, entity);
         }));
         return true;
@@ -219,6 +220,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
     public boolean removeGoal(final Goal goal) {
         if (!goals.remove(goal)) return false;
         if (goals.isEmpty()) updateAI();
+        if (goals.isEmpty()) updateSilent();
         return true;
     }
 
@@ -227,6 +229,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         if (goals.isEmpty()) return false;
         goals.clear();
         updateAI();
+        updateSilent();
         return true;
     }
 
@@ -299,6 +302,26 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
 
     private void updateAI() {
         entities.values().forEach(entity -> plugin.supply(entity, () -> updateAI(entity)));
+    }
+
+    /**
+     * Makes the entity silent while the character has no goals, so it stands around quietly,
+     * but one that moves, attacks or looks around makes the sounds of its kind, like footsteps and ambient sounds.
+     * <p>
+     * The {@link EntityProperties#ENTITY_SILENT silent property} takes precedence over the goals, for all or some viewers.
+     * <p>
+     * Must be called on the region of the entity.
+     *
+     * @param entity the entity
+     */
+    public void updateSilent(final Entity entity) {
+        final var key = EntityProperties.ENTITY_SILENT.key().asString();
+        if (properties.containsKey(key) || viewerValues.containsKey(key)) return;
+        entity.setSilent(goals.isEmpty());
+    }
+
+    private void updateSilent() {
+        entities.values().forEach(entity -> plugin.supply(entity, () -> updateSilent(entity)));
     }
 
     @Override
@@ -900,7 +923,8 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
         entity.setVisibleByDefault(false);
         entity.setGravity(false);
         entity.setInvulnerable(true);
-        entity.setSilent(true);
+        // without goals it stays silent, see updateSilent, the silent property applied below takes precedence
+        entity.setSilent(goals.isEmpty());
         entity.setPersistent(false);
 
         if (entity instanceof final Mannequin mannequin) {
