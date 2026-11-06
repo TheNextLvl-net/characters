@@ -69,6 +69,7 @@ public final class EntityListener implements Listener {
         plugin.characterProvider().getCharacter(event.getEntity()).ifPresent(character -> {
             final var owner = ((PaperCharacter) character).getOwner(event.getEntity());
             if (owner == null) return;
+            // todo: maybe make the respawn delay a per-character property (with an option to never respawn)
             if (!event.getEntity().getWorld().getGameRuleValue(GameRules.IMMEDIATE_RESPAWN)) {
                 plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.despawn(owner), 20);
                 plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> character.spawn(owner), 75);
