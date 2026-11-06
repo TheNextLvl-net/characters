@@ -17,6 +17,7 @@ import org.bukkit.Location;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.type.Ladder;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Allay;
@@ -99,6 +100,9 @@ public final class EntityController {
     private static final double JUMP_VELOCITY = 0.42;
     // like vanilla, climbing ladders: vanilla sets 0.2 after the move, gravity and drag leave (0.2 - 0.08) * 0.98 for the next one
     private static final double CLIMBING_VELOCITY = (0.2 - 0.08) * 0.98;
+    private static final double LADDER_THICKNESS = 3 / 16d;
+    // how much of its walking an entity can still steer in mid air
+    private static final double AIR_CONTROL = 0.1;
     // like vanilla's jump delay
     private static final int JUMP_DELAY = 10;
     private static final double WATER_JUMP_VELOCITY = 0.3;
@@ -247,7 +251,10 @@ public final class EntityController {
         if (movement == null) {
             jumping = false;
             climbing = false;
-            if (physics) entity.setVelocity(new Vector(0, flies() ? 0 : vertical(current, null), 0));
+            if (physics) {
+                final var velocity = isAirborne(current) ? entity.getVelocity() : new Vector();
+                entity.setVelocity(velocity.setY(flies() ? 0 : vertical(current, null)));
+            }
             character.doors().close();
             rotate(action.look(), current, false, home);
             if (action.attack() != null) attack(action.attack(), current);
@@ -259,6 +266,15 @@ public final class EntityController {
         final var moving = velocity.getX() != 0 || velocity.getZ() != 0;
         // flying entities move in all directions on their own
         if (!flies()) velocity.setY(vertical(current, movement));
+        // like vanilla, an entity keeps its momentum in mid air and can only steer a little,
+        // which is still enough to get onto a block it jumps up to once it is high enough
+        if (isAirborne(current)) {
+            final var momentum = entity.getVelocity().setY(0);
+            final var steered = momentum.clone().add(velocity.clone().setY(0).multiply(AIR_CONTROL));
+            final var limit = Math.max(momentum.length(), Math.hypot(velocity.getX(), velocity.getZ()));
+            if (steered.length() > limit && steered.length() > 0) steered.multiply(limit / steered.length());
+            velocity.setX(steered.getX()).setZ(steered.getZ());
+        }
         entity.setVelocity(velocity);
         trackProgress(current, moving);
 
@@ -325,6 +341,13 @@ public final class EntityController {
         if (this.aggressive == aggressive || !(entity instanceof final Mob mob)) return;
         this.aggressive = aggressive;
         mob.setAggressive(aggressive || character.getProperty(EntityProperties.MOB_AGGRESSIVE).orElse(false));
+    }
+
+    // falling or jumping, not standing, climbing, swimming or flying
+    private boolean isAirborne(final Location current) {
+        if (flies() || entity.isOnGround()) return false;
+        final var block = current.getBlock();
+        return !PathFinder.isClimbable(block) && !PathFinder.isWater(block);
     }
 
     private boolean isKnockedBack() {
@@ -669,6 +692,37 @@ public final class EntityController {
         return toNextNext.normalize().dot(toNext.normalize()) < 0;
     }
 
+    /*
+     * Like players, an entity on a ladder faces it and stays close to it.
+     * Climbing up, it presses against the ladder, which is also what makes vanilla climb,
+     * climbing down, it moves up to the ladder without touching it, as pressing against it would make it climb up again.
+     * Vines and scaffolding have no wall, so it stays in the middle of them.
+     */
+    private Vector hugLadder(final Location current, final double modifier, final boolean up) {
+        final var block = current.getBlock();
+        final var speed = speed(modifier, false);
+        if (block.getBlockData() instanceof final Ladder ladder) {
+            final var wall = ladder.getFacing().getOppositeFace().getDirection();
+            movementYaw = (float) Math.toDegrees(Math.atan2(-wall.getX(), wall.getZ()));
+            if (up) return wall.multiply(speed * 0.5);
+            // right in front of the ladder, which is 3/16 of a block thick
+            final var offset = Math.max(0, 0.5 - LADDER_THICKNESS - halfWidth() - 0.01);
+            final var target = block.getLocation().add(0.5, 0, 0.5).add(wall.clone().multiply(offset));
+            return towards(current, target, speed);
+        }
+        return towards(current, block.getLocation().add(0.5, 0, 0.5), speed);
+    }
+
+    // horizontally towards the target, without overshooting it
+    private static Vector towards(final Location current, final Location target, final double speed) {
+        final var dx = target.getX() - current.getX();
+        final var dz = target.getZ() - current.getZ();
+        final var distance = Math.sqrt(dx * dx + dz * dz);
+        if (distance < 0.01) return new Vector();
+        final var step = Math.min(speed, distance);
+        return new Vector(dx / distance * step, 0, dz / distance * step);
+    }
+
     private boolean climbsWalls() {
         return entity instanceof Spider;
     }
@@ -734,12 +788,13 @@ public final class EntityController {
             // up a ladder, vine or scaffolding
             if (dy > 0 && PathFinder.isClimbable(current.getBlock())) {
                 climbing = true;
-                return new Vector();
+                return hugLadder(current, modifier, true);
             }
             // down a ladder, vine or scaffolding, walking into the wall would make it climb up again,
             // but while it still stands on the top of a ladder, it moves to the middle of it to drop in
             if (dy < -0.5 && (PathFinder.isClimbable(current.getBlock())
                     || PathFinder.isClimbable(current.getBlock().getRelative(0, -1, 0)))) {
+                if (PathFinder.isClimbable(current.getBlock()) && !entity.isOnGround()) return hugLadder(current, modifier, false);
                 final var distance = Math.sqrt(horizontalSquared);
                 if (!entity.isOnGround() || distance < 0.01) return new Vector();
                 final var speed = Math.min(speed(modifier, false), distance);
@@ -761,6 +816,8 @@ public final class EntityController {
         if (PathFinder.isClimbable(current.getBlock())) {
             movementYaw = wantedYaw;
             climbing = dy > 0;
+            // climb first, moving sideways out of the ladder before being high enough would make it fall
+            if (dy > stepHeight()) return hugLadder(current, modifier, true);
             final var distance = Math.sqrt(horizontalSquared);
             final var speed = Math.min(speed(modifier, false), distance);
             return new Vector(dx / distance * speed, 0, dz / distance * speed);

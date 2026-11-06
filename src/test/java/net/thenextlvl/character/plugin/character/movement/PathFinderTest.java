@@ -337,6 +337,46 @@ class PathFinderTest {
     }
 
     @Test
+    void climbsUpLadderOntoPillar() {
+        final var world = pillar();
+        final var path = finder(world, false).find(new Location(world.proxy(), 2.5, FLOOR + 1, 0.5), new Location(world.proxy(), 0.5, FLOOR + 6, 0.5), 0);
+        assertTrue(path.reaches(), "did not climb up: " + describe(path.nodes()));
+        // straight up the ladder, then onto the pillar
+        final var nodes = path.nodes();
+        for (var i = 0; i < nodes.size() - 1; i++) {
+            final var node = nodes.get(i);
+            assertTrue(node.getBlockX() == 1 || node.getBlockX() == 2, "left the ladder early: " + describe(nodes));
+        }
+    }
+
+    // the setup in game: a ladder on a one block wide ridge of dirt that leads up to the goal
+    private static FakeWorld ridge() {
+        final var world = new FakeWorld();
+        // the ground, and the ridge at x 31 with its steps up along z
+        for (var x = 25; x <= 40; x++) for (var z = 170; z <= 190; z++) world.blocks.put(key(x, 62, z), Kind.SOLID);
+        for (final var block : new int[][]{
+                {31, 63, 176}, {31, 63, 177}, {31, 63, 178}, {32, 63, 176}, {32, 63, 177}, {33, 63, 176},
+                {31, 64, 177}, {31, 64, 178}, {31, 65, 177}, {31, 65, 178}, {31, 65, 179},
+                {31, 66, 177}, {31, 66, 178}, {31, 66, 179}, {31, 66, 180},
+                {30, 67, 177}, {31, 67, 177}, {31, 67, 178}, {31, 67, 179}, {31, 67, 180}, {31, 67, 181},
+                {31, 68, 181}, {31, 68, 182}, {31, 69, 182}, {31, 69, 183}, {31, 70, 183}, {31, 71, 184},
+                {31, 72, 185}, {32, 72, 185}, {33, 72, 185}, {34, 72, 185}, {35, 72, 185}, {31, 72, 186}, {31, 73, 186}
+        }) world.blocks.put(key(block[0], block[1], block[2]), Kind.SOLID);
+        for (var y = 64; y <= 67; y++) world.blocks.put(key(32, y, 177), Kind.LADDER);
+        return world;
+    }
+
+    @Test
+    void climbsLadderOntoRidge() {
+        final var world = ridge();
+        final var path = finder(world, false).find(new Location(world.proxy(), 32.5, 64, 177.5), new Location(world.proxy(), 35.5, 73, 185.5), 0);
+        assertTrue(path.reaches(), "did not reach the goal: " + describe(path.nodes()));
+        // off the top of the ladder straight onto the ridge, never onto the top of the ladder
+        assertTrue(path.nodes().stream().noneMatch(location -> location.getBlockX() == 32 && location.getBlockZ() == 177
+                                                               && location.getBlockY() >= 68), "stood on top of the ladder: " + describe(path.nodes()));
+    }
+
+    @Test
     void climbsDownVinesFromPillar() {
         final var world = pillar();
         final var path = finder(world, false).find(new Location(world.proxy(), 0.5, FLOOR + 6, 0.5), new Location(world.proxy(), 0.5, FLOOR + 1, -3.5), 0);

@@ -214,6 +214,8 @@ public final class PathFinder {
         }
         final var below = world.getBlockAt(x, y - 1, z);
         if (below.isPassable() || below.isLiquid()) return null;
+        // ladders and vines have a collision box, but nothing to stand on, an entity on top of one hangs in it
+        if (isClimbable(below)) return null;
         return below.getBoundingBox().getMaxY();
     }
 
@@ -335,6 +337,11 @@ public final class PathFinder {
                 // along the wall it climbs
                 if (standing == null && dy == 0 && isOnWall(nx, y, nz)) {
                     addIfPassable(neighbors, nx, y, nz);
+                    break;
+                }
+                // onto a ladder, vine or scaffolding, to climb down it
+                if (standing == null && isOnLadder(nx, y - dy, nz)) {
+                    addIfPassable(neighbors, nx, y - dy, nz);
                     break;
                 }
                 if (standing == null) continue;
