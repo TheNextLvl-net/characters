@@ -8,6 +8,7 @@ import net.thenextlvl.character.event.CharacterAttackEvent;
 import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
+import net.thenextlvl.character.goal.LookAroundGoal;
 import net.thenextlvl.character.goal.LookAtGoal;
 import net.thenextlvl.character.goal.MovementGoal;
 import net.thenextlvl.character.goal.PatrolGoal;
@@ -191,6 +192,10 @@ public final class EntityController {
     // like vanilla's LookAtPlayerGoal
     private static final int MIN_LOOK_TICKS = 40;
     private static final int MAX_LOOK_TICKS = 80;
+    // like vanilla's RandomLookAroundGoal, which checks every other tick with a chance of 0.02 and looks for 20 to 39 ticks
+    private static final float LOOK_AROUND_CHANCE = 0.01f;
+    private static final int MIN_LOOK_AROUND_TICKS = 20;
+    private static final int MAX_LOOK_AROUND_TICKS = 39;
 
     private final CharacterPlugin plugin;
     private final PaperCharacter character;
@@ -809,6 +814,16 @@ public final class EntityController {
             case final PatrolGoal patrol -> {
                 final var point = patrol(state, patrol, current, start, lead);
                 yield point != null ? new Action(new Movement(point, 0, patrol.speed(), 0), null) : null;
+            }
+            case final LookAroundGoal ignored -> {
+                // like vanilla's RandomLookAroundGoal, it starts with a small chance, then looks in a random direction for a while
+                if (start && lead) {
+                    if (ThreadLocalRandom.current().nextFloat() >= LOOK_AROUND_CHANCE) yield null;
+                    state.lookAroundAngle = ThreadLocalRandom.current().nextDouble(Math.PI * 2);
+                    state.lookTicks = ThreadLocalRandom.current().nextInt(MIN_LOOK_AROUND_TICKS, MAX_LOOK_AROUND_TICKS + 1);
+                } else if (lead && --state.lookTicks < 0) yield null;
+                final var eyes = eyes(current);
+                yield new Action(null, eyes.add(Math.cos(state.lookAroundAngle), 0, Math.sin(state.lookAroundAngle)));
             }
             case final LookAtGoal lookAt -> {
                 final var target = resolve(lookAt.target(), player, current, true);

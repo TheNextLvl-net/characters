@@ -21,6 +21,7 @@ import net.thenextlvl.character.event.CharacterViewerRemoveEvent;
 import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
+import net.thenextlvl.character.goal.LookAroundGoal;
 import net.thenextlvl.character.goal.LookAtGoal;
 import net.thenextlvl.character.goal.PatrolGoal;
 import net.thenextlvl.character.goal.Target;
@@ -433,6 +434,7 @@ public class PaperCharacter implements Character, TagSerializable<CompoundTag> {
             case final WanderGoal ignored -> true;
             case final PatrolGoal ignored -> true;
             case final LookAtGoal ignored -> true;
+            case final LookAroundGoal ignored -> true;
         });
     }
 

@@ -16,6 +16,7 @@ import net.thenextlvl.character.Character;
 import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
+import net.thenextlvl.character.goal.LookAroundGoal;
 import net.thenextlvl.character.goal.LookAtGoal;
 import net.thenextlvl.character.goal.MovementGoal;
 import net.thenextlvl.character.goal.PatrolGoal;
@@ -47,9 +48,11 @@ public final class CharacterGoalCommand extends BrigadierCommand {
 
     // /character goal add <character> look-at|follow <target>
     // /character goal add <character> wander <radius>
+    // /character goal add <character> look-around
     private ArgumentBuilder<CommandSourceStack, ?> add() {
         return Commands.literal("add").then(characterArgument(plugin)
                 .then(targets("look-at", LookAtGoal::new))
+                .then(Commands.literal("look-around").executes(context -> add(context, new LookAroundGoal())))
                 .then(targets("follow", FollowGoal::new))
                 .then(targets("attack", AttackGoal::new))
                 .then(Commands.literal("wander").then(Commands.argument("radius", DoubleArgumentType.doubleArg(1))
@@ -157,6 +160,7 @@ public final class CharacterGoalCommand extends BrigadierCommand {
     private String describe(final Goal goal) {
         return switch (goal) {
             case final LookAtGoal lookAt -> "look at " + describe(lookAt.target()) + " (range " + lookAt.range() + ")";
+            case final LookAroundGoal ignored -> "look around";
             case final FollowGoal follow -> "follow " + describe(follow.target())
                                             + " (distance " + follow.distance() + ", range " + follow.range() + ")";
             case final AttackGoal attack -> "attack " + describe(attack.target()) + " (range " + attack.range() + ")";

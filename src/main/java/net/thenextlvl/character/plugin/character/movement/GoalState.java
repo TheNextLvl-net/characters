@@ -17,6 +17,8 @@ public final class GoalState {
     // the index of the goal that ran last, the next one gets its turn first
     int lastGoal = -1;
     int lookTicks;
+    // the direction a look around goal looks in, in radians
+    double lookAroundAngle;
     int patrolIndex;
     Mode mode = Mode.NONE;
     private long tick = -1;

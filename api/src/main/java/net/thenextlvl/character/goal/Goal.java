@@ -10,7 +10,8 @@ package net.thenextlvl.character.goal;
  * so a goal that always applies, like looking at a nearby viewer, does not keep the others from running.
  * A running goal is never interrupted.
  * Following is done once the target is close enough, wandering once a location is reached,
- * patrolling once a point is reached and looking after a few seconds, like vanilla's {@code LookAtPlayerGoal}.
+ * patrolling once a point is reached and looking after a few seconds, like vanilla's {@code LookAtPlayerGoal}
+ * and {@code RandomLookAroundGoal}.
  * <p>
  * A movement goal that applies but has nothing to do, like following a target that is close enough
  * or wandering while resting, keeps the entity standing where it is.
@@ -23,5 +24,5 @@ package net.thenextlvl.character.goal;
  * @see net.thenextlvl.character.Character#addGoal(Goal)
  * @since 0.9.0
  */
-public sealed interface Goal permits LookAtGoal, MovementGoal {
+public sealed interface Goal permits LookAroundGoal, LookAtGoal, MovementGoal {
 }

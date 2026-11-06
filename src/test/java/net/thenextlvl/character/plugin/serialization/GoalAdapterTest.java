@@ -3,6 +3,7 @@ package net.thenextlvl.character.plugin.serialization;
 import net.thenextlvl.character.goal.AttackGoal;
 import net.thenextlvl.character.goal.FollowGoal;
 import net.thenextlvl.character.goal.Goal;
+import net.thenextlvl.character.goal.LookAroundGoal;
 import net.thenextlvl.character.goal.LookAtGoal;
 import net.thenextlvl.character.goal.Target;
 import net.thenextlvl.character.goal.WanderGoal;
@@ -28,6 +29,7 @@ class GoalAdapterTest {
         return List.of(
                 new LookAtGoal(Target.viewer()),
                 new LookAtGoal(Target.nearestPlayer(12), 4),
+                new LookAroundGoal(),
                 new FollowGoal(Target.player(UUID.randomUUID())),
                 new FollowGoal(Target.viewer(), 1, 20, 0.3),
                 new AttackGoal(Target.viewer()),
