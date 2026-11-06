@@ -5,6 +5,7 @@ module net.thenextlvl.characters {
     exports net.thenextlvl.character.action;
     exports net.thenextlvl.character.event;
     exports net.thenextlvl.character.goal;
+    exports net.thenextlvl.character.notification;
     exports net.thenextlvl.character.property;
     exports net.thenextlvl.character.skin;
     exports net.thenextlvl.character.tag;

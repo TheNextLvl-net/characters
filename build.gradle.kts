@@ -97,6 +97,10 @@ paper {
                 "characters.command.action.chance",
                 "characters.command.action.cooldown",
                 "characters.command.action.list",
+                "characters.command.action.notification",
+                "characters.command.action.notification.list",
+                "characters.command.action.notification.remove",
+                "characters.command.action.notification.set",
                 "characters.command.action.permission",
                 "characters.command.action.remove",
                 "characters.command.attribute",
@@ -118,6 +122,10 @@ paper {
         register("characters.command.action.add") { children = listOf("characters.command.action") }
         register("characters.command.action.cooldown") { children = listOf("characters.command.action") }
         register("characters.command.action.list") { children = listOf("characters.command.action") }
+        register("characters.command.action.notification") { children = listOf("characters.command.action") }
+        register("characters.command.action.notification.list") { children = listOf("characters.command.action.notification") }
+        register("characters.command.action.notification.remove") { children = listOf("characters.command.action.notification") }
+        register("characters.command.action.notification.set") { children = listOf("characters.command.action.notification") }
         register("characters.command.action.permission") { children = listOf("characters.command.action") }
         register("characters.command.action.remove") { children = listOf("characters.command.action") }
         register("characters.command.attribute") { children = listOf("characters.command") }

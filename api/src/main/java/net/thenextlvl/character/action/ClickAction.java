@@ -1,9 +1,9 @@
 package net.thenextlvl.character.action;
 
-import net.kyori.adventure.sound.Sound;
 import net.thenextlvl.binder.StaticBinder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.Copyable;
+import net.thenextlvl.character.notification.Notifications;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.CheckReturnValue;
@@ -188,43 +188,13 @@ public interface ClickAction<T> extends Copyable<ClickAction<T>> {
     Duration getRemainingCooldown(Player player);
 
     /**
-     * Returns the message shown in the action bar of players that use the action while it is on cooldown.
-     * <p>
-     * The message is in the MiniMessage format, {@code <cooldown>} is the remaining cooldown in seconds.
+     * Returns the notifications of this action, sent when the action succeeds,
+     * is on cooldown or the player lacks its permission.
      *
-     * @return the cooldown message
+     * @return the notifications
+     * @see net.thenextlvl.character.notification.NotificationTrigger
      * @since 0.9.0
      */
     @Contract(pure = true)
-    Optional<String> getCooldownMessage();
-
-    /**
-     * Sets the message shown in the action bar of players that use the action while it is on cooldown.
-     *
-     * @param message the cooldown message, or {@code null} to show none
-     * @return {@code true} if the message was changed, {@code false} otherwise
-     * @see #getCooldownMessage()
-     * @since 0.9.0
-     */
-    @Contract(mutates = "this")
-    boolean setCooldownMessage(@Nullable String message);
-
-    /**
-     * Returns the sound played to players that use the action while it is on cooldown.
-     *
-     * @return the cooldown sound
-     * @since 0.9.0
-     */
-    @Contract(pure = true)
-    Optional<Sound> getCooldownSound();
-
-    /**
-     * Sets the sound played to players that use the action while it is on cooldown.
-     *
-     * @param sound the cooldown sound, or {@code null} to play none
-     * @return {@code true} if the sound was changed, {@code false} otherwise
-     * @since 0.9.0
-     */
-    @Contract(mutates = "this")
-    boolean setCooldownSound(@Nullable Sound sound);
+    Notifications getNotifications();
 }

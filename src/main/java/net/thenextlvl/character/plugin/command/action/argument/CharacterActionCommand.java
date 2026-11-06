@@ -33,15 +33,12 @@ abstract class CharacterActionCommand<T> extends SimpleCommand {
         final var cooldown = previous.map(ClickAction::getCooldown).orElse(Duration.ZERO);
         final var permission = previous.flatMap(ClickAction::getPermission).orElse(null);
         final var chance = previous.map(ClickAction::getChance).orElse(100);
-        final var cooldownMessage = previous.flatMap(ClickAction::getCooldownMessage).orElse(null);
-        final var cooldownSound = previous.flatMap(ClickAction::getCooldownSound).orElse(null);
 
         final var success = character.addAction(actionName, ClickAction.factory().create(actionType, clickTypes.getClickTypes(), input, action -> {
             action.setChance(chance);
             action.setCooldown(cooldown);
             action.setPermission(permission);
-            action.setCooldownMessage(cooldownMessage);
-            action.setCooldownSound(cooldownSound);
+            previous.ifPresent(other -> action.getNotifications().copyFrom(other.getNotifications()));
         }));
 
         final var message = success ? "character.action.added" : "nothing.changed";

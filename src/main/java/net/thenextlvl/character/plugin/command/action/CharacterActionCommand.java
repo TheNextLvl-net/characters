@@ -8,6 +8,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import net.thenextlvl.character.plugin.CharacterPlugin;
 import net.thenextlvl.character.plugin.command.brigadier.BrigadierCommand;
 import net.thenextlvl.character.plugin.command.suggestion.CharacterActionSuggestionProvider;
+import net.thenextlvl.character.plugin.command.action.notification.CharacterActionNotificationCommand;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -22,11 +23,12 @@ public final class CharacterActionCommand extends BrigadierCommand {
                 .then(CharacterActionChanceCommand.create(plugin))
                 .then(CharacterActionCooldownCommand.create(plugin))
                 .then(CharacterActionListCommand.create(plugin))
+                .then(CharacterActionNotificationCommand.create(plugin))
                 .then(CharacterActionPermissionCommand.create(plugin))
                 .then(CharacterActionRemoveCommand.create(plugin));
     }
 
-    static ArgumentBuilder<CommandSourceStack, ?> actionArgument(final CharacterPlugin plugin) {
+    public static ArgumentBuilder<CommandSourceStack, ?> actionArgument(final CharacterPlugin plugin) {
         return Commands.argument("action", StringArgumentType.word())
                 .suggests(new CharacterActionSuggestionProvider());
     }

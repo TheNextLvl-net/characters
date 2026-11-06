@@ -1,13 +1,11 @@
 package net.thenextlvl.character.plugin.action;
 
-import net.kyori.adventure.sound.Sound;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.minimessage.tag.resolver.Formatter;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.thenextlvl.character.Character;
 import net.thenextlvl.character.action.ActionType;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.action.ClickType;
+import net.thenextlvl.character.notification.NotificationTrigger;
+import net.thenextlvl.character.notification.Notifications;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
@@ -33,8 +31,7 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     private volatile @Nullable String permission = null;
     private volatile @Range(from = 0, to = 100) int chance = 100;
     private volatile Duration cooldown = Duration.ZERO;
-    private volatile @Nullable String cooldownMessage = null;
-    private volatile @Nullable Sound cooldownSound = null;
+    private final SimpleNotifications notifications = new SimpleNotifications();
 
     public SimpleClickAction(final ActionType<T> actionType, final EnumSet<ClickType> clickTypes, final T input) {
         this.actionType = actionType;
@@ -129,40 +126,8 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     }
 
     @Override
-    public Optional<String> getCooldownMessage() {
-        return Optional.ofNullable(cooldownMessage);
-    }
-
-    @Override
-    public boolean setCooldownMessage(@Nullable final String message) {
-        if (Objects.equals(this.cooldownMessage, message)) return false;
-        this.cooldownMessage = message;
-        return true;
-    }
-
-    @Override
-    public Optional<Sound> getCooldownSound() {
-        return Optional.ofNullable(cooldownSound);
-    }
-
-    @Override
-    public boolean setCooldownSound(@Nullable final Sound sound) {
-        if (Objects.equals(this.cooldownSound, sound)) return false;
-        this.cooldownSound = sound;
-        return true;
-    }
-
-    // tells the player the action is on cooldown, with the remaining seconds
-    private void sendCooldownFeedback(final Player player) {
-        final var message = cooldownMessage;
-        if (message != null) {
-            final var seconds = getRemainingCooldown(player).toMillis() / 1000d;
-            player.sendActionBar(MiniMessage.miniMessage().deserialize(message,
-                    Formatter.number("cooldown", seconds),
-                    Placeholder.parsed("player", player.getName())));
-        }
-        final var sound = cooldownSound;
-        if (sound != null) player.playSound(sound);
+    public Notifications getNotifications() {
+        return notifications;
     }
 
     @Override
@@ -173,14 +138,18 @@ final class SimpleClickAction<T> implements ClickAction<T> {
     @Override
     public boolean invoke(final Character character, final Player player) {
         final var permission1 = permission;
-        if (permission1 != null && !player.hasPermission(permission1)) return false;
+        if (permission1 != null && !player.hasPermission(permission1)) {
+            notifications.trigger(NotificationTrigger.noPermission(), player, character, this);
+            return false;
+        }
         if (isOnCooldown(player)) {
-            sendCooldownFeedback(player);
+            notifications.trigger(NotificationTrigger.cooldown(), player, character, this);
             return false;
         }
         if (cooldown.isPositive()) cooldowns.put(player.getUniqueId(), System.currentTimeMillis());
         if (ThreadLocalRandom.current().nextInt(100) >= chance) return false;
         actionType.action().invoke(character, player, input);
+        notifications.trigger(NotificationTrigger.success(), player, character, this);
         return true;
     }
 
@@ -191,8 +160,7 @@ final class SimpleClickAction<T> implements ClickAction<T> {
         chance = other.getChance();
         cooldown = other.getCooldown();
         permission = other.getPermission().orElse(null);
-        cooldownMessage = other.getCooldownMessage().orElse(null);
-        cooldownSound = other.getCooldownSound().orElse(null);
+        notifications.copyFrom(other.getNotifications());
         return this;
     }
 }

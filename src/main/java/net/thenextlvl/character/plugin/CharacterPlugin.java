@@ -24,6 +24,9 @@ import net.thenextlvl.character.action.ActionTypes;
 import net.thenextlvl.character.action.ClickAction;
 import net.thenextlvl.character.action.ClickActionFactory;
 import net.thenextlvl.character.goal.Goal;
+import net.thenextlvl.character.notification.NotificationTrigger;
+import net.thenextlvl.character.notification.NotificationType;
+import net.thenextlvl.character.notification.UnparsedTitle;
 import net.thenextlvl.character.goal.Target;
 import net.thenextlvl.character.event.CharacterLoadEvent;
 import net.thenextlvl.character.plugin.action.SimpleActionTypes;
@@ -54,6 +57,8 @@ import net.thenextlvl.character.plugin.serialization.ItemStackAdapter;
 import net.thenextlvl.character.plugin.serialization.KeyAdapter;
 import net.thenextlvl.character.plugin.serialization.LocationAdapter;
 import net.thenextlvl.character.plugin.serialization.NamedTextColorAdapter;
+import net.thenextlvl.character.plugin.serialization.NotificationTriggerAdapter;
+import net.thenextlvl.character.plugin.serialization.NotificationTypeAdapter;
 import net.thenextlvl.character.plugin.serialization.ProfilePropertyAdapter;
 import net.thenextlvl.character.plugin.serialization.QuaternionfAdapter;
 import net.thenextlvl.character.plugin.serialization.RegistryAdapter;
@@ -64,6 +69,7 @@ import net.thenextlvl.character.plugin.serialization.TargetAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleAdapter;
 import net.thenextlvl.character.plugin.serialization.TitleTimesAdapter;
 import net.thenextlvl.character.plugin.serialization.TransformationAdapter;
+import net.thenextlvl.character.plugin.serialization.UnparsedTitleAdapter;
 import net.thenextlvl.character.plugin.serialization.Vector3fAdapter;
 import net.thenextlvl.character.plugin.serialization.WorldAdapter;
 import net.thenextlvl.character.plugin.version.PluginVersionChecker;
@@ -197,6 +203,8 @@ public final class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(Pig.Variant.class, new RegistryAdapter<>(RegistryKey.PIG_VARIANT))
             .registerTypeHierarchyAdapter(Pose.class, new EnumAdapter<>(Pose.class))
             .registerTypeHierarchyAdapter(PotionType.class, new EnumAdapter<>(PotionType.class))
+            .registerTypeHierarchyAdapter(NotificationTrigger.class, new NotificationTriggerAdapter())
+            .registerTypeHierarchyAdapter(NotificationType.class, new NotificationTypeAdapter())
             .registerTypeHierarchyAdapter(ProfileProperty.class, new ProfilePropertyAdapter())
             .registerTypeHierarchyAdapter(Quaternionf.class, new QuaternionfAdapter())
             .registerTypeHierarchyAdapter(Rabbit.Type.class, new EnumAdapter<>(Rabbit.Type.class))
@@ -214,6 +222,7 @@ public final class CharacterPlugin extends JavaPlugin {
             .registerTypeHierarchyAdapter(Transformation.class, new TransformationAdapter())
             .registerTypeHierarchyAdapter(TriState.class, new EnumAdapter<>(TriState.class))
             .registerTypeHierarchyAdapter(TropicalFish.Pattern.class, new EnumAdapter<>(TropicalFish.Pattern.class))
+            .registerTypeHierarchyAdapter(UnparsedTitle.class, new UnparsedTitleAdapter())
             .registerTypeHierarchyAdapter(Vector3f.class, new Vector3fAdapter())
             .registerTypeHierarchyAdapter(Villager.Profession.class, new RegistryAdapter<>(RegistryKey.VILLAGER_PROFESSION))
             .registerTypeHierarchyAdapter(Villager.Type.class, new RegistryAdapter<>(RegistryKey.VILLAGER_TYPE))

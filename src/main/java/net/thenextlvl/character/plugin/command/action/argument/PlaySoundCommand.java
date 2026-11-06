@@ -42,7 +42,7 @@ public final class PlaySoundCommand extends CharacterActionCommand<Sound> {
 
     @Override
     public int run(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        final var source = tryGetArgument(context, "source", Sound.Source.class).orElse(Sound.Source.MASTER);
+        final var source = tryGetArgument(context, "sound-source", Sound.Source.class).orElse(Sound.Source.MASTER);
         final var volume = tryGetArgument(context, "volume", float.class).orElse(1f);
         final var pitch = tryGetArgument(context, "pitch", float.class).orElse(1f);
         final var sound = RegistryArgumentExtractor.getTypedKey(context, RegistryKey.SOUND_EVENT, "sound");
