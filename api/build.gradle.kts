@@ -31,7 +31,7 @@ repositories {
 
 dependencies {
     // todo: unpin once paper-api ships the Automatic-Module-Name manifest entry again (missing since 26.3.build.242)
-    compileOnly("io.papermc.paper:paper-api:26.3.build.238-stable")
+    compileOnly("io.papermc.paper:paper-api:26.3.build.251-stable")
     implementation("net.thenextlvl:static-binder:0.1.3")
 }
 
